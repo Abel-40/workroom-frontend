@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "composite": true,  // Required for project references
+    "module": "commonjs",
+    "outDir": "./dist",
+    "noEmit": false
+  },
+  "include": [
+    "vite.config.ts",
+    "src/**/*.ts",
+    "src/**/*.d.ts"
+  ]
+}
