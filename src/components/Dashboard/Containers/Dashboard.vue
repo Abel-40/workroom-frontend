@@ -13,7 +13,7 @@ import {Calendar} from "lucide-vue-next";
       <Header/>
           <!-- Page Title -->
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-              <div>
+              <div class="-mt-24 md:mt-0 ">
                 <p class="text-sm text-[#7D8592]">Welcome back, Abel</p>
                 <h1 class="text-xl font-semibold">Dashboard</h1>
               </div>

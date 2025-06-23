@@ -52,7 +52,8 @@ const onClick = ()=>{
 }
 </script>
 <template>
-  <div class="w-full flex justify-between items-center p-4 gap-5 bg-white rounded-3xl border border-gray-200 shadow-sm cursor-pointer" @click="onClick">
+ <div class="w-full flex flex-wrap md:flex-nowrap justify-between items-start p-4 gap-5 bg-white rounded-3xl border border-gray-200 shadow-sm cursor-pointer overflow-auto scrollbar-thin scrollbar-thumb-blue-500 scrollbar-track-gray-100"
+@click="onClick">
     <div class="min-w-[20%]">
       <div class="flex flex-col gap-3 justify-center ">
         <p class="text-sm text-left whitespace-nowrap text-[#91929E]">Task Name</P>
@@ -60,7 +61,8 @@ const onClick = ()=>{
       </div>
     </div>
     <!-- left side properties -->
-    <div class="w-[70%] grid grid-cols-6 gap-3 items-center">
+    <div class="w-full md:w-[70%] grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 items-center">
+
       <div class="flex flex-col gap-3 justify-center items-center">
         <p class="text-sm whitespace-nowrap text-[#91929E]">Estimate </P>
         <p class="text-sm font-semibold">{{props.Task.EstimatedTime}}</p>

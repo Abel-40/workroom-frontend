@@ -21,8 +21,8 @@ const showSection = computed(() => {
 </script>
 <template>
   <div class="relative w-full min-h-screen bg-[#F4F9FD]">
-    <div class="flex flex-col md:flex-row pl-4 pt-3 ml-64">
-      <Sidebar class="w-64 fixed left-4 top-3 h-3/4 z-50"/>
+    <div class="flex flex-col md:flex-row pl-4 pt-3 md:ml-64">
+      <Sidebar class="w-64 md:fixed md:left-4 top-3 h-3/4 z-50"/>
       <component :is="showSection" v-if="showSection"/>
       
       <router-view v-else/>

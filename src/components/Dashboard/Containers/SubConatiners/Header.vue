@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
             class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6"
           >
             <!-- Search Bar -->
-            <div class="w-full md:w-1/2 max-w-md">
+            <div class="w-full md:w-1/2 max-w-md hidden md:block">
               <Input
                 id="search"
                 type="text"
@@ -26,7 +26,7 @@ import { Button } from "@/components/ui/button";
             </div>
 
             <!-- User Controls -->
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-3 mt-20 md:mt-0 justify-end mb-6 md:mb-0">
               <Button variant="ghost" size="icon" class="bg-white shadow-sm">
                 <Bell class="w-5 h-5" />
               </Button>
