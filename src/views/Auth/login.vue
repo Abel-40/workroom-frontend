@@ -115,9 +115,6 @@ const onSubmit = async (e: Event) => {
                 <div class="space-y-2">
                   <Label for="password">Password</Label>
                   <Input id="password" placeholder="**********" type="password" v-model="form.password"/>
-                  <span v-if="showErrors && !validate.password()" class="text-red-500 text-4 md-1"> Password must be at least 8 characters long and include at least 1 uppercase letter, 1 lowercase letter, 1 number, and 1 special character.</span>
-
-
                 </div>
 
                 <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
