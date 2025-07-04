@@ -71,34 +71,34 @@ const router = createRouter({
 })
 
 
-router.beforeEach((to, from, next) => {
-  const authStore = useAuthStore()
-  const authPages = ['/auth/login/', '/auth/step1/', '/auth/step2/', '/auth/step3/', '/auth/step4/','/check/','/auth/accept_invitation/']
-   const requiresAuth = to.matched.some(record => record.meta.requiredAuth)
+// router.beforeEach((to, from, next) => {
+//   const authStore = useAuthStore()
+//   const authPages = ['/auth/login/', '/auth/step1/', '/auth/step2/', '/auth/step3/', '/auth/step4/','/check/','/auth/accept_invitation/']
+//    const requiresAuth = to.matched.some(record => record.meta.requiredAuth)
 
-  const step = to.query.section
+//   const step = to.query.section
 
-  // Redirect to login if user is not authenticated and the route requires it
-  if (!authStore.logedInUserInfo.is_authenticated && requiresAuth && !authPages.includes(to.path)) {
-    return next('/')
-  }
+//   // Redirect to login if user is not authenticated and the route requires it
+//   if (!authStore.logedInUserInfo.is_authenticated && requiresAuth && !authPages.includes(to.path)) {
+//     return next('/')
+//   }
 
-  // Multi-step registration enforcement logic
-  if (to.path.startsWith('/auth/')) {
+//   // Multi-step registration enforcement logic
+//   if (to.path.startsWith('/auth/')) {
   
-    if (step === 'step2' && !authStore.step1Form.isStep1Complete) {
-      return next({ path: '/auth/', query: { section: 'step1' } })
-    }
+//     if (step === 'step2' && !authStore.step1Form.isStep1Complete) {
+//       return next({ path: '/auth/', query: { section: 'step1' } })
+//     }
 
     
-    if (step === 'step3' && !authStore.step2Form.isStep2Complete) {
-      return next({ path: '/auth/', query: { section: 'step2' } })
-    }
-  }
+//     if (step === 'step3' && !authStore.step2Form.isStep2Complete) {
+//       return next({ path: '/auth/', query: { section: 'step2' } })
+//     }
+//   }
 
   
-  next()
-})
+//   next()
+// })
 
 
 export default router

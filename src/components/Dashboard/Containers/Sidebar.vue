@@ -17,6 +17,7 @@ import { ref, watch, defineEmits, defineProps } from "vue";
 import { useAuthStore } from "@/stores/authStore";
 import { useRoute, useRouter } from "vue-router";
 
+
 const emit = defineEmits(["collapse", "close-sidebar"]);
 const props = defineProps<{ showSidebar: boolean }>();
 
@@ -35,6 +36,7 @@ watch(
   },
   { immediate: true }
 );
+
 
 const navItems = [
   { title: "Dashboard", sectionName: "dashboard" },
@@ -95,18 +97,25 @@ const logout = () => {
     router.push("/auth/login/");
   }
 };
+const windowWidth = ref(window.innerWidth);
+
+window.addEventListener("resize", () => {
+  windowWidth.value = window.innerWidth;
+});
+
 </script>
 
 <template>
-  <div
-    class="fixed top-0 left-1 h-full bg-white flex flex-col transition-all duration-200 overflow-x-hidden md:z-40 z-[100] overflow-y-hidden"
-    :class="[
-      isCollapsed ? 'w-20' : 'w-64',
-      'md:block',
-      props.showSidebar ? 'block z-[100]' : 'hidden md:block'
-    ]"
-  >
-    <div class="flex items-center gap-2 justify-between px-2 py-4 mt-4">
+ <div
+  class="fixed top-0 bg-white flex flex-col transition-all duration-200 overflow-x-hidden md:z-40 z-[100] overflow-y-hidden"
+  :class="[
+    isCollapsed ? 'w-20' : windowWidth < 768 ? 'w-24' : 'w-64',
+    windowWidth < 768 ? 'left-4' : 'left-1',
+    'md:block',
+    props.showSidebar ? 'block z-[100]' : 'hidden md:block'
+  ]"
+>
+    <div class="flex items-center gap-2 justify-between px-2 py-4 mt-4 ">
       <span
         v-if="!isCollapsed"
         class="flex gap-2 text-xl font-bold text-[#3F8CFF]"
@@ -135,15 +144,16 @@ const logout = () => {
             @click="navigateToSection(navItem.sectionName)"
           >
             <a
-              class="w-full lg:min-w-[210px] h-full flex items-center gap-2 p-2 lg:rounded-l-xl"
-              :class="setItemClass(navItem.sectionName)"
-            >
+  class="w-full lg:min-w-[210px] h-full flex items-center sm:justify-center md:justify-start gap-2 p-2 lg:rounded-l-xl transition-all duration-200 sm:w-24"
+  :class="[setItemClass(navItem.sectionName), isCollapsed || windowWidth < 768 ? 'justify-center' : 'justify-start']"
+>
               <component
                 :is="setNavIcon(navItem.title)"
                 class="w-5 h-5"
                 :class="setIconColor(navItem.sectionName)"
               />
-              <span v-if="!isCollapsed">{{ navItem.title }}</span>
+             <span v-if="!isCollapsed && windowWidth >= 768" class="b">{{ navItem.title }}</span>
+
             </a>
             <div
               class="w-0 h-full rounded-xl ml-4 hidden md:block"
@@ -158,8 +168,9 @@ const logout = () => {
         class="bg-[#8aade1] w-full text-xs md:text-sm flex items-center justify-center"
         @click="logout"
       >
-        <template v-if="!isCollapsed">
-          Support <CircleHelp class="w-4 h-4 md:w-5 md:h-5 ml-1" />
+        <template v-if="!isCollapsed ">
+          <h2 class="hidden md:block"> Support</h2>
+           <CircleHelp class="w-4 h-4 md:w-5 md:h-5 ml-1" />
         </template>
         <template v-else>
           <CircleHelp class="w-5 h-5" />

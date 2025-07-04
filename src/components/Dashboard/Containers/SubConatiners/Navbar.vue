@@ -41,14 +41,19 @@
           Workroom
         </span>
         <button
-          @click="$emit('toggle-sidebar')"
+          @click="showNav = !showNav"
           class="md:hidden text-blue-600 focus:outline-none z-10"
         >
           <Menu class="w-6 h-6" />
         </button>
 
         <!-- Nav Items -->
-        <div class="flex gap-2 md:gap-6 flex-1 justify-center z-10">
+       <div
+  class="absolute top-full left-0 h-screen bg-white flex flex-col items-center gap-2 py-2 w-48
+         md:static md:flex md:flex-row md:gap-6 md:w-auto md:bg-transparent md:py-0"
+  :class="{ 'hidden': !showNav, 'flex': showNav }"
+>
+
           <a
             v-for="item in navItems"
             :key="item.name"
@@ -161,6 +166,8 @@ onUnmounted(() => {
 });
 
 defineEmits(["toggle-sidebar"]);
+const showNav = ref(false)
+
 </script>
 
 <style scoped>

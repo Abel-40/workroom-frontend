@@ -9,6 +9,7 @@ import {Calendar} from "lucide-vue-next";
 <template>
   <div class="flex-1 p-4 mt-16">
     <div class="mb-6">
+    
           <!-- Page Title -->
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
               <div class="-mt-24 md:mt-0 ">
@@ -25,6 +26,7 @@ import {Calendar} from "lucide-vue-next";
     </div>
     <!-- Workload and Events Section -->
     <div class="flex flex-col lg:flex-row gap-6 mb-6">
+      
       <WorkloadStats/>
       <Events/>
     </div>

@@ -54,6 +54,7 @@ const users = [
     imageSrc: "https://randomuser.me/api/portraits/men/5.jpg"
   }
 ];
+defineEmits(["toggle-sidebar"]);
 </script>
 
 <template>
@@ -65,7 +66,9 @@ const users = [
         View all <ChevronRight class="w-4 h-4" />
       </Button>
     </div>
-
+    <div class="bg-blue-600 w-3 h-24 rounded-lg fixed -ml-3 mt-64 md:hidden"
+     @click="$emit('toggle-sidebar')">
+    </div>
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
       <UserCard
         v-for="(user, index) in users"
@@ -78,3 +81,4 @@ const users = [
     </div>
   </div>
 </template>
+
