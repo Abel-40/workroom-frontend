@@ -87,7 +87,7 @@ const skip = ()=>{
         <p class="text-sm font-medium text-gray-700 mb-6">
           To match you with the right tools, pick a task type based on your company’s sector. Workroom will take it from there!:
         </p>
-        <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <SelectionCard
             v-for="option in authStore.defaultTaskTypes"
             :key="option.id"

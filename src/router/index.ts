@@ -8,7 +8,7 @@ const StepOne = () => import('@/views/Auth/StepOne.vue')
 const StepTwo = () => import('@/views/Auth/StepTwo.vue')
 const DashboardLayout = () => import('@/views/Admin/DashboardLayout.vue')
 const Dashboard = () => import('@/components/Dashboard/Containers/Dashboard.vue')
-
+const AcceptInvitation = ()=> import('@/views/Auth/AcceptInvitation.vue')
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -43,6 +43,17 @@ const router = createRouter({
         }
       ]
     },
+      // {
+      //   path:'staff',
+      //   name:'staff',
+      //   component:
+
+      // },
+        {
+          path:'/accept_invitation/',
+          name:'accept_invitation',
+          component:AcceptInvitation
+        },
     {
       path: '/admin/dashboard/',
       name: 'admin-dashboard',
@@ -62,14 +73,14 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
-  const authPages = ['/auth/login/', '/auth/step1/', '/auth/step2/', '/auth/step3/', '/auth/step4/']
+  const authPages = ['/auth/login/', '/auth/step1/', '/auth/step2/', '/auth/step3/', '/auth/step4/','/check/','/auth/accept_invitation/']
    const requiresAuth = to.matched.some(record => record.meta.requiredAuth)
 
   const step = to.query.section
 
   // Redirect to login if user is not authenticated and the route requires it
   if (!authStore.logedInUserInfo.is_authenticated && requiresAuth && !authPages.includes(to.path)) {
-    return next('/auth/login/')
+    return next('/')
   }
 
   // Multi-step registration enforcement logic
@@ -82,11 +93,6 @@ router.beforeEach((to, from, next) => {
     
     if (step === 'step3' && !authStore.step2Form.isStep2Complete) {
       return next({ path: '/auth/', query: { section: 'step2' } })
-    }
-
-   
-    if (step === 'step4' && !authStore.step3Form.isStep3Complete) {
-      return next({ path: '/auth/', query: { section: 'step3' } })
     }
   }
 

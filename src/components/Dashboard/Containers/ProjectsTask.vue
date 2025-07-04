@@ -61,7 +61,7 @@ const projectType = ref<'Active'|'In Active'|'Done'>('Active')
 const onViewDetail = (project: Project) => {
   selectedProject.value = project;
   router.push({
-    path: "/admin/dashboard/",
+    path: "/admin/",
     query: {
       section: "projects",
       id: selectedProject.value.id,
@@ -73,7 +73,7 @@ const onViewDetail = (project: Project) => {
 const { showDetial } = storeToRefs(projectsStore);
 const goBack = () => {
   router.push({
-    path: "/admin/dashboard/",
+    path: "/admin/",
     query: {
       section: "projects"
     },
@@ -283,11 +283,10 @@ watch(()=>paginatedProjects.value,()=>{
     @apply="ApplyFilter"
   />
   <!--header +  project aside + projects Task -->
-  <div class="w-full flex-col px-4 py-3">
+  <div class="w-full flex-col px-4 py-3 mt-16">
     <!-- <p>{{ selectedFilters }}</p> -->
     <div class="mb-6">
-      <!-- to header -->
-      <Header />
+  
       <!-- lower header -->
       <!-- Page Title -->
       <div

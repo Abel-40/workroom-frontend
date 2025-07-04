@@ -1,7 +1,6 @@
 import { defineStore } from "pinia";
 import type { User,ApiResponse,UserProfile,Departments,Sectors,Company, TaskType,DefaultTaskType } from "@/types/types";
 import axiosInstance from "@/plugins/axios";
-import axios from "axios";
 interface Step3Form {
   selected_types?: number[]
   use_all_default_task_types?: boolean 
@@ -133,7 +132,8 @@ export const useAuthStore =  defineStore('AuthStore',{
         this.logedInUserInfo = data.data
         sessionStorage.setItem("currentUserContent", JSON.stringify(this.logedInUserInfo))
         sessionStorage.setItem("currentAuthTokens", JSON.stringify({accessToken:this.logedInUserInfo.access}))
-        
+        axiosInstance.defaults.headers.common["Authorization"] =
+          `Bearer ${this.logedInUserInfo.access}`;
         return { user: data.data.user }
       } catch (error: any) {
         const errorMsg = error.response?.data?.message || "Login failed"
@@ -247,6 +247,17 @@ export const useAuthStore =  defineStore('AuthStore',{
         throw error
       }
     },
+      async getCompanyDepartment(userId: number): Promise<DefaultTaskType[]> {
+      try {
+        const { data } = await axiosInstance.get<ApiResponse<{ Department_types: DefaultTaskType[] }>>(
+          `/department/${userId}/dept_types/`
+        )
+        return data.data.Department_types
+      } catch (error) {
+        console.error('Failed to fetch default Department types:', error)
+        throw error
+      }
+    },
     async createDepartmentType(form:Record<string,number[] | boolean | number |undefined>):Promise<{
             created_departments?:any[];
             errors?: Record<string, string[]>;
@@ -277,6 +288,35 @@ export const useAuthStore =  defineStore('AuthStore',{
       catch(error:any){
         return {
           message: error.response?.data?.message ||'failed to create task types',
+        };
+      }
+    },
+    async inviteNewEmployee(form:Record<string,string | number>):Promise<{email?:string,errors?:Record<string,string[]>,message?:string}>{
+      try{
+        const {data} = await axiosInstance.post<ApiResponse<{email:string; token:string}>>('/auth/send_invite/',form)
+         if(data.success){
+          console.log(data.data)
+          return {email:data.data.email}
+        }else{
+          const errors = data.errors;
+
+          if (errors && typeof errors === 'object' && !Array.isArray(errors)) {
+            
+            return {
+              errors,
+              message: data.message || 'Validation failed',
+            };
+          } else {
+            
+            return {
+              message: data.message || 'Something went wrong',
+            };
+          }        
+        }
+      }
+      catch(error:any){
+        return {
+          message: error.response?.data?.message ||'failed to Invite new Employee',
         };
       }
     }

@@ -63,7 +63,7 @@ const handleSubmit = async ()=>{
     })
     }
   } else {
-    sessionStorage.removeItem('AuthStore')
+    authStore.restoreData()
     router.push({
       path:'/admin/dashboard/',
       query:{Section:'dashboard'}

@@ -51,10 +51,12 @@ export type UserProfile = {
 
 // Department
 type Department = {
-  readonly id: string;
+  readonly id: number;
   name: string;
-  created_by: string;
+  company:number
+  description: string;
   leader: string;
+  created_at:string;
 };
 
 // Sector 

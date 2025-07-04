@@ -3,7 +3,6 @@ import {MoveLeft} from 'lucide-vue-next';
 import { Button } from "@/components/ui/button";
 import {Plus} from 'lucide-vue-next';
 import EventCard from ".././Cards/EventCard.vue";
-import Header from './SubConatiners/Header.vue';
 import {ref} from "vue"
 import { useRouter } from 'vue-router';
 

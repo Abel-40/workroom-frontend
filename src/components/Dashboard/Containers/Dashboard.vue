@@ -1,16 +1,14 @@
 <script setup lang="ts">
 import ActivityStream from './SubConatiners/ActivityStream.vue';
 import Events from './SubConatiners/Events.vue';
-import Header from './SubConatiners/Header.vue';
 import Projects from './SubConatiners/Projects.vue';
 import WorkloadStats from './SubConatiners/WorkloadStats.vue';
 import {Calendar} from "lucide-vue-next";
 </script>
 
 <template>
-  <div class="flex-1 p-4">
+  <div class="flex-1 p-4 mt-16">
     <div class="mb-6">
-      <Header/>
           <!-- Page Title -->
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
               <div class="-mt-24 md:mt-0 ">
