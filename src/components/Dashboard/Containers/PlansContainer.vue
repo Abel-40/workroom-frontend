@@ -5,6 +5,7 @@ import PlanCard from "../Cards/PlanCard.vue";
 
 const plansStore = usePlansStore();
 const billingPeriod = ref<"monthly" | "yearly">("monthly");
+const selectedPlanId = ref<number | null>(null);
 
 onMounted(() => {
   plansStore.fetchPlans();
@@ -21,13 +22,24 @@ const getDisplayPrice = (plan: any) => {
 
 const getPeriodLabel = () =>
   billingPeriod.value === "monthly" ? "/month" : "/year";
+
+const handleSelectedPlan = async (planId: number) => {
+  selectedPlanId.value = planId;
+  const response = await plansStore.startCheckout(planId);
+  if (response.success && response.data && response.data.checkout_url) {
+    window.location.href = response.data.checkout_url;
+  } else {
+    // Optionally handle error (e.g., show a toast)
+    console.error(response.message || "Checkout failed");
+  }
+};
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+  <div class="bg-gray-50 py-6 px-4 sm:px-6 lg:px-8">
     <div class="max-w-7xl mx-auto">
       <!-- Header -->
-      <div class="text-center mb-8">
+      <div class="text-center mb-4">
         <h1 class="text-4xl font-bold text-gray-900 mb-4">Choose Your Plan</h1>
         <p class="text-xl text-gray-600 max-w-3xl mx-auto">
           Select the perfect plan for your team. All plans include a free trial
@@ -36,7 +48,7 @@ const getPeriodLabel = () =>
       </div>
 
       <!-- Billing Toggle -->
-      <div class="flex justify-center mb-10">
+      <div class="flex justify-center mb-5">
         <button
           class="px-6 py-2 rounded-l-lg border border-blue-600 font-semibold focus:outline-none transition-colors duration-200"
           :class="
@@ -92,9 +104,9 @@ const getPeriodLabel = () =>
             :plan="{
               ...plan,
               price: getDisplayPrice(plan),
-              billingPeriod: billingPeriod,
-              periodLabel: getPeriodLabel(),
             }"
+            :periodLabel="getPeriodLabel()"
+            @selected_plan="handleSelectedPlan"
           />
         </div>
 

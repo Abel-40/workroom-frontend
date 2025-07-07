@@ -1,9 +1,10 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import axiosInstance from "@/plugins/axios";
+import type { ApiResponse } from "@/types/types";
 
 interface Plan {
-  id:number;
+  id: number;
   name: string;
   price: string;
   description: string;
@@ -27,7 +28,7 @@ export const usePlansStore = defineStore("plans", () => {
     error.value = "";
 
     try {
-      const {data} = await axiosInstance.get("/plans/get_plans/");
+      const { data } = await axiosInstance.get("/plans/get_plans/");
       plans.value = data.data.plans;
     } catch (err: any) {
       error.value = "Failed to load plans.";
@@ -37,10 +38,36 @@ export const usePlansStore = defineStore("plans", () => {
     }
   };
 
+  const startCheckout = async (
+    planId: number
+  ): Promise<ApiResponse<{ checkout_url: string }>> => {
+    try {
+      const { data } = await axiosInstance.post<
+        ApiResponse<{ checkout_url: string }>
+      >("/subscriptions/start-checkout/", {
+        plan_id: planId,
+      });
+      return data;
+    } catch (err: any) {
+      // If error response exists, return it in ApiResponse shape
+      if (err.response && err.response.data) {
+        return err.response.data;
+      }
+      return {
+        success: false,
+        message: "Checkout failed.",
+        statusCode: 500,
+        data: { checkout_url: "" },
+        errors: err.message || "Unknown error",
+      };
+    }
+  };
+
   return {
     plans,
     loading,
     error,
     fetchPlans,
+    startCheckout,
   };
 });

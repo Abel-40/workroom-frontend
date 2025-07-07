@@ -11,6 +11,8 @@ import { onMounted } from 'vue';
 import { useToast } from '@/components/ui/toast/use-toast';
 import router from '@/router';
 import SelectionCard from '@/components/Dashboard/Cards/SelectionCard.vue';
+import PlansContainer from '@/components/Dashboard/Containers/PlansContainer.vue';
+
 const route = useRoute
 const authStore = useAuthStore()
 onMounted(()=>{
@@ -65,8 +67,7 @@ const handleSubmit = async ()=>{
   } else {
     authStore.restoreData()
     router.push({
-      path:'/admin/dashboard/',
-      query:{Section:'dashboard'}
+      path:'/plans/',
     })
   }
   
@@ -74,8 +75,7 @@ const handleSubmit = async ()=>{
 
 const skip = ()=>{
     router.push({
-      path:'/admin/dashboard/',
-      query:{section:'dashboard'}
+      path:'/plans/',
     })
 }
 
