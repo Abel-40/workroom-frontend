@@ -9,7 +9,7 @@ import Users from "@/components/Dashboard/Containers/UsersList.vue";
 import { useRoute } from "vue-router";
 import { computed, ref, onMounted, onBeforeUnmount } from "vue";
 import Navbar from "@/components/Dashboard/Containers/SubConatiners/Navbar.vue";
-import Workload from "@/components/Dashboard/Containers/SubConatiners/WorkloadStats.vue";
+
 
 const route = useRoute();
 
@@ -63,6 +63,13 @@ onBeforeUnmount(() => {
   <div class="relative w-full min-h-screen bg-[#F4F9FD] overflow-x-hidden">
     <!-- Top navbar -->
     <Navbar :is-collapsed="isCollapsed" @toggle-sidebar="toggleSidebar" />
+    <!-- Overlay when sidebar is visible (mobile only) -->
+<div
+  v-if="isSidebarVisible"
+  class="fixed inset-0 bg-black/40 z-10 md:hidden"
+  @click="toggleSidebar"
+  />
+
 
     <!-- Main area -->
     <div :class="isCollapsed ? 'pl-20' : 'md:pl-64'">
@@ -73,12 +80,16 @@ onBeforeUnmount(() => {
         @collapse="handleSidebarCollapse"
         @close-sidebar="toggleSidebar"
         :showSidebar="isSidebarVisible"
+        :is-collapsed="isCollapsed" @toggle-sidebar="toggleSidebar"
       />
+       <div
+        class="bg-blue-600 w-3 h-24 rounded-lg fixed mt-64 md:hidden z-[10] "
+        @click="toggleSidebar"
+      >
+      </div>
 
       <!-- Section with blue toggle line -->
-      <!-- <Workload :is-collapsed="isCollapsed" @toggle-sidebar="toggleSidebar" /> -->
-
-      <!-- Section content -->
+     
       <div class="pt-12 mb:pl-6">
         <component :is="showSection" v-if="showSection" />
         <router-view v-else />

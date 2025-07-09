@@ -1,0 +1,10 @@
+[33m45bb4c8[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mlayout[m[33m, [m[1;31morigin/layout[m[33m)[m HEAD@{0}: checkout: moving from subscription to layout
+[33m6a224c4[m[33m ([m[1;31morigin/subscription[m[33m, [m[1;32msubscription[m[33m)[m HEAD@{1}: checkout: moving from layout to subscription
+[33m45bb4c8[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mlayout[m[33m, [m[1;31morigin/layout[m[33m)[m HEAD@{2}: checkout: moving from subscription to layout
+[33m6a224c4[m[33m ([m[1;31morigin/subscription[m[33m, [m[1;32msubscription[m[33m)[m HEAD@{3}: checkout: moving from layout to subscription
+[33m45bb4c8[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mlayout[m[33m, [m[1;31morigin/layout[m[33m)[m HEAD@{4}: commit: navbar
+[33mc8bcde0[m HEAD@{5}: checkout: moving from main to layout
+[33m6f9ccda[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m)[m HEAD@{6}: checkout: moving from frontend to main
+[33mfd60dfd[m[33m ([m[1;32mfrontend[m[33m)[m HEAD@{7}: commit: making side bar responsive
+[33m6f9ccda[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m)[m HEAD@{8}: checkout: moving from main to frontend
+[33m6f9ccda[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m)[m HEAD@{9}: clone: from https://github.com/Abel-40/workroom-frontend.git

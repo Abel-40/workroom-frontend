@@ -128,7 +128,7 @@ const goToPremium = () => {
 
         <!-- Nav Items -->
         <div
-          class="absolute top-full left-0 bg-white flex flex-col items-center gap-2 py-2 w-48 md:static md:flex md:flex-row md:gap-6 md:w-auto md:bg-transparent md:py-0"
+          class="absolute top-full left-0 bg-white flex flex-col items-center gap-2 py-2 w-48 md:static md:flex md:flex-row md:gap-6 md:w-auto md:bg-transparent md:py-0 h-screen"
           :class="{ hidden: !showNav, flex: showNav }"
         >
           <a
@@ -190,6 +190,14 @@ const goToPremium = () => {
         </div>
       </div>
     </nav>
+    <!-- Gray overlay when mobile nav is open -->
+<div
+  v-if="showNav"
+  class="fixed left-48 right-0 top-28 bottom-0 bg-black/40 z-10 md:hidden"
+  @click="showNav = false"
+/>
+
+
   </div>
 </template>
 

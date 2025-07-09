@@ -102,12 +102,12 @@ const windowWidth = ref(window.innerWidth);
 window.addEventListener("resize", () => {
   windowWidth.value = window.innerWidth;
 });
-
+// defineEmits(["toggle-sidebar"]);
 </script>
 
 <template>
  <div
-  class="fixed top-0 bg-white flex flex-col transition-all duration-200 overflow-x-hidden md:z-40 z-[100] overflow-y-hidden"
+  class="fixed top-0 bg-white flex flex-col transition-all duration-200 overflow-x-hidden md:z-40 z-[10] overflow-y-hidden "
   :class="[
     isCollapsed ? 'w-20' : windowWidth < 768 ? 'w-24' : 'w-64',
     windowWidth < 768 ? 'left-4' : 'left-1',
@@ -115,24 +115,9 @@ window.addEventListener("resize", () => {
     props.showSidebar ? 'block z-[100]' : 'hidden md:block'
   ]"
 >
-    <div class="flex items-center gap-2 justify-between px-2 py-4 mt-4 ">
-      <span
-        v-if="!isCollapsed"
-        class="flex gap-2 text-xl font-bold text-[#3F8CFF]"
-      >
-        <WorkflowIcon class="w-6 h-6 text-[#3F8CFF]" />
-        Workroom
-      </span>
-      <button
-        @click="toggleCollapse"
-        class="hidden md:flex items-center justify-center w-10 h-10 sticky top-0 z-10"
-      >
-        <PanelRightClose v-if="isCollapsed" class="w-5 h-5 text-[#3F8CFF]" />
-        <PanelLeftClose v-else class="w-5 h-5 text-[#3F8CFF]" />
-      </button>
-    </div>
+   
 
-    <div class="flex flex-col bg-white pl-4 md:py-2 -ml-5 md:ml-0 lg:h-[80%] flex-1 overflow-y-auto overflow-x-hidden md:justify-around">
+    <div class="flex flex-col bg-white pl-4 md:py-2 -ml-5 md:ml-0 lg:h-[80%] flex-1 overflow-y-auto overflow-x-hidden md:justify-around mt-6 absolute ">
       <div class="absolute inset-0 opacity-20 pointer-events-none overflow-hidden">
         <div class="absolute top-8 right-2 w-[100px] md:w-[150px] h-[100px] md:h-[150px] bg-blue-400 rounded-full blur-xl"></div>
         <div class="absolute bottom-6 left-0 w-[100px] md:w-[150px] h-[100px] md:h-[150px] bg-purple-400 rounded-full blur-xl"></div>
@@ -165,7 +150,7 @@ window.addEventListener("resize", () => {
 
       <div class="p-4">
       <Button
-        class="bg-[#8aade1] w-full text-xs md:text-sm flex items-center justify-center"
+        class="bg-[#8aade1] w-full text-xs md:text-sm flex items-center justify-center "
         @click="logout"
       >
         <template v-if="!isCollapsed ">
@@ -178,6 +163,21 @@ window.addEventListener("resize", () => {
       </Button>
     </div>
 
+    </div>
+     <div class="flex items-center gap-2 justify-between px-2 py-4 mt-96">
+      <span
+        v-if="!isCollapsed"
+        class="flex gap-2 text-xl font-bold text-[#3F8CFF]"
+      >
+     
+      </span>
+      <button
+        @click="toggleCollapse"
+        class="hidden md:flex items-center justify-center w-16 h-10 sticky top-0 z-10"
+      >
+        <PanelRightClose v-if="isCollapsed" class="w-5 h-5 text-[#3F8CFF]" />
+        <PanelLeftClose v-else class="w-5 h-5 text-[#3F8CFF]" />
+      </button>
     </div>
   </div>
 </template>
