@@ -2,7 +2,6 @@ import { defineStore } from "pinia";
 import { ref } from "vue";
 import axiosInstance from "@/plugins/axios";
 import type { ApiResponse } from "@/types/types";
-
 interface Plan {
   id: number;
   name: string;
@@ -39,17 +38,18 @@ export const usePlansStore = defineStore("plans", () => {
   };
 
   const startCheckout = async (
-    planId: number
-  ): Promise<ApiResponse<{ checkout_url: string }>> => {
+    planId: number,
+    billingCycle: "monthly" | "yearly"
+  ): Promise<ApiResponse<{ checkout_url?: string; plan?: string }>> => {
     try {
       const { data } = await axiosInstance.post<
-        ApiResponse<{ checkout_url: string }>
+        ApiResponse<{ checkout_url?: string; plan?: string }>
       >("/subscriptions/start-checkout/", {
         plan_id: planId,
+        billing_cycle: billingCycle,
       });
       return data;
     } catch (err: any) {
-      // If error response exists, return it in ApiResponse shape
       if (err.response && err.response.data) {
         return err.response.data;
       }
@@ -57,7 +57,29 @@ export const usePlansStore = defineStore("plans", () => {
         success: false,
         message: "Checkout failed.",
         statusCode: 500,
-        data: { checkout_url: "" },
+        data: {},
+        errors: err.message || "Unknown error",
+      };
+    }
+  };
+
+  const getUserCompanyPlan = async (): Promise<
+    ApiResponse<{ plan?: string }>
+  > => {
+    try {
+      const { data } = await axiosInstance.get<ApiResponse<{ plan?: string }>>(
+        "/plans/request_user_company_plan/"
+      );
+      return data;
+    } catch (err: any) {
+      if (err.response && err.response.data) {
+        return err.response.data;
+      }
+      return {
+        success: false,
+        message: "Failed to fetch user plan.",
+        statusCode: 500,
+        data: {},
         errors: err.message || "Unknown error",
       };
     }
@@ -69,5 +91,6 @@ export const usePlansStore = defineStore("plans", () => {
     error,
     fetchPlans,
     startCheckout,
+    getUserCompanyPlan,
   };
 });

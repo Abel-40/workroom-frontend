@@ -2,7 +2,11 @@
 import { ref, computed, onMounted } from "vue";
 import { usePlansStore } from "@/stores/plansStore";
 import PlanCard from "../Cards/PlanCard.vue";
+import { useToast } from "@/components/ui/toast";
+import router from "@/router";
+import { Section } from "lucide-vue-next";
 
+const toast = useToast();
 const plansStore = usePlansStore();
 const billingPeriod = ref<"monthly" | "yearly">("monthly");
 const selectedPlanId = ref<number | null>(null);
@@ -25,12 +29,35 @@ const getPeriodLabel = () =>
 
 const handleSelectedPlan = async (planId: number) => {
   selectedPlanId.value = planId;
-  const response = await plansStore.startCheckout(planId);
-  if (response.success && response.data && response.data.checkout_url) {
-    window.location.href = response.data.checkout_url;
+  const response = await plansStore.startCheckout(planId, billingPeriod.value);
+  if (response.success) {
+    if (response.data.checkout_url) {
+      window.location.href = response.data.checkout_url;
+    } else if (response.data.plan) {
+      toast.toast({
+        title: "Success",
+        description: "Free plan activated successfully!",
+        variant: "default",
+      });
+     router.push({
+      path:'/Admin/dashboard/'
+     })
+    }
   } else {
-    // Optionally handle error (e.g., show a toast)
-    console.error(response.message || "Checkout failed");
+    // Show all error messages from the API
+    let errorMsg = response.message || "Checkout failed";
+    if (response.errors) {
+      if (typeof response.errors === "string") {
+        errorMsg += `: ${response.errors}`;
+      } else if (typeof response.errors === "object") {
+        errorMsg += ": " + Object.values(response.errors).flat().join(", ");
+      }
+    }
+    toast.toast({
+      title: "Error",
+      description: errorMsg,
+      variant: "destructive",
+    });
   }
 };
 </script>

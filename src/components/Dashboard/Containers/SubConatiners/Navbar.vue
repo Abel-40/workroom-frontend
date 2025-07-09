@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from "vue";
 import { useAuthStore } from "@/stores/authStore";
+import { usePlansStore } from "@/stores/plansStore";
 import {
   Bell,
   MessageCircle,
@@ -28,7 +29,7 @@ const navItems = [
   { name: "Department", route: "/?section=departments" },
   { name: "Performance", route: "/?section=performance" },
 ];
-
+const plansStore = usePlansStore()
 const authStore = useAuthStore();
 const logout = () => {
   if (authStore.logedInUserInfo.is_authenticated) {
@@ -37,7 +38,7 @@ const logout = () => {
   }
 };
 
-const isPremium = ref(false); // Replace with real check
+const isPremium = ref(false); // Will be set based on plan
 const showPremiumBar = ref(true);
 const isSticky = ref(true);
 
@@ -46,8 +47,15 @@ function handleScroll() {
   // isSticky.value = window.scrollY < window.innerHeight;
 }
 
-onMounted(() => {
+onMounted(async () => {
   window.addEventListener("scroll", handleScroll);
+  // Fetch user plan info
+  const planResponse = await plansStore.getUserCompanyPlan();
+  if (planResponse.success && planResponse.data && planResponse.data.plan) {
+    isPremium.value = planResponse.data.plan !== "free";
+  } else {
+    isPremium.value = false; // fallback: show Go Premium if error
+  }
 });
 onUnmounted(() => {
   window.removeEventListener("scroll", handleScroll);
@@ -60,7 +68,7 @@ const goToPremium = () => {
   router.push({
     path: "/plans/",
   });
-  console.log('check')
+  console.log("check");
 };
 </script>
 
@@ -76,12 +84,11 @@ const goToPremium = () => {
       <div
         v-if="!isPremium && showPremiumBar"
         class="w-full bg-gradient-to-r from-yellow-400 to-yellow-200 text-yellow-900 font-semibold text-center py-2 text-xs shadow-md"
-         @click="goToPremium()"
+        @click="goToPremium()"
       >
-      <Button
+        <Button
           variant="link"
           class="underline hover:text-yellow-800 transition-colors text-xs py-0 h-auto"
-         
         >
           Go Premium
         </Button>
@@ -121,7 +128,7 @@ const goToPremium = () => {
 
         <!-- Nav Items -->
         <div
-          class="absolute top-full left-0  bg-white flex flex-col items-center gap-2 py-2 w-48 md:static md:flex md:flex-row md:gap-6 md:w-auto md:bg-transparent md:py-0"
+          class="absolute top-full left-0 bg-white flex flex-col items-center gap-2 py-2 w-48 md:static md:flex md:flex-row md:gap-6 md:w-auto md:bg-transparent md:py-0"
           :class="{ hidden: !showNav, flex: showNav }"
         >
           <a
