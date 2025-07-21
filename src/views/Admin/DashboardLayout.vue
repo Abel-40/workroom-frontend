@@ -9,7 +9,7 @@ import Users from "@/components/Dashboard/Containers/UsersList.vue";
 import { useRoute } from "vue-router";
 import { computed, ref, onMounted, onBeforeUnmount } from "vue";
 import Navbar from "@/components/Dashboard/Containers/SubConatiners/Navbar.vue";
-
+import BottomNavBar from "@/components/custom component/BottomNavBar.vue";
 
 const route = useRoute();
 
@@ -64,36 +64,38 @@ onBeforeUnmount(() => {
     <!-- Top navbar -->
     <Navbar :is-collapsed="isCollapsed" @toggle-sidebar="toggleSidebar" />
     <!-- Overlay when sidebar is visible (mobile only) -->
-<div
-  v-if="isSidebarVisible"
-  class="fixed inset-0 bg-black/40 z-10 md:hidden"
-  @click="toggleSidebar"
-  />
-
+    <div
+      v-if="isSidebarVisible"
+      class="fixed inset-0 bg-black/40 z-10 md:hidden"
+      @click="toggleSidebar"
+    />
 
     <!-- Main area -->
-    <div :class="isCollapsed ? 'pl-20' : 'md:pl-64'">
+    <div :class="isCollapsed ? 'pl-32' : 'md:pl-72'">
       <!-- Sidebar -->
       <Sidebar
         ref="sidebarRef"
-        class="fixed top-20 left-0 h-full z-50"
+        class="fixed top-20 md:top-28 md:bottom-10 left-0 z-50 h-full md:h-auto"
         @collapse="handleSidebarCollapse"
         @close-sidebar="toggleSidebar"
         :showSidebar="isSidebarVisible"
-        :is-collapsed="isCollapsed" @toggle-sidebar="toggleSidebar"
+        :is-collapsed="isCollapsed"
+        @toggle-sidebar="toggleSidebar"
       />
-       <div
-        class="bg-blue-600 w-3 h-24 rounded-lg fixed mt-64 md:hidden z-[10] "
+      <div
+        class="bg-blue-600 w-2 h-24 rounded-lg fixed mt-64 md:hidden z-[10]"
         @click="toggleSidebar"
-      >
-      </div>
+      ></div>
 
       <!-- Section with blue toggle line -->
-     
-      <div class="pt-12 mb:pl-6">
+      <div class="pt-12 mb:pl-12">
         <component :is="showSection" v-if="showSection" />
         <router-view v-else />
       </div>
+    </div>
+    <!-- BottomNavBar: only show on mobile -->
+    <div class="md:hidden">
+      <BottomNavBar />
     </div>
   </div>
 </template>

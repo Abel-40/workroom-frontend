@@ -24,7 +24,7 @@ defineProps<{
       </div>
 
           <!-- Actions -->
-    <div class="flex items-center mt-4 md:mt-0">
+    <div class="flex items-center mt-4 md:mt-0 md:hidden">
       <button class="p-2 rounded-full hover:bg-blue-50 transition">
         <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
           <circle cx="10" cy="4" r="2"/>

@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import PlansContainer from '@/components/Dashboard/Containers/PlansContainer.vue';
+import BottomNavBar from '@/components/custom component/BottomNavBar.vue';
 </script>
 
 <template>
 
-  <PlansContainer/>
+  <BottomNavBar/>
 </template>

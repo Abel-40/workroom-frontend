@@ -136,6 +136,9 @@ export const useAuthStore =  defineStore('AuthStore',{
           `Bearer ${this.logedInUserInfo.access}`;
         return { user: data.data.user }
       } catch (error: any) {
+        if(error.request){
+          console.log("connection error")
+        }
         const errorMsg = error.response?.data?.message || "Login failed"
         return { error: errorMsg }
       }
