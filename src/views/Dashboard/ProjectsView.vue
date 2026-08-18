@@ -16,21 +16,21 @@ import {
   Check,
 } from "lucide-vue-next";
 import { Button } from "@/components/ui/button";
-import TaskCard from "@/components/Dashboard/Cards/TaskCard.vue";
-import Header from "@/components/Dashboard/Containers/SubContainers/Header.vue";
-import TaskBoardView from "./Projects/TaskBoardView.vue";
-import TaskTimelineView from "./Projects/TaskTimelineView.vue";
-import TaskDetailPanel from "./Projects/TaskDetailPanel.vue";
-import TaskInfoSidebar from "./Projects/TaskInfoSidebar.vue";
-import EmptyTasksState from "./Projects/EmptyTasksState.vue";
-import AddTaskModal from "./Projects/AddTaskModal.vue";
+import TaskCard from "@/components/cards/TaskCard.vue";
+import Header from "@/components/layout/Header.vue";
+import TaskBoardView from "@/components/projects/TaskBoardView.vue";
+import TaskTimelineView from "@/components/projects/TaskTimelineView.vue";
+import TaskDetailPanel from "@/components/projects/TaskDetailPanel.vue";
+import TaskInfoSidebar from "@/components/projects/TaskInfoSidebar.vue";
+import EmptyTasksState from "@/components/projects/EmptyTasksState.vue";
+import AddTaskModal from "@/components/projects/AddTaskModal.vue";
 import { useProjectStore } from "@/stores/projectStore";
 import type { Project, TaskType } from "@/types/types";
 import { addDays, format } from "date-fns";
 import { ref, onMounted, computed, watch } from "vue";
 import { storeToRefs } from "pinia";
 import { useRouter, useRoute } from "vue-router";
-import filterModal from "./filterModal.vue";
+import filterModal from "@/components/projects/FilterModal.vue";
 import filterComposables from "@/composables/filterComposables";
 import {
   Select,

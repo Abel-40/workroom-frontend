@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { watch } from "vue";
-import CustomModal from "@/components/customModal.vue";
+import CustomModal from "@/components/common/CustomModal.vue";
 import { useNotificationStore } from "@/stores/notificationStore";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 

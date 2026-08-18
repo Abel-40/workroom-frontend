@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {ChevronRight} from "lucide-vue-next";
 import { Button } from "@/components/ui/button";
-import EventCard from "../../Cards/EventCard.vue";
+import EventCard from "@/components/cards/EventCard.vue";
 import { useEventStore } from "@/stores/eventStore";
 const eventStore = useEventStore();
 </script>

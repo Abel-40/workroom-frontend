@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import ProjectCard from '../../Cards/ProjectCard.vue';
+import ProjectCard from '@/components/cards/ProjectCard.vue';
 import {
   ArrowDown,
   Calendar,

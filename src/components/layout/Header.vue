@@ -21,7 +21,7 @@ import {
 import { useNotificationStore } from "@/stores/notificationStore";
 import { useAuthStore } from "@/stores/authStore";
 import { useRouter } from "vue-router";
-import NotificationsPanel from "@/components/Dashboard/Containers/NotificationsPanel.vue";
+import NotificationsPanel from "@/components/layout/NotificationsPanel.vue";
 
 const notificationStore = useNotificationStore();
 const authStore = useAuthStore();

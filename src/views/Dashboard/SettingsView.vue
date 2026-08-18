@@ -12,7 +12,7 @@ import {
 import { RouterLink } from "vue-router";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
-import Header from "./SubContainers/Header.vue";
+import Header from "@/components/layout/Header.vue";
 import { useUserProfileStore } from "@/stores/userProfileStore";
 
 const profileStore = useUserProfileStore();

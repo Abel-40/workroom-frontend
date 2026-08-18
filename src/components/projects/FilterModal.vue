@@ -3,7 +3,6 @@ import filterComposables from "@/composables/filterComposables";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import customModal from "@/components/customModal.vue";
 import { CircleAlert } from "lucide-vue-next";
 
 import DateRangePicker from "@/components/ui/DateRangePicker/DateRangePicker.vue";
@@ -32,7 +31,7 @@ import {
   Filter,
 } from "lucide-vue-next";
 import { computed, reactive, ref } from "vue";
-import CustomModal from "@/components/customModal.vue";
+import CustomModal from "@/components/common/CustomModal.vue";
 
 const { isOpen, onClose } = filterComposables();
 const modelValue = ref(["Abel", "Abel2", "Abel3"]);

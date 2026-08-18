@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import UserCard from '../../Cards/UserCard.vue';
+import UserCard from '@/components/cards/UserCard.vue';
 import { ChevronRight } from "lucide-vue-next";
 import { Button } from "@/components/ui/button";
 import { useEmployeeStore } from "@/stores/employeeStore";

@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import {MoveLeft, Plus} from 'lucide-vue-next';
 import { Button } from "@/components/ui/button";
-import EventCard from ".././Cards/EventCard.vue";
-import Header from './SubContainers/Header.vue';
-import AddEventModal from './AddEventModal.vue';
+import EventCard from "@/components/cards/EventCard.vue";
+import Header from '@/components/layout/Header.vue';
+import AddEventModal from '@/components/calendar/AddEventModal.vue';
 import { ref } from "vue"
 import { useRouter } from 'vue-router';
 import { useEventStore } from '@/stores/eventStore';

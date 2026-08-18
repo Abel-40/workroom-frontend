@@ -8,8 +8,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import Header from "./SubContainers/Header.vue";
-import EmployeeInviteModal from "./EmployeeInviteModal.vue";
+import Header from "@/components/layout/Header.vue";
+import EmployeeInviteModal from "@/components/employees/EmployeeInviteModal.vue";
 import { useEmployeeStore } from "@/stores/employeeStore";
 
 const employeeStore = useEmployeeStore();

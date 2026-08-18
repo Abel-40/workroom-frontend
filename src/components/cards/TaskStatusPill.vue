@@ -4,7 +4,7 @@ import { Check } from "lucide-vue-next";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useProjectStore } from "@/stores/projectStore";
 import type { TaskType } from "@/types/types";
-import TaskCompleteModal from "@/components/Dashboard/Containers/Projects/TaskCompleteModal.vue";
+import TaskCompleteModal from "@/components/projects/TaskCompleteModal.vue";
 
 const props = defineProps<{
   projectId: string;

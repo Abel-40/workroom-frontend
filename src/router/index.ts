@@ -5,8 +5,8 @@ const Login = () => import('@/views/Auth/login.vue')
 const Signup = () => import('@/views/Auth/Signup.vue')
 const StepOne = () => import('@/views/Auth/StepOne.vue')
 const StepTwo = () => import('@/views/Auth/StepTwo.vue')
-const DashboardLayout = () => import('@/views/Admin/DashboardLayout.vue')
-const Dashboard = () => import('@/components/Dashboard/Containers/Dashboard.vue')
+const DashboardLayout = () => import('@/layouts/DashboardLayout.vue')
+const Dashboard = () => import('@/views/Dashboard/DashboardHome.vue')
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),

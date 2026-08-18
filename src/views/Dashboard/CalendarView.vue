@@ -13,8 +13,8 @@ import {
 } from "date-fns";
 import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight, Plus } from "lucide-vue-next";
 import { Button } from "@/components/ui/button";
-import Header from "./SubContainers/Header.vue";
-import AddEventModal from "./AddEventModal.vue";
+import Header from "@/components/layout/Header.vue";
+import AddEventModal from "@/components/calendar/AddEventModal.vue";
 import { useEventStore } from "@/stores/eventStore";
 
 const eventStore = useEventStore();

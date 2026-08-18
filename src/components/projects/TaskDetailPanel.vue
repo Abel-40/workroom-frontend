@@ -2,7 +2,7 @@
 import { computed, ref } from "vue";
 import { ChevronDown, Paperclip, X } from "lucide-vue-next";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import TaskStatusPill from "@/components/Dashboard/Cards/TaskStatusPill.vue";
+import TaskStatusPill from "@/components/cards/TaskStatusPill.vue";
 import type { TaskType } from "@/types/types";
 
 const props = defineProps<{

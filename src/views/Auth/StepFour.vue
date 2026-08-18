@@ -10,7 +10,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { onMounted } from 'vue';
 import { useToast } from '@/components/ui/toast/use-toast';
 import router from '@/router';
-import SelectionCard from '@/components/Dashboard/Cards/SelectionCard.vue';
+import SelectionCard from '@/components/cards/SelectionCard.vue';
 const route = useRoute
 const authStore = useAuthStore()
 onMounted(()=>{

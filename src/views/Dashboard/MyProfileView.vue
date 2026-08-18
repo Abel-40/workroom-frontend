@@ -2,7 +2,7 @@
 import { computed, ref } from "vue";
 import { ArrowDown, ArrowUp, Calendar, Funnel, MapPin, Pencil, Settings } from "lucide-vue-next";
 import { RouterLink } from "vue-router";
-import Header from "./SubContainers/Header.vue";
+import Header from "@/components/layout/Header.vue";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
