@@ -8,9 +8,7 @@
  *
  *  Activation
  *  ----------
- *  Set  VITE_MOCK_API=true  in your .env.local file
- *  OR   the mock mode is auto-enabled when the real API is
- *       unreachable (see axios.ts).
+ *  Set  VITE_MOCK_API=true  in your .env.local file.
  * ============================================================
  */
 

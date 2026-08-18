@@ -17,7 +17,7 @@ import {
 } from "lucide-vue-next";
 import { Button } from "@/components/ui/button";
 import TaskCard from "@/components/Dashboard/Cards/TaskCard.vue";
-import Header from "@/components/Dashboard/Containers/SubConatiners/Header.vue";
+import Header from "@/components/Dashboard/Containers/SubContainers/Header.vue";
 import TaskBoardView from "./Projects/TaskBoardView.vue";
 import TaskTimelineView from "./Projects/TaskTimelineView.vue";
 import TaskDetailPanel from "./Projects/TaskDetailPanel.vue";

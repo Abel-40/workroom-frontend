@@ -22,8 +22,19 @@ if (MOCK_MODE) {
 
 // ── Axios instance ─────────────────────────────────────────────
 const axiosInstance = axios.create({
-  baseURL: 'http://127.0.0.1:8000/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api',
 })
+
+// ── Request interceptor: attach the access token, if any ──────
+axiosInstance.interceptors.request.use((config) => {
+  const raw = sessionStorage.getItem('currentAuthTokens')
+  const accessToken = raw ? (JSON.parse(raw).accessToken as string | undefined) : undefined
+  if (accessToken) {
+    config.headers = config.headers ?? {}
+    config.headers['Authorization'] = `Bearer ${accessToken}`
+  }
+  return config
+}, (error) => Promise.reject(error))
 
 // ── Request interceptor: short-circuit in mock mode ───────────
 axiosInstance.interceptors.request.use((config) => {

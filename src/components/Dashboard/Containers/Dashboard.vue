@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import ActivityStream from './SubConatiners/ActivityStream.vue';
-import Events from './SubConatiners/Events.vue';
-import Header from './SubConatiners/Header.vue';
-import Projects from './SubConatiners/Projects.vue';
-import WorkloadStats from './SubConatiners/WorkloadStats.vue';
+import ActivityStream from './SubContainers/ActivityStream.vue';
+import Events from './SubContainers/Events.vue';
+import Header from './SubContainers/Header.vue';
+import Projects from './SubContainers/Projects.vue';
+import WorkloadStats from './SubContainers/WorkloadStats.vue';
 import {Calendar} from "lucide-vue-next";
 </script>
 

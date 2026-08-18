@@ -1,7 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 // Dynamic imports for better code splitting
-const HomeView = () => import('@/views/HomeView.vue')
 const Login = () => import('@/views/Auth/login.vue')
 const Signup = () => import('@/views/Auth/Signup.vue')
 const StepOne = () => import('@/views/Auth/StepOne.vue')
@@ -15,11 +14,6 @@ const router = createRouter({
     {
       path: '/',
       redirect: '/auth/login/'
-    },
-    {
-      path: '/check/',
-      name: 'Home',
-      component: HomeView
     },
     {
       path: '/auth/login/',

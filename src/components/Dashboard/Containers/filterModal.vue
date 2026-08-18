@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import Modal from "@/components/Modal.vue";
 import filterComposables from "@/composables/filterComposables";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

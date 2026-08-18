@@ -16,7 +16,7 @@ import {
   Users,
 } from "lucide-vue-next";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import Header from "./SubConatiners/Header.vue";
+import Header from "./SubContainers/Header.vue";
 import { useMessengerStore } from "@/stores/messengerStore";
 import { useEmployeeStore } from "@/stores/employeeStore";
 

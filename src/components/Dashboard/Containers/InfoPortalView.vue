@@ -2,7 +2,7 @@
 import { computed, ref } from "vue";
 import { Check, FolderOpen, MoveLeft, Paperclip, Pencil, Plus, Share2, Sparkles, Trash2, X } from "lucide-vue-next";
 import { Button } from "@/components/ui/button";
-import Header from "./SubConatiners/Header.vue";
+import Header from "./SubContainers/Header.vue";
 import ShareFolderModal from "./ShareFolderModal.vue";
 import { useInfoPortalStore, type InfoFolder, type InfoPageBlock } from "@/stores/infoPortalStore";
 

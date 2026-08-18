@@ -2,7 +2,7 @@
 import {MoveLeft, Plus} from 'lucide-vue-next';
 import { Button } from "@/components/ui/button";
 import EventCard from ".././Cards/EventCard.vue";
-import Header from './SubConatiners/Header.vue';
+import Header from './SubContainers/Header.vue';
 import AddEventModal from './AddEventModal.vue';
 import { ref } from "vue"
 import { useRouter } from 'vue-router';

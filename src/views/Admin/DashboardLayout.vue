@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import Sidebar from '@/components/Dashboard/Containers/Sidebar.vue';
 import Dashboard from '@/components/Dashboard/Containers/Dashboard.vue';
-import EventContainer from '@/components/Dashboard/Containers/EventsConainer.vue';
-import ProjectsContianer from '@/components/Dashboard/Containers/ProjectsContainer.vue'
+import EventContainer from '@/components/Dashboard/Containers/EventsContainer.vue';
 import ProjectsTask from '@/components/Dashboard/Containers/ProjectsTask.vue'
 import CalendarView from '@/components/Dashboard/Containers/CalendarView.vue'
 import EmployeesView from '@/components/Dashboard/Containers/EmployeesView.vue'
@@ -17,7 +16,6 @@ const showSection = computed(() => {
   const section = route.query.section
   if (section === 'dashboard') return Dashboard
   if (section === 'events') return EventContainer
-  if(section === 'project') return ProjectsContianer
   if(section === 'projects') return ProjectsTask
   if(section === 'calendar') return CalendarView
   if(section === 'employees') return EmployeesView
