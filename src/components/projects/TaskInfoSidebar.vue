@@ -3,6 +3,18 @@ import { computed, ref } from "vue";
 import { ArrowDown, ArrowUp, Calendar } from "lucide-vue-next";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useToast } from "@/components/ui/toast/use-toast";
+import { useEmployeeStore } from "@/stores/employeeStore";
+import { useProjectStore } from "@/stores/projectStore";
+import { formatHoursToDuration } from "@/lib/duration";
 import type { Project, TaskType } from "@/types/types";
 import TimeTrackingModal from "./TimeTrackingModal.vue";
 
@@ -11,7 +23,11 @@ const props = defineProps<{
   task: TaskType;
 }>();
 
+const employeeStore = useEmployeeStore();
+const projectsStore = useProjectStore();
+const { toast } = useToast();
 const timeTrackingOpen = ref(false);
+const assigning = ref(false);
 
 const initials = (name: string) =>
   (name || "?")
@@ -35,9 +51,22 @@ const priorityColor = (level: string) => {
 };
 const priorityIcon = (level: string) => (level === "low" ? ArrowDown : ArrowUp);
 
-const progressPercent = computed(() => parseInt(props.task.Progress, 10) || 0);
+const progressPercent = computed(() => parseInt(props.task.progress, 10) || 0);
 const ringCircumference = 2 * Math.PI * 18;
 const ringOffset = computed(() => ringCircumference * (1 - progressPercent.value / 100));
+
+const UNASSIGNED = "__unassigned__";
+const assigneeValue = computed({
+  get: () => props.task.assignedToId ?? UNASSIGNED,
+  set: async (value: string) => {
+    const assignedToId = value === UNASSIGNED ? null : value;
+    if (assignedToId === props.task.assignedToId) return;
+    assigning.value = true;
+    const { error } = await projectsStore.assignTask(props.task.id, assignedToId);
+    assigning.value = false;
+    if (error) toast({ title: "Assignment not updated", description: error, variant: "destructive" });
+  },
+});
 </script>
 
 <template>
@@ -57,19 +86,26 @@ const ringOffset = computed(() => ringCircumference * (1 - progressPercent.value
 
       <div>
         <p class="text-xs text-subtle">Assignee</p>
-        <div class="mt-1 flex items-center gap-2">
-          <Avatar size="sm" class="h-6 w-6 text-[10px]">
-            <AvatarFallback>{{ initials(task.assignee) }}</AvatarFallback>
-          </Avatar>
-          <span class="text-ink">{{ task.assignee || "Unassigned" }}</span>
-        </div>
+        <Select v-model="assigneeValue" :disabled="assigning">
+          <SelectTrigger class="mt-1 rounded-xl">
+            <SelectValue placeholder="Unassigned" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectItem :value="UNASSIGNED">Unassigned</SelectItem>
+              <SelectItem v-for="person in employeeStore.employees" :key="person.id" :value="person.id">
+                {{ person.name }}
+              </SelectItem>
+            </SelectGroup>
+          </SelectContent>
+        </Select>
       </div>
 
       <div>
         <p class="text-xs text-subtle">Priority</p>
-        <div class="mt-1 flex items-center gap-1" :class="priorityColor(task.priority.level)">
-          <component :is="priorityIcon(task.priority.level)" class="h-4 w-4" />
-          <span class="font-medium capitalize">{{ task.priority.level }}</span>
+        <div class="mt-1 flex items-center gap-1" :class="priorityColor(task.priority)">
+          <component :is="priorityIcon(task.priority)" class="h-4 w-4" />
+          <span class="font-medium capitalize">{{ task.priority }}</span>
         </div>
       </div>
 
@@ -91,8 +127,8 @@ const ringOffset = computed(() => ringCircumference * (1 - progressPercent.value
             />
           </svg>
           <div>
-            <p class="text-sm font-semibold text-ink">{{ task.SpentTime || "0h" }} logged</p>
-            <p class="text-xs text-subtle">Original Estimate {{ task.EstimatedTime || "—" }}</p>
+            <p class="text-sm font-semibold text-ink">{{ formatHoursToDuration(task.spentTimeHours) }} logged</p>
+            <p class="text-xs text-subtle">Original Estimate {{ task.estimatedTimeHours ? formatHoursToDuration(task.estimatedTimeHours) : "—" }}</p>
           </div>
         </div>
         <Button class="mt-3 w-full rounded-xl" size="sm" @click="timeTrackingOpen = true">
@@ -111,6 +147,6 @@ const ringOffset = computed(() => ringCircumference * (1 - progressPercent.value
       </div>
     </div>
 
-    <TimeTrackingModal v-model:open="timeTrackingOpen" :project-id="project.id" :task="task" />
+    <TimeTrackingModal v-model:open="timeTrackingOpen" :task="task" />
   </aside>
 </template>

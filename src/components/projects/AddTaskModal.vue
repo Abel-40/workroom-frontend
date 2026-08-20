@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive } from "vue";
+import { computed, reactive, ref } from "vue";
 import {
   Dialog,
   DialogContent,
@@ -18,8 +18,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { TASK_GROUPS } from "@/lib/taskGroups";
+import { useToast } from "@/components/ui/toast/use-toast";
+import { parseDurationToMinutes } from "@/lib/duration";
 import { useProjectStore } from "@/stores/projectStore";
+import { useEmployeeStore } from "@/stores/employeeStore";
+import { useDirectoryStore } from "@/stores/directoryStore";
 
 const props = defineProps<{
   projectId: string;
@@ -28,37 +31,48 @@ const props = defineProps<{
 const open = defineModel<boolean>("open", { required: true });
 
 const projectsStore = useProjectStore();
-const assigneeOptions = computed(() => projectsStore.allAssignees as string[]);
+const employeeStore = useEmployeeStore();
+const directoryStore = useDirectoryStore();
+const saving = ref(false);
+const { toast } = useToast();
 
-const LABEL_COLORS = [
-  { value: "purple", class: "bg-violet-500" },
-  { value: "cyan", class: "bg-cyan-400" },
-];
+const UNASSIGNED = "__unassigned__";
+const NONE = "__none__";
 
 const emptyForm = () => ({
-  name: "",
-  taskGroup: TASK_GROUPS[0] as string,
+  title: "",
+  departmentId: NONE as string,
+  taskTypeId: NONE as string,
   estimatedTime: "",
   deadline: "",
   priority: "medium" as "low" | "medium" | "high",
-  assignee: "",
+  assigneeId: UNASSIGNED as string,
   description: "",
-  labelColors: [] as string[],
 });
 
 const form = reactive(emptyForm());
 
-const toggleLabel = (value: string) => {
-  const idx = form.labelColors.indexOf(value);
-  if (idx >= 0) form.labelColors.splice(idx, 1);
-  else form.labelColors.push(value);
-};
+const canSave = computed(() => form.title.trim().length > 0);
 
-const canSave = computed(() => form.name.trim().length > 0);
-
-const save = () => {
+const save = async () => {
   if (!canSave.value) return;
-  projectsStore.addTask(props.projectId, { ...form });
+  saving.value = true;
+  const estimateMinutes = parseDurationToMinutes(form.estimatedTime);
+  const { errors } = await projectsStore.createTask(props.projectId, {
+    title: form.title,
+    description: form.description,
+    departmentId: form.departmentId === NONE ? null : form.departmentId,
+    taskTypeId: form.taskTypeId === NONE ? null : form.taskTypeId,
+    assignedToId: form.assigneeId === UNASSIGNED ? null : form.assigneeId,
+    priority: form.priority,
+    deadline: form.deadline || null,
+    estimatedTimeHours: estimateMinutes > 0 ? estimateMinutes / 60 : null,
+  });
+  saving.value = false;
+  if (errors) {
+    toast({ title: "Task not created", description: Object.values(errors)[0]?.[0] || "Please check the form.", variant: "destructive" });
+    return;
+  }
   Object.assign(form, emptyForm());
   open.value = false;
 };
@@ -74,23 +88,42 @@ const save = () => {
       <div class="space-y-4">
         <div class="space-y-1.5">
           <Label class="text-xs text-subtle">Task Name</Label>
-          <Input v-model="form.name" placeholder="Task Name" class="rounded-xl" />
+          <Input v-model="form.title" placeholder="Task Name" class="rounded-xl" />
         </div>
 
-        <div class="space-y-1.5">
-          <Label class="text-xs text-subtle">Task Group</Label>
-          <Select v-model="form.taskGroup">
-            <SelectTrigger class="rounded-xl">
-              <SelectValue placeholder="Design" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                <SelectItem v-for="group in TASK_GROUPS" :key="group" :value="group">
-                  {{ group }}
-                </SelectItem>
-              </SelectGroup>
-            </SelectContent>
-          </Select>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="space-y-1.5">
+            <Label class="text-xs text-subtle">Department</Label>
+            <Select v-model="form.departmentId">
+              <SelectTrigger class="rounded-xl">
+                <SelectValue placeholder="None" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectItem :value="NONE">None</SelectItem>
+                  <SelectItem v-for="d in directoryStore.departments" :key="d.id" :value="d.id">
+                    {{ d.name }}
+                  </SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
+          <div class="space-y-1.5">
+            <Label class="text-xs text-subtle">Task Type</Label>
+            <Select v-model="form.taskTypeId">
+              <SelectTrigger class="rounded-xl">
+                <SelectValue placeholder="None" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectItem :value="NONE">None</SelectItem>
+                  <SelectItem v-for="t in directoryStore.taskTypes" :key="t.id" :value="t.id">
+                    {{ t.name }}
+                  </SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         <div class="grid grid-cols-2 gap-3">
@@ -122,14 +155,15 @@ const save = () => {
 
         <div class="space-y-1.5">
           <Label class="text-xs text-subtle">Assignee</Label>
-          <Select v-model="form.assignee">
+          <Select v-model="form.assigneeId">
             <SelectTrigger class="rounded-xl">
               <SelectValue placeholder="Select Assignee" />
             </SelectTrigger>
             <SelectContent>
               <SelectGroup>
-                <SelectItem v-for="name in assigneeOptions" :key="name" :value="name">
-                  {{ name }}
+                <SelectItem :value="UNASSIGNED">Unassigned</SelectItem>
+                <SelectItem v-for="person in employeeStore.employees" :key="person.id" :value="person.id">
+                  {{ person.name }}
                 </SelectItem>
               </SelectGroup>
             </SelectContent>
@@ -146,18 +180,8 @@ const save = () => {
           />
         </div>
 
-        <div class="flex items-center justify-between pt-1">
-          <div class="flex gap-2">
-            <button
-              v-for="color in LABEL_COLORS"
-              :key="color.value"
-              type="button"
-              class="h-6 w-6 rounded-full ring-offset-2 transition"
-              :class="[color.class, form.labelColors.includes(color.value) ? 'ring-2 ring-ink' : '']"
-              @click="toggleLabel(color.value)"
-            />
-          </div>
-          <Button class="rounded-xl" :disabled="!canSave" @click="save">Save Task</Button>
+        <div class="flex justify-end pt-1">
+          <Button class="rounded-xl" :disabled="!canSave || saving" @click="save">Save Task</Button>
         </div>
       </div>
     </DialogContent>

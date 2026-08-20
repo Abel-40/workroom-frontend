@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { parseDurationToMinutes } from "@/lib/duration";
+import { formatHoursToDuration } from "@/lib/duration";
 
 const props = defineProps<{
   tasks: TaskType[];
@@ -76,8 +76,7 @@ const barFor = (task: TaskType) => {
     return null;
   }
   const startDay = created.getDate();
-  const estimateMinutes = parseDurationToMinutes(task.EstimatedTime);
-  const durationDays = Math.max(1, Math.round(estimateMinutes / (8 * 60)) || 1);
+  const durationDays = Math.max(1, Math.round((task.estimatedTimeHours || 0) / 8) || 1);
   const span = Math.min(durationDays, daysInMonth.value - startDay + 1);
   return { startDay, span };
 };
@@ -122,7 +121,7 @@ const barColor = (task: TaskType) => {
           class="flex h-11 w-full items-center border-b border-gray-50 px-3 text-left text-sm text-ink hover:bg-page"
           @click="emit('select', task)"
         >
-          <span class="truncate">{{ task.name }}</span>
+          <span class="truncate">{{ task.title }}</span>
         </button>
         <p v-if="!filteredTasks.length" class="p-4 text-center text-sm text-subtle">No tasks.</p>
       </div>
@@ -176,7 +175,7 @@ const barColor = (task: TaskType) => {
                   gridColumnStart: barFor(task)!.startDay,
                   gridColumnEnd: `span ${barFor(task)!.span}`,
                 }"
-                :title="`${task.name} — ${task.EstimatedTime || 'no estimate'}`"
+                :title="`${task.title} — ${task.estimatedTimeHours ? formatHoursToDuration(task.estimatedTimeHours) : 'no estimate'}`"
               />
             </template>
           </div>

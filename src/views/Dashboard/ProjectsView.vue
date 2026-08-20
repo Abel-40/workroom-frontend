@@ -8,12 +8,12 @@ import {
   Pencil,
   ArrowUp,
   Calendar,
-  Edit3,
-  Link2,
+  Trash2,
   MoveLeft,
   ChevronRight,
   ArrowDown,ArrowLeft,ArrowRight,
   Check,
+  Sparkles,
 } from "lucide-vue-next";
 import { Button } from "@/components/ui/button";
 import TaskCard from "@/components/cards/TaskCard.vue";
@@ -24,7 +24,13 @@ import TaskDetailPanel from "@/components/projects/TaskDetailPanel.vue";
 import TaskInfoSidebar from "@/components/projects/TaskInfoSidebar.vue";
 import EmptyTasksState from "@/components/projects/EmptyTasksState.vue";
 import AddTaskModal from "@/components/projects/AddTaskModal.vue";
+import CreateProjectModal from "@/components/projects/CreateProjectModal.vue";
+import AiToolsPanel from "@/components/projects/AiToolsPanel.vue";
+import ProjectImage from "@/components/projects/ProjectImage.vue";
+import { useToast } from "@/components/ui/toast/use-toast";
 import { useProjectStore } from "@/stores/projectStore";
+import { useEmployeeStore } from "@/stores/employeeStore";
+import { useDirectoryStore } from "@/stores/directoryStore";
 import type { Project, TaskType } from "@/types/types";
 import { addDays, format } from "date-fns";
 import { ref, onMounted, computed, watch } from "vue";
@@ -45,7 +51,10 @@ import {
 const { onOpen, isOpen } = filterComposables();
 
 const router = useRouter();
+const { toast } = useToast();
 const projectsStore = useProjectStore();
+const employeeStore = useEmployeeStore();
+const directoryStore = useDirectoryStore();
 const { selectedProject, selectedTask } = storeToRefs(projectsStore);
 // const selectedProject = ref(projectsStore.getSelectedState)
 const onClick = (project: Project) => {
@@ -55,9 +64,119 @@ const onClick = (project: Project) => {
 };
 
 const isAddTaskOpen = ref(false);
+const isAddProjectOpen = ref(false);
+const isAiToolsOpen = ref(false);
 const isEditingProject = ref(false);
-const toggleEditProject = () => {
-  isEditingProject.value = !isEditingProject.value;
+
+// Set when the AI panel's "View generated tasks" action is used -- switches
+// the Kanban board to show only this project's AI-generated tasks until
+// cleared. Local UI state only, not persisted.
+const showOnlyAiGeneratedTasks = ref(false);
+const onViewGeneratedTasks = () => {
+  selectedTaskStyle.value = "Kanban";
+  showOnlyAiGeneratedTasks.value = true;
+};
+const boardTasks = computed(() => {
+  const tasks = selectedProject.value?.task.tasks || [];
+  return showOnlyAiGeneratedTasks.value ? tasks.filter((t) => t.source === "ai_generated") : tasks;
+});
+
+// Editable assignees (edit mode only) -- same type-to-mention picker as
+// CreateProjectModal, staged locally and persisted alongside title/
+// description when the user leaves edit mode.
+const editAssignees = ref<{ id: string; name: string }[]>([]);
+const assigneeInput = ref("");
+const showMentions = ref(false);
+const mentionMatches = computed(() => {
+  const lastAt = assigneeInput.value.lastIndexOf("@");
+  if (lastAt < 0) return [];
+  const query = assigneeInput.value.slice(lastAt + 1).toLowerCase();
+  return employeeStore.employees
+    .filter((e) => !editAssignees.value.some((s) => s.id === e.id))
+    .filter((e) => e.name.toLowerCase().includes(query))
+    .slice(0, 6);
+});
+const onAssigneeInput = () => {
+  const lastAt = assigneeInput.value.lastIndexOf("@");
+  showMentions.value = lastAt >= 0 && (lastAt === 0 || assigneeInput.value[lastAt - 1] === " ");
+};
+const pickAssignee = (person: { id: string; name: string }) => {
+  editAssignees.value.push({ id: person.id, name: person.name });
+  assigneeInput.value = "";
+  showMentions.value = false;
+};
+const removeAssignee = (id: string) => {
+  editAssignees.value = editAssignees.value.filter((p) => p.id !== id);
+};
+const onAssigneeInputBlur = () => {
+  setTimeout(() => {
+    showMentions.value = false;
+  }, 150);
+};
+
+const toggleEditProject = async () => {
+  if (isEditingProject.value && selectedProject.value) {
+    // Leaving edit mode: persist the title/description/assignee edits made in place.
+    await projectsStore.updateProject(selectedProject.value.id, {
+      title: selectedProject.value.title,
+      description: selectedProject.value.description,
+      collaboratorIds: editAssignees.value.map((p) => p.id),
+    });
+    isEditingProject.value = false;
+    return;
+  }
+  // Entering edit mode: seed the assignee picker from the project's current collaborators.
+  editAssignees.value = (selectedProject.value?.assigneeIds ?? [])
+    .map((id) => {
+      const employee = employeeStore.employees.find((e) => e.id === id);
+      return employee ? { id, name: employee.name } : null;
+    })
+    .filter((p): p is { id: string; name: string } => !!p);
+  assigneeInput.value = "";
+  isEditingProject.value = true;
+};
+
+// Cover image (edit mode only) -- applied immediately since it's a real
+// upload/API call, not a value that fits the staged title/description edit.
+const coverMode = ref<"link" | "upload">("link");
+const coverUrl = ref("");
+const coverFileInput = ref<HTMLInputElement | null>(null);
+const savingCover = ref(false);
+const onCoverLinkSave = async () => {
+  if (!selectedProject.value || !coverUrl.value.trim()) return;
+  savingCover.value = true;
+  const { error } = await projectsStore.setProjectImageLink(selectedProject.value.id, coverUrl.value.trim());
+  savingCover.value = false;
+  if (error) {
+    toast({ title: "Cover image not set", description: error, variant: "destructive" });
+    return;
+  }
+  coverUrl.value = "";
+};
+const onCoverFileChange = async (event: Event) => {
+  const file = (event.target as HTMLInputElement).files?.[0];
+  if (!file || !selectedProject.value) return;
+  savingCover.value = true;
+  const { error } = await projectsStore.uploadProjectImage(selectedProject.value.id, file);
+  savingCover.value = false;
+  if (coverFileInput.value) coverFileInput.value.value = "";
+  if (error) toast({ title: "Cover image not uploaded", description: error, variant: "destructive" });
+};
+const onCoverRemove = async () => {
+  if (!selectedProject.value) return;
+  savingCover.value = true;
+  const { error } = await projectsStore.removeProjectImage(selectedProject.value.id);
+  savingCover.value = false;
+  if (error) toast({ title: "Cover image not removed", description: error, variant: "destructive" });
+};
+
+const archiving = ref(false);
+const archiveCurrentProject = async () => {
+  if (!selectedProject.value) return;
+  archiving.value = true;
+  const ok = await projectsStore.archiveProject(selectedProject.value.id);
+  archiving.value = false;
+  if (ok) goBack();
 };
 const onSelectTask = (task: TaskType) => {
   projectsStore.selectTask(task);
@@ -72,16 +191,56 @@ const projectDeadline = (project: Project | null) => {
   if (Number.isNaN(created.getTime())) return "Not set";
   return format(addDays(created, 30), "MMM d, yyyy");
 };
+
+// Trimmed display id -- the real id is a full UUID, too long to show inline;
+// the full value is still available via the title tooltip.
+const shortProjectId = (id: string | null | undefined) => (id ? id.slice(0, 8).toUpperCase() : "");
+
+// "See more" for long descriptions in the detail panel.
+const DESCRIPTION_PREVIEW_LENGTH = 160;
+const showFullDescription = ref(false);
+const descriptionIsLong = computed(
+  () => (selectedProject.value?.description?.length ?? 0) > DESCRIPTION_PREVIEW_LENGTH
+);
+const descriptionPreview = computed(() => {
+  const text = selectedProject.value?.description ?? "";
+  if (!descriptionIsLong.value || showFullDescription.value) return text;
+  return text.slice(0, DESCRIPTION_PREVIEW_LENGTH).trimEnd() + "…";
+});
+watch(selectedProject, () => {
+  showFullDescription.value = false;
+});
+
+// Tasks are fetched lazily per-project (not bundled with the project list
+// itself) -- whenever the open project changes, load its real task list.
+const tasksLoading = ref(false);
+watch(
+  selectedProject,
+  async (project) => {
+    showOnlyAiGeneratedTasks.value = false;
+    if (!project) return;
+    tasksLoading.value = true;
+    await projectsStore.fetchTasks(project.id);
+    tasksLoading.value = false;
+  },
+  { immediate: true }
+);
+
 // first selected project value
-onMounted(()=>{
+onMounted(async ()=>{
+  // Employees load first so project creator names resolve when mapping.
+  await employeeStore.fetchEmployees();
+  if (!directoryStore.loaded) await directoryStore.fetchAll();
+  await projectsStore.fetchProjects();
   selectedProject.value = paginatedProjects.value[0]
 })
-// Update whenever a new project is added
+// Update whenever a new project is added -- createProject unshifts the
+// newest project to the front of the list.
 watch(
   () => projectsStore.projects.length,
   () => {
     if (projectsStore.projects.length > 0) {
-      selectedProject.value = [...projectsStore.projects].reverse()[0];
+      selectedProject.value = projectsStore.projects[0];
     }
   }
 );
@@ -164,7 +323,7 @@ const active = (index: number) => {
 interface FilterOption {
   period?: {
     start: Date | null;
-    end: Date;
+    end: Date | null;
   };
   taskGroups?: string[]; // e.g. ["Design", "Development"]
   assignedBy?: string[]; // e.g. ["Abel", "Danel"]
@@ -172,11 +331,13 @@ interface FilterOption {
   estimate?: string; // duration as string
   priority?: "low" | "medium" | "high" | null;
 }
-const today = new Date();
+// No default date filter -- "end: new Date()" here would freeze an upper
+// bound at page-load time and silently hide any project created afterward
+// (e.g. right after submitting Create Project) until a full reload.
 const selectedFilters = ref<FilterOption>({
   period: {
     start: null,
-    end: today,
+    end: null,
   },
   taskGroups: [],
   assignedBy: [],
@@ -192,17 +353,40 @@ const ApplyFilter = (filters: FilterOption) => {
 const projects = computed(()=>{
   return projectsStore.projects.filter((project)=> project.status === projectType.value)
 })
-// const projectsOtherThanTodo = computed(()=>{
-//   return projectsStore.projects.filter((project)=>{
-//     return project.task.status !== 'todo'
-//   })
-// })
-console.log(projects.value)
 const BacklogTasks = computed(()=>{
   return selectedProject.value?.task.tasks?.filter((task)=>{
     return task.status === 'To Do'
   })
 })
+
+// Task Group and Estimate filter on task-level data that isn't wired to the
+// backend in this app yet (Tasks are still local-only -- see projectStore),
+// so there's no real per-project task list to filter here. Task Group is
+// read against the project's own Department instead (the closest real
+// "what kind of work is this" signal already available on every project),
+// and Estimate against the project's own span (deadline minus start date)
+// rather than a task's logged estimate.
+const projectDepartmentName = (project: Project): string | null => {
+  if (!project.departmentId) return null;
+  return directoryStore.departments.find((d) => d.id === project.departmentId)?.name ?? null;
+};
+const parseEstimateDays = (value: string): number | null => {
+  const match = value.match(/(\d+(?:\.\d+)?)\s*(d|day|days|w|week|weeks|m|month|months)/i);
+  if (!match) return null;
+  const amount = parseFloat(match[1]);
+  const unit = match[2].toLowerCase();
+  if (unit.startsWith("w")) return amount * 7;
+  if (unit.startsWith("m")) return amount * 30;
+  return amount;
+};
+const projectSpanDays = (project: Project): number | null => {
+  if (!project.startDate || !project.deadline) return null;
+  const start = new Date(project.startDate).getTime();
+  const end = new Date(project.deadline).getTime();
+  if (Number.isNaN(start) || Number.isNaN(end)) return null;
+  return Math.max(0, (end - start) / (1000 * 60 * 60 * 24));
+};
+
 const filteredProjects = computed(() => {
   const filters = selectedFilters.value
 
@@ -219,6 +403,8 @@ const filteredProjects = computed(() => {
     return projects.value
   }
 
+  const estimateDays = filters.estimate ? parseEstimateDays(filters.estimate) : null;
+
   return projects.value.filter((project) => {
     const projectDate = new Date(project.createdAt)
     const period = filters.period
@@ -229,14 +415,16 @@ const filteredProjects = computed(() => {
       (!period.end || projectDate <= period.end)
     )
 
-    // Task Groups filtering - assuming this filters project's tasks
+    // Task Groups filtering -- matches the project's own Department (see
+    // comment above); a project outside any of the checked departments (or
+    // with no department at all) doesn't match.
     const matchesTaskGroups =
       !filters.taskGroups ||
       filters.taskGroups.length === 0 ||
-      (project.task?.tasks &&
-        project.task.tasks.some((task) =>
-          filters.taskGroups!.includes(task.name)
-        ))
+      (() => {
+        const departmentName = projectDepartmentName(project);
+        return !!departmentName && filters.taskGroups!.some((g) => g.toLowerCase() === departmentName.toLowerCase());
+      })()
 
     // Assigned By filtering
     const matchesAssignedBy =
@@ -244,17 +432,22 @@ const filteredProjects = computed(() => {
       filters.assignedBy.length === 0 ||
       filters.assignedBy.includes(project.assignedBy)
 
-    // Assignees filtering
-  // In your filteredProjects computed property:
-    const matchesAssignee = !filters.assignees || filters.assignees.length === 0 ||  project.assignee.some(assignee => filters.assignees?.includes(assignee))
+    // Assignees filtering (free-text names, matched case-insensitively so a
+    // typo in casing doesn't silently drop an otherwise-correct match)
+    const matchesAssignee = !filters.assignees || filters.assignees.length === 0 ||
+      project.assignee.some((assignee) =>
+        filters.assignees?.some((a) => a.trim().toLowerCase() === assignee.toLowerCase())
+      )
 
-    // Estimate filtering
+    // Estimate filtering -- "at least" the entered span (deadline - start),
+    // e.g. "30 days" matches projects running 30 days or longer.
     const matchesEstimate =
       !filters.estimate ||
-      (project.task?.tasks &&
-        project.task.tasks.some(
-          (task) => task.EstimatedTime === filters.estimate
-        ))
+      estimateDays === null ||
+      (() => {
+        const spanDays = projectSpanDays(project);
+        return spanDays !== null && spanDays >= estimateDays;
+      })()
 
     // Priority filtering
     const matchesPriority =
@@ -347,6 +540,13 @@ watch(()=>paginatedProjects.value,()=>{
         </div>
         <div class="flex items-center gap-2 px-2 py-2">
           <Button
+            variant="outline"
+            class="rounded-xl"
+            @click="isAddProjectOpen = true"
+          >
+            <Plus class="w-4 h-4" /> Add Project
+          </Button>
+          <Button
             class="bg-primary hover:bg-blue-100 active:text-blue-500 active:bg-blue-100 text-white hover:bg-primary/90 rounded-xl"
             :disabled="!selectedProject"
             @click="isAddTaskOpen = true"
@@ -408,6 +608,76 @@ watch(()=>paginatedProjects.value,()=>{
                     </button>
                   </div>
 
+                  <!-- Cover image -->
+                  <div class="mt-3">
+                    <div class="flex h-28 w-full items-center justify-center overflow-hidden rounded-xl bg-page">
+                      <ProjectImage
+                        v-if="selectedProject?.image"
+                        :image="selectedProject.image"
+                        :alt="selectedProject.title"
+                      >
+                        <template #fallback>
+                          <span class="text-3xl">{{ selectedProject?.icon }}</span>
+                        </template>
+                      </ProjectImage>
+                      <span v-else class="text-3xl">{{ selectedProject?.icon }}</span>
+                    </div>
+                    <div v-if="isEditingProject" class="mt-2 space-y-1.5">
+                      <div class="flex rounded-lg bg-page p-0.5 text-[11px]">
+                        <button
+                          type="button"
+                          class="flex-1 rounded-md py-1 font-medium transition"
+                          :class="coverMode === 'link' ? 'bg-white shadow-sm text-ink' : 'text-subtle'"
+                          @click="coverMode = 'link'"
+                        >
+                          Link
+                        </button>
+                        <button
+                          type="button"
+                          class="flex-1 rounded-md py-1 font-medium transition"
+                          :class="coverMode === 'upload' ? 'bg-white shadow-sm text-ink' : 'text-subtle'"
+                          @click="coverMode = 'upload'"
+                        >
+                          Upload
+                        </button>
+                      </div>
+                      <div v-if="coverMode === 'link'" class="flex gap-1">
+                        <input
+                          v-model="coverUrl"
+                          type="url"
+                          placeholder="https://example.com/cover.jpg"
+                          class="w-full min-w-0 rounded-lg border border-gray-200 px-2 py-1 text-xs focus:border-primary focus:outline-none"
+                        />
+                        <button
+                          type="button"
+                          class="shrink-0 rounded-lg bg-primary px-2 text-xs font-medium text-white disabled:opacity-50"
+                          :disabled="savingCover || !coverUrl.trim()"
+                          @click="onCoverLinkSave"
+                        >
+                          Set
+                        </button>
+                      </div>
+                      <input
+                        v-else
+                        ref="coverFileInput"
+                        type="file"
+                        accept="image/png,image/jpeg,image/gif,image/webp"
+                        class="block w-full text-[11px] text-subtle file:mr-1.5 file:rounded-md file:border-0 file:bg-primary/10 file:px-1.5 file:py-0.5 file:text-[11px] file:font-medium file:text-primary"
+                        :disabled="savingCover"
+                        @change="onCoverFileChange"
+                      />
+                      <button
+                        v-if="selectedProject?.image"
+                        type="button"
+                        class="text-[11px] font-medium text-red-500 hover:underline disabled:opacity-50"
+                        :disabled="savingCover"
+                        @click="onCoverRemove"
+                      >
+                        Remove image
+                      </button>
+                    </div>
+                  </div>
+
                   <!-- Title -->
                   <div class="mt-3">
                     <div class="text-sm text-gray-400">Title</div>
@@ -416,14 +686,14 @@ watch(()=>paginatedProjects.value,()=>{
                       v-model="selectedProject.title"
                       class="mt-1 w-full rounded-lg border border-gray-200 px-2 py-1 text-sm font-semibold text-gray-800 focus:border-primary focus:outline-none"
                     />
-                    <p v-else class="font-semibold text-gray-800">{{ selectedProject?.title }}</p>
+                    <p v-else class="font-semibold text-gray-800 line-clamp-2 break-words" :title="selectedProject?.title">{{ selectedProject?.title }}</p>
                   </div>
 
                   <!-- Project Number -->
                   <div class="mt-4 text-sm text-gray-400">Project Number</div>
                   <div class="flex items-center justify-between">
-                    <span class="font-semibold text-gray-800">{{
-                      selectedProject?.id
+                    <span class="font-semibold text-gray-800" :title="selectedProject?.id">{{
+                      shortProjectId(selectedProject?.id)
                     }}</span>
                   </div>
 
@@ -436,19 +706,23 @@ watch(()=>paginatedProjects.value,()=>{
                       rows="4"
                       class="w-full resize-y rounded-lg border border-gray-200 px-2 py-1 text-sm text-gray-700 focus:border-primary focus:outline-none"
                     />
-                    <p v-else class="text-sm text-gray-500">
-                      {{ selectedProject?.description }}
+                    <p v-else class="text-sm text-gray-500 break-words">
+                      {{ descriptionPreview }}
+                      <button
+                        v-if="descriptionIsLong"
+                        type="button"
+                        class="text-primary font-medium hover:underline"
+                        @click="showFullDescription = !showFullDescription"
+                      >
+                        {{ showFullDescription ? " See less" : " See more…" }}
+                      </button>
                     </p>
                   </div>
 
                   <!-- Reporter -->
                   <div class="mt-4">
-                    <div class="text-sm text-gray-400">Assigned By</div>
+                    <div class="text-sm text-gray-400">Created By</div>
                     <div class="flex items-center gap-2 mt-1">
-                      <img
-                        src="https://i.pravatar.cc/24?img=1"
-                        class="w-6 h-6 rounded-full"
-                      />
                       <span class="text-sm text-gray-700">{{
                         selectedProject?.assignedBy
                       }}</span>
@@ -458,18 +732,59 @@ watch(()=>paginatedProjects.value,()=>{
                   <!-- Assignees -->
                   <div class="mt-4">
                     <div class="text-sm text-gray-400">Assignees</div>
-                    <div class="flex items-center mt-1 space-x-1">
-                      <img
-                        v-for="i in 4"
-                        :key="i"
-                        :src="`https://i.pravatar.cc/24?img=${i + 1}`"
-                        class="w-6 h-6 rounded-full border"
-                      />
-                      <div
-                        class="w-6 h-6 bg-blue-500 text-white text-xs flex items-center justify-center rounded-full"
-                      >
-                        +2
+                    <template v-if="isEditingProject">
+                      <div v-if="editAssignees.length" class="mt-1 flex flex-wrap gap-1.5">
+                        <span
+                          v-for="person in editAssignees"
+                          :key="person.id"
+                          class="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary"
+                        >
+                          {{ person.name }}
+                          <button type="button" class="text-primary/60 hover:text-primary" @click="removeAssignee(person.id)">&times;</button>
+                        </span>
                       </div>
+                      <div class="relative mt-1.5">
+                        <input
+                          v-model="assigneeInput"
+                          placeholder="Type @ to mention a teammate"
+                          class="w-full rounded-lg border border-gray-200 px-2 py-1 text-xs focus:border-primary focus:outline-none"
+                          @input="onAssigneeInput"
+                          @blur="onAssigneeInputBlur"
+                        />
+                        <div
+                          v-if="showMentions && mentionMatches.length"
+                          class="absolute z-10 mt-1 w-full rounded-lg border border-gray-100 bg-white p-1 shadow-lg"
+                        >
+                          <button
+                            v-for="person in mentionMatches"
+                            :key="person.id"
+                            type="button"
+                            class="flex w-full items-center justify-between gap-2 rounded-md px-2 py-1 text-left text-xs hover:bg-page"
+                            @click="pickAssignee(person)"
+                          >
+                            <span>{{ person.name }}</span>
+                            <span class="text-subtle">{{ person.roleLabel }}</span>
+                          </button>
+                        </div>
+                      </div>
+                    </template>
+                    <div v-else-if="selectedProject?.assignee.length" class="mt-1 flex flex-wrap gap-1.5">
+                      <span
+                        v-for="name in selectedProject.assignee"
+                        :key="name"
+                        class="rounded-full bg-page px-2 py-0.5 text-xs font-medium text-gray-700"
+                      >
+                        {{ name }}
+                      </span>
+                    </div>
+                    <p v-else class="mt-1 text-sm text-gray-400 italic">No one assigned yet</p>
+                  </div>
+
+                  <!-- Visibility -->
+                  <div class="mt-4">
+                    <div class="text-sm text-gray-400">Visibility</div>
+                    <div class="text-sm font-medium text-gray-700 mt-1 capitalize">
+                      {{ selectedProject?.visibility ?? "company" }}
                     </div>
                   </div>
 
@@ -505,16 +820,23 @@ watch(()=>paginatedProjects.value,()=>{
 
                   <!-- Action Icons -->
                   <div class="mt-6 flex gap-2">
-                    <div
-                      class="w-9 h-9 bg-purple-100 rounded-full flex items-center justify-center cursor-pointer"
+                    <button
+                      type="button"
+                      class="w-9 h-9 bg-primary/10 rounded-full flex items-center justify-center cursor-pointer"
+                      title="AI Tools"
+                      @click="isAiToolsOpen = true"
                     >
-                      <Edit3 class="w-4 h-4 text-purple-600" />
-                    </div>
-                    <div
-                      class="w-9 h-9 bg-cyan-100 rounded-full flex items-center justify-center cursor-pointer"
+                      <Sparkles class="w-4 h-4 text-primary" />
+                    </button>
+                    <button
+                      type="button"
+                      class="w-9 h-9 bg-red-100 rounded-full flex items-center justify-center cursor-pointer disabled:opacity-50"
+                      title="Archive project"
+                      :disabled="archiving"
+                      @click="archiveCurrentProject"
                     >
-                      <Link2 class="w-4 h-4 text-cyan-600" />
-                    </div>
+                      <Trash2 class="w-4 h-4 text-red-600" />
+                    </button>
                   </div>
                 </div>
               </template>
@@ -543,19 +865,29 @@ watch(()=>paginatedProjects.value,()=>{
                       :class="setActive(project.id)"
                     >
                       <!-- <SmallProjectCard :fields="{id:project.id,title:project.title}"  @view-detail="onViewDetail"/> -->
-                      <div class="w-full h-full px-4 py-2 rounded-xl">
-                        <p class="text-xs text-gray-500">{{ project.id }}</p>
-                        <p class="font-medium">{{ project.title }}</p>
-                        <div class="cursor-pointer flex items-center">
-                          <Button
-                            variant="link"
-                            as="a"
-                            class="text-primary px-0 py-0 h-auto"
-                            @click="onViewDetail(project)"
-                          >
-                            View details
-                          </Button>
-                          <ChevronRight class="w-4 h-4 text-primary" />
+                      <div class="flex h-full w-full items-center gap-2 overflow-hidden rounded-xl px-4 py-2">
+                        <div class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-page">
+                          <ProjectImage v-if="project.image" :image="project.image" :alt="project.title">
+                            <template #fallback>
+                              <span class="text-base">{{ project.icon }}</span>
+                            </template>
+                          </ProjectImage>
+                          <span v-else class="text-base">{{ project.icon }}</span>
+                        </div>
+                        <div class="min-w-0">
+                          <p class="text-xs text-gray-500" :title="project.id">{{ shortProjectId(project.id) }}</p>
+                          <p class="font-medium truncate" :title="project.title">{{ project.title }}</p>
+                          <div class="cursor-pointer flex items-center">
+                            <Button
+                              variant="link"
+                              as="a"
+                              class="text-primary px-0 py-0 h-auto"
+                              @click="onViewDetail(project)"
+                            >
+                              View details
+                            </Button>
+                            <ChevronRight class="w-4 h-4 text-primary" />
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -585,7 +917,6 @@ watch(()=>paginatedProjects.value,()=>{
           <div class="flex flex-col gap-6 xl:flex-row xl:items-start">
             <TaskDetailPanel
               class="flex-1"
-              :project-id="selectedProject.id"
               :task="selectedTask"
               @close="closeTaskDetail"
             />
@@ -635,8 +966,10 @@ watch(()=>paginatedProjects.value,()=>{
             </div>
           </div>
 
+          <p v-if="tasksLoading" class="px-4 py-10 text-center text-sm text-subtle">Loading tasks…</p>
+
           <EmptyTasksState
-            v-if="!selectedProject?.task.tasks?.length"
+            v-else-if="!selectedProject?.task.tasks?.length"
             @add-task="isAddTaskOpen = true"
           />
 
@@ -647,7 +980,6 @@ watch(()=>paginatedProjects.value,()=>{
                 v-for="task in selectedProject?.task.tasks?.filter((task)=>task.status !== 'To Do')"
                 :key="task.id"
                 :Task="task"
-                :project-id="selectedProject!.id"
               />
             </div>
 
@@ -663,17 +995,17 @@ watch(()=>paginatedProjects.value,()=>{
                 v-for="task in BacklogTasks"
                 :key="task.id"
                 :Task="task"
-                :project-id="selectedProject!.id"
               />
             </div>
           </template>
 
-          <TaskBoardView
-            v-else-if="selectedTaskStyle === 'Kanban' && selectedProject"
-            :project-id="selectedProject.id"
-            :tasks="selectedProject.task.tasks || []"
-            @select="onSelectTask"
-          />
+          <template v-else-if="selectedTaskStyle === 'Kanban' && selectedProject">
+            <div v-if="showOnlyAiGeneratedTasks" class="mb-3 flex items-center justify-between rounded-xl bg-primary/10 px-3 py-2 text-xs">
+              <span class="flex items-center gap-1.5 font-medium text-primary"><Sparkles class="h-3.5 w-3.5" /> Showing AI-generated tasks only</span>
+              <button type="button" class="font-medium text-primary underline" @click="showOnlyAiGeneratedTasks = false">Clear filter</button>
+            </div>
+            <TaskBoardView :tasks="boardTasks" @select="onSelectTask" />
+          </template>
 
           <TaskTimelineView
             v-else-if="selectedTaskStyle === 'ChartNoAxesGantt'"
@@ -689,5 +1021,12 @@ watch(()=>paginatedProjects.value,()=>{
     v-if="selectedProject"
     v-model:open="isAddTaskOpen"
     :project-id="selectedProject.id"
+  />
+  <CreateProjectModal v-model:open="isAddProjectOpen" />
+  <AiToolsPanel
+    v-if="selectedProject"
+    v-model:open="isAiToolsOpen"
+    :project-id="selectedProject.id"
+    @view-generated-tasks="onViewGeneratedTasks"
   />
 </template>

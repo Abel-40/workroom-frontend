@@ -1,37 +1,93 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
-import { ChevronDown, Paperclip, X } from "lucide-vue-next";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { computed, reactive, ref } from "vue";
+import { Check, Pencil, Trash2, X } from "lucide-vue-next";
 import TaskStatusPill from "@/components/cards/TaskStatusPill.vue";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useAuthStore } from "@/stores/authStore";
+import { useDirectoryStore } from "@/stores/directoryStore";
+import { useProjectStore } from "@/stores/projectStore";
+import { useToast } from "@/components/ui/toast/use-toast";
+import { formatHoursToDuration, parseDurationToMinutes } from "@/lib/duration";
 import type { TaskType } from "@/types/types";
 
 const props = defineProps<{
-  projectId: string;
   task: TaskType;
 }>();
 
-defineEmits<{
+const emit = defineEmits<{
   (e: "close"): void;
 }>();
 
-const LABEL_CLASS: Record<string, string> = {
-  purple: "bg-violet-500",
-  cyan: "bg-cyan-400",
-};
+const authStore = useAuthStore();
+const directoryStore = useDirectoryStore();
+const projectsStore = useProjectStore();
+const { toast } = useToast();
+const archiving = ref(false);
 
-const expanded = ref(false);
-const visibleActivity = computed(() => {
-  const entries = props.task.activity || [];
-  return expanded.value ? entries : entries.slice(0, 3);
+// Only the task's creator may edit its fields -- everyone who can view the
+// task can still change its status/assignee via the controls that already
+// exist elsewhere (TaskStatusPill, TaskInfoSidebar), which follow the
+// backend's broader manage-task rule; this is specifically about editing
+// title/description/priority/etc.
+const canEdit = computed(() => props.task.createdById === authStore.logedInUserInfo.user?.id);
+
+const NONE = "__none__";
+const isEditing = ref(false);
+const saving = ref(false);
+const form = reactive({
+  title: "",
+  description: "",
+  priority: "medium" as TaskType["priority"],
+  deadline: "",
+  estimatedTime: "",
+  departmentId: NONE as string,
+  taskTypeId: NONE as string,
 });
 
-const initials = (name: string) =>
-  (name || "?")
-    .split(" ")
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
+const startEditing = () => {
+  form.title = props.task.title;
+  form.description = props.task.description;
+  form.priority = props.task.priority;
+  form.deadline = props.task.deadline ? props.task.deadline.slice(0, 10) : "";
+  form.estimatedTime = props.task.estimatedTimeHours ? formatHoursToDuration(props.task.estimatedTimeHours) : "";
+  form.departmentId = props.task.departmentId ?? NONE;
+  form.taskTypeId = props.task.taskTypeId ?? NONE;
+  isEditing.value = true;
+};
+
+const saveEditing = async () => {
+  saving.value = true;
+  const estimateMinutes = parseDurationToMinutes(form.estimatedTime);
+  const { error } = await projectsStore.updateTask(props.task.id, {
+    title: form.title,
+    description: form.description,
+    priority: form.priority,
+    deadline: form.deadline || null,
+    estimatedTimeHours: estimateMinutes > 0 ? estimateMinutes / 60 : null,
+    departmentId: form.departmentId === NONE ? null : form.departmentId,
+    taskTypeId: form.taskTypeId === NONE ? null : form.taskTypeId,
+  });
+  saving.value = false;
+  if (error) {
+    toast({ title: "Task not updated", description: error, variant: "destructive" });
+    return;
+  }
+  isEditing.value = false;
+};
+
+const toggleEdit = () => {
+  if (isEditing.value) saveEditing();
+  else startEditing();
+};
 
 const formatTimestamp = (iso: string) => {
   const date = new Date(iso);
@@ -43,86 +99,125 @@ const formatTimestamp = (iso: string) => {
     minute: "2-digit",
   }).format(date);
 };
+
+const archiveTask = async () => {
+  archiving.value = true;
+  const ok = await projectsStore.archiveTask(props.task.id);
+  archiving.value = false;
+  if (!ok) {
+    toast({ title: "Task not archived", description: "Something went wrong. Please try again.", variant: "destructive" });
+    return;
+  }
+  emit("close");
+};
 </script>
 
 <template>
   <div class="w-full rounded-2xl border border-gray-100 bg-white p-4">
     <div class="mb-4 flex items-center justify-between">
       <h3 class="text-sm font-semibold text-ink">Task Details</h3>
-      <button type="button" class="text-subtle hover:text-ink" @click="$emit('close')">
-        <X class="h-4 w-4" />
-      </button>
+      <div class="flex items-center gap-2">
+        <button
+          v-if="canEdit"
+          type="button"
+          class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border disabled:opacity-50"
+          :class="isEditing ? 'border-primary bg-primary/10 text-primary' : 'border-gray-200 text-gray-400 hover:border-primary/40'"
+          :title="isEditing ? 'Save changes' : 'Edit task'"
+          :disabled="saving"
+          @click="toggleEdit"
+        >
+          <Check v-if="isEditing" class="h-3.5 w-3.5" />
+          <Pencil v-else class="h-3.5 w-3.5" />
+        </button>
+        <button
+          type="button"
+          class="text-subtle hover:text-red-500 disabled:opacity-50"
+          title="Archive task"
+          :disabled="archiving"
+          @click="archiveTask"
+        >
+          <Trash2 class="h-4 w-4" />
+        </button>
+        <button type="button" class="text-subtle hover:text-ink" @click="$emit('close')">
+          <X class="h-4 w-4" />
+        </button>
+      </div>
     </div>
 
     <div class="mb-3 flex items-start justify-between gap-3">
-      <div>
-        <p class="text-xs font-mono text-subtle">{{ task.id }}</p>
-        <h4 class="text-lg font-semibold text-ink">{{ task.name }}</h4>
+      <div class="min-w-0 flex-1">
+        <p class="text-xs font-mono text-subtle">{{ task.id.slice(0, 8) }}</p>
+        <input
+          v-if="isEditing"
+          v-model="form.title"
+          class="mt-1 w-full rounded-lg border border-gray-200 px-2 py-1 text-lg font-semibold text-ink focus:border-primary focus:outline-none"
+        />
+        <h4 v-else class="text-lg font-semibold text-ink">{{ task.title }}</h4>
       </div>
-      <TaskStatusPill :project-id="projectId" :task="task" />
+      <TaskStatusPill :task="task" />
     </div>
 
-    <p class="mb-4 whitespace-pre-line text-sm leading-relaxed text-subtle">
+    <Textarea
+      v-if="isEditing"
+      v-model="form.description"
+      rows="3"
+      placeholder="Description"
+      class="mb-4 rounded-xl text-sm"
+    />
+    <p v-else class="mb-4 whitespace-pre-line text-sm leading-relaxed text-subtle">
       {{ task.description || "No description provided." }}
     </p>
 
-    <div
-      v-if="task.attachments?.length"
-      class="mb-4 space-y-2"
-    >
-      <div
-        v-for="(attachment, index) in task.attachments"
-        :key="index"
-        class="flex items-center gap-3 rounded-xl border border-gray-100 bg-page p-3"
-      >
-        <div class="h-10 w-10 shrink-0 rounded-lg bg-gradient-to-br from-primary to-violet-500" />
-        <div class="min-w-0 flex-1">
-          <p class="truncate text-sm font-medium text-ink">
-            {{ attachment.type === "file" ? attachment.name : attachment.label || attachment.url }}
-          </p>
-          <p class="text-xs text-subtle">Attached to this task</p>
-        </div>
-        <Paperclip class="h-4 w-4 shrink-0 text-subtle" />
+    <div v-if="isEditing" class="mb-4 grid grid-cols-2 gap-3">
+      <div class="space-y-1">
+        <p class="text-xs text-subtle">Priority</p>
+        <Select v-model="form.priority">
+          <SelectTrigger class="rounded-xl"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectItem value="low">Low</SelectItem>
+              <SelectItem value="medium">Medium</SelectItem>
+              <SelectItem value="high">High</SelectItem>
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+      </div>
+      <div class="space-y-1">
+        <p class="text-xs text-subtle">Dead Line</p>
+        <Input v-model="form.deadline" type="date" class="rounded-xl" />
+      </div>
+      <div class="space-y-1">
+        <p class="text-xs text-subtle">Estimate</p>
+        <Input v-model="form.estimatedTime" placeholder="e.g. 2d 4h" class="rounded-xl" />
+      </div>
+      <div class="space-y-1">
+        <p class="text-xs text-subtle">Department</p>
+        <Select v-model="form.departmentId">
+          <SelectTrigger class="rounded-xl"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectItem :value="NONE">None</SelectItem>
+              <SelectItem v-for="d in directoryStore.departments" :key="d.id" :value="d.id">{{ d.name }}</SelectItem>
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+      </div>
+      <div class="col-span-2 space-y-1">
+        <p class="text-xs text-subtle">Task Type</p>
+        <Select v-model="form.taskTypeId">
+          <SelectTrigger class="rounded-xl"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectItem :value="NONE">None</SelectItem>
+              <SelectItem v-for="t in directoryStore.taskTypes" :key="t.id" :value="t.id">{{ t.name }}</SelectItem>
+            </SelectGroup>
+          </SelectContent>
+        </Select>
       </div>
     </div>
 
-    <div v-if="task.labelColors?.length" class="mb-4 flex gap-2">
-      <span
-        v-for="(color, idx) in task.labelColors"
-        :key="idx"
-        class="h-3 w-3 rounded-full"
-        :class="LABEL_CLASS[color] || 'bg-slate-400'"
-      />
-    </div>
-
-    <div class="border-t border-gray-100 pt-4">
-      <h4 class="mb-3 text-sm font-semibold text-ink">Recent Activity</h4>
-      <ul class="space-y-4">
-        <li v-for="entry in visibleActivity" :key="entry.id" class="flex gap-3">
-          <Avatar size="sm" class="h-8 w-8 shrink-0 text-xs">
-            <AvatarFallback>{{ initials(entry.actor) }}</AvatarFallback>
-          </Avatar>
-          <div class="min-w-0">
-            <p class="text-sm text-ink">
-              <span class="font-medium">{{ entry.actor }}</span>
-              <span v-if="entry.actorRole" class="ml-1 text-xs text-subtle">{{ entry.actorRole }}</span>
-            </p>
-            <p class="text-sm text-subtle">{{ entry.message }}</p>
-            <p class="text-xs text-subtle">{{ formatTimestamp(entry.createdAt) }}</p>
-          </div>
-        </li>
-        <li v-if="!task.activity?.length" class="text-sm text-subtle">No activity yet.</li>
-      </ul>
-
-      <button
-        v-if="(task.activity?.length || 0) > 3"
-        type="button"
-        class="mt-3 flex items-center gap-1 text-xs font-medium text-primary"
-        @click="expanded = !expanded"
-      >
-        {{ expanded ? "View less" : "View more" }}
-        <ChevronDown class="h-3.5 w-3.5 transition" :class="expanded ? 'rotate-180' : ''" />
-      </button>
+    <div class="border-t border-gray-100 pt-4 text-sm text-subtle">
+      Last updated {{ formatTimestamp(task.updatedAt) }}
     </div>
   </div>
 </template>

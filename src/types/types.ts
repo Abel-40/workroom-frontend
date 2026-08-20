@@ -19,18 +19,6 @@ export type ApiResponse<T = any> = {
 
 
 // Supporting types
-export type FileLink = {
-  type: 'file';
-  file: File;
-  name: string;
-};
-
-export type UrlLink = {
-  type: 'link';
-  url: string;
-  label?: string;
-};
-
 export type ImageType = File | string; // File (uploaded) or string (URL)
 
 // Main User Types
@@ -60,21 +48,21 @@ type Department = {
   leader: string;
 };
 
-// Sector 
+// Sector
 interface Sector{
-  id:number,
+  id:string,
   name:string,
   description:string
 }
 
 // Company
 export interface Company{
-  id:number;
+  id:string;
   name:string;
   code?:string;
   created_at:Date;
   owner:string;
-  sector:number;
+  sector:string;
   plan?:string;
   stripe_customer_id?:string;
   stripe_subscription_id?:string;
@@ -86,51 +74,55 @@ export interface Company{
 
 
 export type Sectors = Sector[]
-// Task
-export interface ActivityEntry {
-  id: string;
-  actor: string;
-  actorRole?: string;
-  message: string;
-  createdAt: string;
-}
+// Task — real backend shape (projects_and_tasks.models.Task / api/routers/tasks.py:task_data()).
+export type TaskStatus = 'To Do' | 'In Progress' | 'In Review' | 'Done';
+export type TaskPriority = 'low' | 'medium' | 'high';
+export type TaskSource = 'manual' | 'ai_generated';
 
 export interface TaskType {
   id: string;
-  name: string;
-  icon: string;
-  createdAt: string;
+  projectId: string;
+  title: string;
   description: string;
-  priority: {
-    level: 'low' | 'medium' | 'high';
-  };
-  assignee: string;
-  status: 'Done' | 'In Progress' | 'To Do' | 'In Review';
-  EstimatedTime?: string;
-  attachments?: Array<FileLink | UrlLink>;
-  SpentTime?: string;
-  // Formatted percentage string, e.g. "0%", "33%", "100%" — computed from SpentTime/EstimatedTime.
-  Progress: string;
+  status: TaskStatus;
+  priority: TaskPriority;
+  source: TaskSource;
+  createdById: string | null;
+  assignedToId: string | null;
+  assigneeName: string | null; // resolved via employeeStore, not sent by the API directly
+  departmentId: string | null;
+  taskTypeId: string | null;
   deadline: string;
-  labelColors?: string[];
-  activity?: ActivityEntry[];
+  estimatedTimeHours: number | null;
+  spentTimeHours: number | null;
+  // Formatted percentage string, e.g. "0%", "33%", "100%" — computed from spentTimeHours/estimatedTimeHours.
+  progress: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // default task type
 export interface DefaultTaskType {
-   id:number;
+   id:string;
    name:string;
    description:string;
    sector:string;
 }
 // Project
+export type ProjectVisibility = 'public' | 'company' | 'department' | 'private';
+
+// A project's cover image is either an uploaded file (streamed back through
+// an authenticated endpoint -- there's no public /media/ route for uploads)
+// or a plain external link the browser can load directly.
+export type ProjectCoverImage = { kind: 'upload' | 'link'; url: string };
+
 export interface Project {
   id: string;
   title: string;
   icon: string;
   createdAt: string;
   status: 'Active' | 'In Active' | 'Done';
-  image?: ImageType;
+  image?: ProjectCoverImage | null;
   priority: {
     level: 'low' | 'medium' | 'high';
     icon: 'ArrowDown' | 'ArrowUp';
@@ -145,6 +137,12 @@ export interface Project {
   assignedBy: string;
   description: string;
   deadline: string;
+  // Real backend fields (Phase C) -- absent from decorative mock/demo data.
+  departmentId?: string | null;
+  visibility?: ProjectVisibility;
+  startDate?: string;
+  assigneeIds?: string[];
+  createdById?: string | null;
 }
 
 export type Departments = Department[];

@@ -40,3 +40,21 @@ export function computeProgressLabel(spent: string | undefined, estimate: string
   const percent = Math.min(100, Math.round((spentMinutes / estimateMinutes) * 100))
   return `${percent}%`
 }
+
+// The backend stores task time as hours floats (Task.estimated_time /
+// spent_time), not the "1d 2h 30m" strings above — these operate on those
+// floats directly rather than round-tripping through the string parser.
+export function formatHoursToDuration(hours: number | null | undefined): string {
+  if (!hours || hours <= 0) return '0h'
+  return formatMinutesToDuration(Math.round(hours * MINUTES_PER_HOUR))
+}
+
+export function computeProgressFromHours(
+  spentHours: number | null | undefined,
+  estimateHours: number | null | undefined
+): string {
+  const spent = spentHours || 0
+  if (!estimateHours) return spent > 0 ? '100%' : '0%'
+  const percent = Math.min(100, Math.round((spent / estimateHours) * 100))
+  return `${percent}%`
+}

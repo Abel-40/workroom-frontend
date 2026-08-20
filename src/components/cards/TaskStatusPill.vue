@@ -3,16 +3,17 @@ import { ref } from "vue";
 import { Check } from "lucide-vue-next";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useProjectStore } from "@/stores/projectStore";
+import { useToast } from "@/components/ui/toast/use-toast";
 import type { TaskType } from "@/types/types";
 import TaskCompleteModal from "@/components/projects/TaskCompleteModal.vue";
 
 const props = defineProps<{
-  projectId: string;
   task: TaskType;
   size?: "sm" | "md";
 }>();
 
 const projectsStore = useProjectStore();
+const { toast } = useToast();
 const open = ref(false);
 const confirmOpen = ref(false);
 
@@ -48,17 +49,19 @@ const dotClass = (status: TaskType["status"]) => {
   }
 };
 
-const pick = (status: TaskType["status"]) => {
+const pick = async (status: TaskType["status"]) => {
   open.value = false;
   if (status === "Done" && props.task.status !== "Done") {
     confirmOpen.value = true;
     return;
   }
-  projectsStore.updateTaskStatus(props.projectId, props.task.id, status);
+  const { error } = await projectsStore.updateTaskStatus(props.task.id, status);
+  if (error) toast({ title: "Status not updated", description: error, variant: "destructive" });
 };
 
-const approveComplete = () => {
-  projectsStore.updateTaskStatus(props.projectId, props.task.id, "Done");
+const approveComplete = async () => {
+  const { error } = await projectsStore.updateTaskStatus(props.task.id, "Done");
+  if (error) toast({ title: "Status not updated", description: error, variant: "destructive" });
 };
 </script>
 

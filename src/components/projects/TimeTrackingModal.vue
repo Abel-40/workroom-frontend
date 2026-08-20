@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, watch } from "vue";
+import { computed, reactive, ref, watch } from "vue";
 import { Clock3, Timer, CalendarClock } from "lucide-vue-next";
 import {
   Dialog,
@@ -13,15 +13,18 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import type { TaskType } from "@/types/types";
 import { useProjectStore } from "@/stores/projectStore";
+import { useToast } from "@/components/ui/toast/use-toast";
+import { formatHoursToDuration, parseDurationToMinutes } from "@/lib/duration";
 
 const props = defineProps<{
-  projectId: string;
   task: TaskType;
 }>();
 
 const open = defineModel<boolean>("open", { required: true });
 
 const projectsStore = useProjectStore();
+const { toast } = useToast();
+const saving = ref(false);
 
 const emptyForm = () => ({
   timeSpent: "",
@@ -38,9 +41,16 @@ watch(open, (isOpen) => {
 
 const canSave = computed(() => form.timeSpent.trim().length > 0);
 
-const save = () => {
+const save = async () => {
   if (!canSave.value) return;
-  projectsStore.logTime(props.projectId, props.task.id, { ...form });
+  const addedHours = parseDurationToMinutes(form.timeSpent) / 60;
+  saving.value = true;
+  const { error } = await projectsStore.logTime(props.task.id, addedHours);
+  saving.value = false;
+  if (error) {
+    toast({ title: "Time not logged", description: error, variant: "destructive" });
+    return;
+  }
   open.value = false;
 };
 </script>
@@ -58,8 +68,8 @@ const save = () => {
             <Timer class="h-4 w-4" />
           </div>
           <div class="text-center">
-            <p class="text-sm font-semibold text-ink">{{ task.SpentTime || "0h" }} logged</p>
-            <p class="text-xs text-subtle">Original Estimate {{ task.EstimatedTime || "—" }}</p>
+            <p class="text-sm font-semibold text-ink">{{ formatHoursToDuration(task.spentTimeHours) }} logged</p>
+            <p class="text-xs text-subtle">Original Estimate {{ task.estimatedTimeHours ? formatHoursToDuration(task.estimatedTimeHours) : "—" }}</p>
           </div>
           <div class="flex h-9 w-9 items-center justify-center rounded-full bg-white text-primary shadow-sm">
             <CalendarClock class="h-4 w-4" />
@@ -93,7 +103,7 @@ const save = () => {
         </div>
 
         <div class="flex justify-end pt-1">
-          <Button class="rounded-xl" :disabled="!canSave" @click="save">
+          <Button class="rounded-xl" :disabled="!canSave || saving" @click="save">
             <Clock3 class="h-4 w-4" /> Save Task
           </Button>
         </div>
