@@ -18,8 +18,7 @@ coverage
 /cypress/screenshots/
 
 # Editor directories and files
-.vscode/*
-!.vscode/extensions.json
+.vscode/
 .idea
 *.suo
 *.ntvs*
@@ -28,3 +27,7 @@ coverage
 *.sw?
 
 *.tsbuildinfo
+
+# Local design tooling and reference mockups (not app source)
+.21st/
+pic/
