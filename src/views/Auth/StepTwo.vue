@@ -16,13 +16,13 @@ const { toast } = useToast();
 
 interface CompanyType {
   name: string;
-  sector: number;
+  sector: string;
   owner: string;
 }
 
 const companyForm = ref<CompanyType>({
   name: '',
-  sector: 0,
+  sector: '',
   owner: authStore.logedInUserInfo.user.id,
 });
 
@@ -35,7 +35,7 @@ onMounted(async () => {
 const validateForm = (): boolean => {
   return (
     companyForm.value.name.trim() !== '' &&
-    companyForm.value.sector > 0 &&
+    companyForm.value.sector !== '' &&
     !!companyForm.value.owner
   );
 };
@@ -138,7 +138,7 @@ const handleSubmit = async () => {
                       class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                       required
                     >
-                      <option value=0>Select Department</option>
+                      <option value="">Select Department</option>
                       <option 
                         v-for="sector in authStore.sectors" 
                         :key="sector.id" 

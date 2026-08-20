@@ -19,7 +19,7 @@ onMounted(()=>{
 const {toast}  = useToast()
 
 interface DefaultDepartmentType {
-  selected_types?:number[];
+  selected_types?:string[];
   use_all_default_departments?:boolean;
 }
 
@@ -29,9 +29,9 @@ const selcectedDepartmentType = ref<DefaultDepartmentType>({
 })
 
 
-const selected = ref<number[]>([])
+const selected = ref<string[]>([])
 
-function toggleSelection(id: number) {
+function toggleSelection(id: string) {
   if (selected.value.includes(id)) {
     selected.value = selected.value.filter(item => item !== id)
   } else {
