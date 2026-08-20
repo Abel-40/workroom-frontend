@@ -30,12 +30,12 @@ export const DUMMY_LOGGED_IN = {
 
 // ── Company ──────────────────────────────────────────────────
 export const DUMMY_COMPANY = {
-  id: 1,
+  id: 'company-mock-001',
   name: 'Workroom Demo Corp',
   code: 'WDC-001',
   created_at: new Date('2025-01-15'),
   owner: 'demo@workroom.dev',
-  sector: 1,
+  sector: 'sector-mock-001',
   plan: 'pro',
   stripe_customer_id: 'cus_mock_001',
   stripe_subscription_id: 'sub_mock_001',

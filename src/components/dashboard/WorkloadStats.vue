@@ -1,11 +1,15 @@
 <script setup lang="ts">
+import { onMounted } from 'vue';
 import UserCard from '@/components/cards/UserCard.vue';
 import { ChevronRight } from "lucide-vue-next";
 import { Button } from "@/components/ui/button";
 import { useEmployeeStore } from "@/stores/employeeStore";
 
 const employeeStore = useEmployeeStore();
-const users = employeeStore.employees;
+
+onMounted(() => {
+  employeeStore.fetchEmployees();
+});
 </script>
 
 <template>
@@ -20,12 +24,11 @@ const users = employeeStore.employees;
 
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
       <UserCard
-        v-for="(user, index) in users"
-        :key="index"
+        v-for="user in employeeStore.employees"
+        :key="user.id"
         :name="user.name"
-        :role="user.role"
-        :department="user.department"
-        :imageSrc="user.imageSrc"
+        :role="user.roleLabel"
+        :department="user.department ?? undefined"
       />
     </div>
   </div>

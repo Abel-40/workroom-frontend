@@ -118,7 +118,7 @@ export const useEventStore = defineStore("eventStore", {
     nearest(state) {
       return [...state.events]
         .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-        .slice(0, 6);
+        .slice(0, 3);
     },
     byDate(state) {
       const map: Record<string, EventEntry[]> = {};
