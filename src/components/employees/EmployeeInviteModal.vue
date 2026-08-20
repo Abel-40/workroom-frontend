@@ -10,27 +10,38 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useEmployeeStore } from "@/stores/employeeStore";
+import { useToast } from "@/components/ui/toast/use-toast";
 
 const open = defineModel<boolean>("open", { required: true });
 const employeeStore = useEmployeeStore();
+const { toast } = useToast();
 
 const emails = ref<string[]>([""]);
 const sent = ref(false);
+const sending = ref(false);
 
 watch(open, (isOpen) => {
   if (isOpen) {
     emails.value = [""];
     sent.value = false;
+    sending.value = false;
   }
 });
 
 const addAnother = () => emails.value.push("");
 const removeAt = (index: number) => emails.value.splice(index, 1);
 
-const approve = () => {
-  const invited = employeeStore.invite(emails.value);
-  if (!invited.length) return;
-  sent.value = true;
+const approve = async () => {
+  sending.value = true;
+  try {
+    const { sent: invited, errors } = await employeeStore.invite(emails.value);
+    for (const [email, message] of Object.entries(errors)) {
+      toast({ title: `Couldn't invite ${email}`, description: message, variant: "destructive" });
+    }
+    if (invited.length) sent.value = true;
+  } finally {
+    sending.value = false;
+  }
 };
 </script>
 
@@ -72,7 +83,9 @@ const approve = () => {
         </button>
 
         <div class="flex justify-end">
-          <Button class="rounded-xl" @click="approve">Approve</Button>
+          <Button class="rounded-xl" :disabled="sending" @click="approve">
+            {{ sending ? "Sending…" : "Approve" }}
+          </Button>
         </div>
       </div>
 

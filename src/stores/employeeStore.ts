@@ -1,154 +1,95 @@
 import { defineStore } from "pinia";
+import axiosInstance from "@/plugins/axios";
+import type { ApiResponse } from "@/types/types";
+
+export type EmployeeRole = "Owner" | "DL" | "DM";
 
 export interface Employee {
   id: string;
   name: string;
   email: string;
-  role: string;
-  department: string;
-  level: "Junior" | "Middle" | "Senior";
-  gender: "Male" | "Female";
-  birthday: string;
-  fullAge: number;
-  imageSrc: string;
-  backlogTasks: number;
-  tasksInProgress: number;
-  tasksInReview: number;
-  highlight?: boolean;
+  role: EmployeeRole;
+  roleLabel: string;
+  department: string | null;
+  activeTaskCount: number;
+  todoCount: number;
+  inProgressCount: number;
+  inReviewCount: number;
 }
 
-const emailFromName = (name: string) => `${name.toLowerCase().replace(/\s+/g, ".")}@gmail.com`;
+type MemberApi = {
+  id: string;
+  first_name: string;
+  last_name: string;
+  username: string;
+  email: string;
+  role: EmployeeRole;
+  department: string | null;
+  active_task_count: number;
+  todo_count: number;
+  in_progress_count: number;
+  in_review_count: number;
+};
+
+const ROLE_LABELS: Record<EmployeeRole, string> = {
+  Owner: "Owner",
+  DL: "Department Leader",
+  DM: "Department Member",
+};
 
 export const useEmployeeStore = defineStore("employeeStore", {
   state: () => ({
-    employees: [
-      {
-        id: "emp-1",
-        name: "Shawn Stone",
-        role: "UI/UX Designer",
-        department: "USBES",
-        level: "Middle",
-        gender: "Male",
-        birthday: "Apr 12, 1995",
-        fullAge: 25,
-        imageSrc: "https://randomuser.me/api/portraits/men/1.jpg",
-        backlogTasks: 0,
-        tasksInProgress: 16,
-        tasksInReview: 6,
-      },
-      {
-        id: "emp-2",
-        name: "Ready Delgado",
-        role: "UI/UX Designer",
-        department: "TABLES",
-        level: "Junior",
-        gender: "Female",
-        birthday: "Apr 28, 1998",
-        fullAge: 23,
-        imageSrc: "https://randomuser.me/api/portraits/women/1.jpg",
-        backlogTasks: 1,
-        tasksInProgress: 20,
-        tasksInReview: 2,
-      },
-      {
-        id: "emp-3",
-        name: "Emily Tyler",
-        role: "Copywriter",
-        department: "USBES",
-        level: "Middle",
-        gender: "Female",
-        birthday: "May 16, 1996",
-        fullAge: 24,
-        imageSrc: "https://randomuser.me/api/portraits/women/2.jpg",
-        backlogTasks: 0,
-        tasksInProgress: 20,
-        tasksInReview: 2,
-        highlight: true,
-      },
-      {
-        id: "emp-4",
-        name: "Louis Castro",
-        role: "Copywriter",
-        department: "SUNC",
-        level: "Senior",
-        gender: "Male",
-        birthday: "Sep 23, 1992",
-        fullAge: 28,
-        imageSrc: "https://randomuser.me/api/portraits/men/3.jpg",
-        backlogTasks: 2,
-        tasksInProgress: 20,
-        tasksInReview: 2,
-      },
-      {
-        id: "emp-5",
-        name: "Nina Brooks",
-        role: "UX Researcher",
-        department: "INSIGHTS",
-        level: "Middle",
-        gender: "Female",
-        birthday: "Apr 12, 1995",
-        fullAge: 25,
-        imageSrc: "https://randomuser.me/api/portraits/women/3.jpg",
-        backlogTasks: 1,
-        tasksInProgress: 14,
-        tasksInReview: 3,
-      },
-      {
-        id: "emp-6",
-        name: "Carlos Evans",
-        role: "Frontend Engineer",
-        department: "DEV",
-        level: "Senior",
-        gender: "Male",
-        birthday: "Apr 28, 1998",
-        fullAge: 23,
-        imageSrc: "https://randomuser.me/api/portraits/men/4.jpg",
-        backlogTasks: 0,
-        tasksInProgress: 8,
-        tasksInReview: 6,
-        highlight: true,
-      },
-      {
-        id: "emp-7",
-        name: "Sara Jensen",
-        role: "Project Manager",
-        department: "OPS",
-        level: "Middle",
-        gender: "Female",
-        birthday: "Sep 23, 1992",
-        fullAge: 28,
-        imageSrc: "https://randomuser.me/api/portraits/women/4.jpg",
-        backlogTasks: 1,
-        tasksInProgress: 20,
-        tasksInReview: 2,
-      },
-      {
-        id: "emp-8",
-        name: "Michael Lee",
-        role: "Backend Engineer",
-        department: "DEV",
-        level: "Senior",
-        gender: "Male",
-        birthday: "Sep 23, 1992",
-        fullAge: 28,
-        imageSrc: "https://randomuser.me/api/portraits/men/5.jpg",
-        backlogTasks: 0,
-        tasksInProgress: 4,
-        tasksInReview: 6,
-      },
-    ].map((employee) => ({ ...employee, email: emailFromName(employee.name) })) as Employee[],
+    employees: [] as Employee[],
+    loading: false,
   }),
   getters: {
     total: (state) => state.employees.length,
   },
   actions: {
-    invite(emails: string[]) {
-      // In this mock-data app, invites don't create real accounts — recorded for UI feedback only.
-      return emails.filter((email) => email.trim().length > 0);
+    async fetchEmployees() {
+      this.loading = true;
+      try {
+        const { data } = await axiosInstance.get<ApiResponse<{ members: MemberApi[] }>>(
+          "/analytics/company/members/"
+        );
+        this.employees = data.data.members.map((m) => ({
+          id: m.id,
+          name: `${m.first_name} ${m.last_name}`.trim() || m.username,
+          email: m.email,
+          role: m.role,
+          roleLabel: ROLE_LABELS[m.role] ?? m.role,
+          department: m.department,
+          activeTaskCount: m.active_task_count,
+          todoCount: m.todo_count,
+          inProgressCount: m.in_progress_count,
+          inReviewCount: m.in_review_count,
+        }));
+      } catch (error) {
+        // A failed read shouldn't block sibling fetches awaited right after
+        // this one (e.g. ProjectsView loads employees then projects).
+        console.error("Failed to fetch employees:", error);
+      } finally {
+        this.loading = false;
+      }
     },
-  },
-  persist: {
-    key: "pinia-employeeStore",
-    storage: localStorage,
+
+    // Sends one invitation per email via the real invite endpoint (the
+    // backend accepts one address at a time); returns which addresses were
+    // sent and which failed so the UI can surface partial failures.
+    async invite(emails: string[]): Promise<{ sent: string[]; errors: Record<string, string> }> {
+      const sent: string[] = [];
+      const errors: Record<string, string> = {};
+      for (const raw of emails) {
+        const email = raw.trim();
+        if (!email) continue;
+        try {
+          await axiosInstance.post("/auth/send_invite/", { email });
+          sent.push(email);
+        } catch (error: any) {
+          errors[email] = error.response?.data?.message || "Failed to send invitation";
+        }
+      }
+      return { sent, errors };
+    },
   },
 });

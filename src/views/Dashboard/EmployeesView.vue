@@ -1,7 +1,10 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { ArrowLeft, ArrowRight, Funnel, MoreVertical, Plus } from "lucide-vue-next";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,9 +13,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import Header from "@/components/layout/Header.vue";
 import EmployeeInviteModal from "@/components/employees/EmployeeInviteModal.vue";
-import { useEmployeeStore } from "@/stores/employeeStore";
+import { useEmployeeStore, type EmployeeRole } from "@/stores/employeeStore";
+import { useDirectoryStore } from "@/stores/directoryStore";
 
 const employeeStore = useEmployeeStore();
+const directoryStore = useDirectoryStore();
 const layout = ref<"list" | "activity">("list");
 const isInviteOpen = ref(false);
 const currentPage = ref(1);
@@ -23,14 +28,55 @@ const onSearch = (value: string) => {
   currentPage.value = 1;
 };
 
+onMounted(() => {
+  employeeStore.fetchEmployees();
+  if (!directoryStore.loaded) directoryStore.fetchAll();
+});
+
+const initials = (name: string) =>
+  (name || "?")
+    .split(" ")
+    .map((p) => p[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
+const ROLE_OPTIONS: { value: EmployeeRole; label: string }[] = [
+  { value: "Owner", label: "Owner" },
+  { value: "DL", label: "Department Leader" },
+  { value: "DM", label: "Department Member" },
+];
+const departmentFilter = ref<string[]>([]);
+const roleFilter = ref<EmployeeRole[]>([]);
+const activeFilterCount = computed(() => departmentFilter.value.length + roleFilter.value.length);
+const toggleDepartmentFilter = (name: string, checked: boolean) => {
+  departmentFilter.value = checked
+    ? [...departmentFilter.value, name]
+    : departmentFilter.value.filter((existing) => existing !== name);
+  currentPage.value = 1;
+};
+const toggleRoleFilter = (role: EmployeeRole, checked: boolean) => {
+  roleFilter.value = checked ? [...roleFilter.value, role] : roleFilter.value.filter((existing) => existing !== role);
+  currentPage.value = 1;
+};
+const clearEmployeeFilters = () => {
+  departmentFilter.value = [];
+  roleFilter.value = [];
+};
+
 const filteredEmployees = computed(() => {
   const query = searchQuery.value.trim().toLowerCase();
-  if (!query) return employeeStore.employees;
-  return employeeStore.employees.filter((employee) =>
-    [employee.name, employee.email, employee.role, employee.department].some((field) =>
-      field?.toLowerCase().includes(query)
-    )
-  );
+  return employeeStore.employees.filter((employee) => {
+    const matchesQuery =
+      !query ||
+      [employee.name, employee.email, employee.roleLabel, employee.department].some((field) =>
+        field?.toLowerCase().includes(query)
+      );
+    const matchesDepartment =
+      !departmentFilter.value.length || (!!employee.department && departmentFilter.value.includes(employee.department));
+    const matchesRole = !roleFilter.value.length || roleFilter.value.includes(employee.role);
+    return matchesQuery && matchesDepartment && matchesRole;
+  });
 });
 
 const totalPages = computed(() => Math.max(1, Math.ceil(filteredEmployees.value.length / perPage)));
@@ -45,10 +91,10 @@ const rangeLabel = computed(() => {
   return `${start}-${end} of ${filteredEmployees.value.length}`;
 });
 
-const levelBadgeClass: Record<string, string> = {
-  Junior: "bg-slate-100 text-slate-600",
-  Middle: "bg-blue-50 text-primary",
-  Senior: "bg-violet-50 text-violet-600",
+const roleBadgeClass: Record<string, string> = {
+  Owner: "bg-violet-50 text-violet-600",
+  DL: "bg-blue-50 text-primary",
+  DM: "bg-slate-100 text-slate-600",
 };
 </script>
 
@@ -78,9 +124,62 @@ const levelBadgeClass: Record<string, string> = {
               Activity
             </button>
           </div>
-          <Button variant="ghost" size="icon" class="bg-white shadow-sm">
-            <Funnel class="w-4 h-4" />
-          </Button>
+          <Popover>
+            <PopoverTrigger as-child>
+              <Button variant="ghost" size="icon" class="relative bg-white shadow-sm">
+                <Funnel class="w-4 h-4" />
+                <span
+                  v-if="activeFilterCount"
+                  class="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-white"
+                >
+                  {{ activeFilterCount }}
+                </span>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent class="w-64 p-3" align="end">
+              <div class="flex items-center justify-between">
+                <p class="text-xs font-medium text-subtle">Filter employees</p>
+                <button
+                  v-if="activeFilterCount"
+                  type="button"
+                  class="text-xs font-medium text-primary hover:underline"
+                  @click="clearEmployeeFilters"
+                >
+                  Clear
+                </button>
+              </div>
+
+              <p class="mb-1.5 mt-3 text-xs font-medium text-subtle">Department</p>
+              <div class="max-h-32 space-y-1 overflow-y-auto">
+                <label
+                  v-for="dept in directoryStore.departments"
+                  :key="dept.id"
+                  class="flex cursor-pointer items-center gap-2 rounded-lg px-1.5 py-1 text-sm hover:bg-page"
+                >
+                  <Checkbox
+                    :model-value="departmentFilter.includes(dept.name)"
+                    @update:model-value="(checked) => toggleDepartmentFilter(dept.name, checked === true)"
+                  />
+                  <span class="truncate">{{ dept.name }}</span>
+                </label>
+              </div>
+
+              <p class="mb-1.5 mt-3 text-xs font-medium text-subtle">Role</p>
+              <div class="space-y-1">
+                <label
+                  v-for="role in ROLE_OPTIONS"
+                  :key="role.value"
+                  class="flex cursor-pointer items-center gap-2 rounded-lg px-1.5 py-1 text-sm hover:bg-page"
+                >
+                  <Checkbox
+                    :model-value="roleFilter.includes(role.value)"
+                    @update:model-value="(checked) => toggleRoleFilter(role.value, checked === true)"
+                  />
+                  <span>{{ role.label }}</span>
+                </label>
+              </div>
+            </PopoverContent>
+          </Popover>
           <Button class="rounded-xl" @click="isInviteOpen = true">
             <Plus class="w-4 h-4" /> Add Employee
           </Button>
@@ -97,43 +196,42 @@ const levelBadgeClass: Record<string, string> = {
       </Button>
     </div>
     <div v-else-if="filteredEmployees.length === 0" class="rounded-2xl border border-dashed border-gray-200 bg-white p-12 text-center">
-      <p class="font-medium text-ink">No employees match "{{ searchQuery }}"</p>
-      <p class="mt-1 text-sm text-subtle">Try a different name, email, position, or department.</p>
+      <p class="font-medium text-ink">
+        {{ searchQuery ? `No employees match "${searchQuery}"` : "No employees match the selected filters" }}
+      </p>
+      <p class="mt-1 text-sm text-subtle">Try a different name, email, department, or clear the filters.</p>
     </div>
 
     <!-- List layout -->
     <div v-else-if="layout === 'list'" class="overflow-x-auto rounded-2xl border border-gray-100 bg-white">
       <div class="min-w-[860px]">
         <div
-          class="grid grid-cols-[2fr_1fr_1fr_0.7fr_1.3fr_40px] items-center gap-4 border-b border-gray-100 px-4 py-3 text-xs font-medium uppercase tracking-wide text-subtle"
+          class="grid grid-cols-[2fr_1fr_1.3fr_40px] items-center gap-4 border-b border-gray-100 px-4 py-3 text-xs font-medium uppercase tracking-wide text-subtle"
         >
           <span>Employee</span>
-          <span>Gender</span>
-          <span>Birthday</span>
-          <span>Age</span>
-          <span>Position</span>
+          <span>Department</span>
+          <span>Role</span>
           <span></span>
         </div>
 
         <div
           v-for="employee in paginated"
           :key="employee.id"
-          class="grid grid-cols-[2fr_1fr_1fr_0.7fr_1.3fr_40px] items-center gap-4 border-b border-gray-50 px-4 py-3 last:border-b-0 hover:bg-page/40"
+          class="grid grid-cols-[2fr_1fr_1.3fr_40px] items-center gap-4 border-b border-gray-50 px-4 py-3 last:border-b-0 hover:bg-page/40"
         >
           <div class="flex min-w-0 items-center gap-3">
-            <img :src="employee.imageSrc" class="h-10 w-10 shrink-0 rounded-full object-cover ring-2 ring-white" />
+            <Avatar size="sm" class="h-10 w-10 shrink-0 text-xs">
+              <AvatarFallback>{{ initials(employee.name) }}</AvatarFallback>
+            </Avatar>
             <div class="min-w-0">
               <p class="truncate font-medium text-ink">{{ employee.name }}</p>
               <p class="truncate text-xs text-subtle">{{ employee.email }}</p>
             </div>
           </div>
-          <p class="text-sm text-ink">{{ employee.gender }}</p>
-          <p class="text-sm text-ink">{{ employee.birthday }}</p>
-          <p class="text-sm text-ink">{{ employee.fullAge }}</p>
+          <p class="text-sm text-ink">{{ employee.department ?? "—" }}</p>
           <div class="flex items-center gap-2">
-            <p class="truncate text-sm text-ink">{{ employee.role }}</p>
-            <span class="shrink-0 rounded-full px-2 py-0.5 text-xs font-medium" :class="levelBadgeClass[employee.level]">
-              {{ employee.level }}
+            <span class="shrink-0 rounded-full px-2 py-0.5 text-xs font-medium" :class="roleBadgeClass[employee.role]">
+              {{ employee.roleLabel }}
             </span>
           </div>
           <DropdownMenu>
@@ -157,32 +255,30 @@ const levelBadgeClass: Record<string, string> = {
       <div
         v-for="employee in paginated"
         :key="employee.id"
-        class="rounded-2xl border border-gray-100 p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-        :class="employee.highlight ? 'bg-amber-400 text-white' : 'bg-white'"
+        class="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
       >
         <div class="flex flex-col items-center text-center">
-          <img :src="employee.imageSrc" class="h-14 w-14 rounded-full object-cover ring-2 ring-white" />
-          <p class="mt-2 font-medium" :class="employee.highlight ? 'text-white' : 'text-ink'">{{ employee.name }}</p>
-          <p class="text-xs" :class="employee.highlight ? 'text-white/80' : 'text-subtle'">{{ employee.role }}</p>
-          <span
-            class="mt-1 rounded-full px-2 py-0.5 text-[10px] font-medium"
-            :class="employee.highlight ? 'bg-white/20 text-white' : levelBadgeClass[employee.level]"
-          >
-            {{ employee.level }}
+          <Avatar size="sm" class="h-14 w-14 text-sm">
+            <AvatarFallback>{{ initials(employee.name) }}</AvatarFallback>
+          </Avatar>
+          <p class="mt-2 font-medium text-ink">{{ employee.name }}</p>
+          <p class="text-xs text-subtle">{{ employee.department ?? "No department" }}</p>
+          <span class="mt-1 rounded-full px-2 py-0.5 text-[10px] font-medium" :class="roleBadgeClass[employee.role]">
+            {{ employee.roleLabel }}
           </span>
         </div>
         <div class="mt-4 grid grid-cols-3 gap-2 text-center">
           <div>
-            <p class="font-semibold" :class="employee.highlight ? 'text-white' : 'text-ink'">{{ employee.backlogTasks }}</p>
-            <p class="text-[10px]" :class="employee.highlight ? 'text-white/80' : 'text-subtle'">Backlog tasks</p>
+            <p class="font-semibold text-ink">{{ employee.todoCount }}</p>
+            <p class="text-[10px] text-subtle">To Do</p>
           </div>
           <div>
-            <p class="font-semibold" :class="employee.highlight ? 'text-white' : 'text-ink'">{{ employee.tasksInProgress }}</p>
-            <p class="text-[10px]" :class="employee.highlight ? 'text-white/80' : 'text-subtle'">Tasks In Progress</p>
+            <p class="font-semibold text-ink">{{ employee.inProgressCount }}</p>
+            <p class="text-[10px] text-subtle">In Progress</p>
           </div>
           <div>
-            <p class="font-semibold" :class="employee.highlight ? 'text-white' : 'text-ink'">{{ employee.tasksInReview }}</p>
-            <p class="text-[10px]" :class="employee.highlight ? 'text-white/80' : 'text-subtle'">Tasks In Review</p>
+            <p class="font-semibold text-ink">{{ employee.inReviewCount }}</p>
+            <p class="text-[10px] text-subtle">In Review</p>
           </div>
         </div>
       </div>
