@@ -5,6 +5,7 @@ import {
   SquareDashedKanban,
   CalendarDays,
   Users,
+  Building2,
   MessageSquare,
   FolderKanban,
   Headset,
@@ -45,15 +46,10 @@ const navItems = [
   { title: "Projects", sectionName: "projects" },
   { title: "Calendar", sectionName: "calendar" },
   { title: "Employees", sectionName: "employees" },
+  { title: "Departments", sectionName: "departments" },
   { title: "Messenger", sectionName: "messenger" },
   { title: "Info Portal", sectionName: "info-portal" },
 ];
-
-// ✅ Router navigation on click to sync section query
-const navigateToSection = (section: string) => {
-  activeItem.value = section;
-  router.push({ path: "/auth/", query: { section } });
-};
 
 const setNavIcon = (title: string) => {
   switch (title) {
@@ -65,6 +61,8 @@ const setNavIcon = (title: string) => {
       return CalendarDays;
     case "Employees":
       return Users;
+    case "Departments":
+      return Building2;
     case "Messenger":
       return MessageSquare;
     case "Info Portal":

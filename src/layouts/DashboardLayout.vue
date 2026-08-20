@@ -5,6 +5,7 @@ import EventContainer from '@/views/Dashboard/EventsView.vue';
 import ProjectsTask from '@/views/Dashboard/ProjectsView.vue'
 import CalendarView from '@/views/Dashboard/CalendarView.vue'
 import EmployeesView from '@/views/Dashboard/EmployeesView.vue'
+import DepartmentsView from '@/views/Dashboard/DepartmentsView.vue'
 import InfoPortalView from '@/views/Dashboard/InfoPortalView.vue'
 import MessengerView from '@/views/Dashboard/MessengerView.vue'
 import MyProfileView from '@/views/Dashboard/MyProfileView.vue'
@@ -19,6 +20,7 @@ const showSection = computed(() => {
   if(section === 'projects') return ProjectsTask
   if(section === 'calendar') return CalendarView
   if(section === 'employees') return EmployeesView
+  if(section === 'departments') return DepartmentsView
   if(section === 'info-portal') return InfoPortalView
   if(section === 'messenger') return MessengerView
   if(section === 'profile') return MyProfileView
