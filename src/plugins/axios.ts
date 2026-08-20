@@ -66,13 +66,21 @@ axiosInstance.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true
       try {
-        const { data } = await axios.post('/user/refresh_token/', {}, { withCredentials: true })
+        // Use the bare `axios` client (not axiosInstance) so this call never
+        // flows back through our own response interceptor — a 401 here would
+        // otherwise trigger another refresh attempt with no `_retry` guard.
+        const { data } = await axios.post(
+          `${axiosInstance.defaults.baseURL}/auth/refresh-token/`,
+          {},
+          { withCredentials: true },
+        )
+        const newAccessToken = data.data.access
         sessionStorage.setItem('currentAuthTokens', JSON.stringify({
-          accessToken: data.access,
+          accessToken: newAccessToken,
           refreshToken: '',
         }))
-        axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${data.access}`
-        originalRequest.headers['Authorization'] = `Bearer ${data.access}`
+        axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${newAccessToken}`
+        originalRequest.headers['Authorization'] = `Bearer ${newAccessToken}`
         return axiosInstance(originalRequest)
       } catch {
         sessionStorage.clear()

@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { WorkflowIcon, ArrowRight, FlaskConical } from 'lucide-vue-next'
+import { WorkflowIcon, ArrowRight } from 'lucide-vue-next'
 import {
   Card,
   CardContent,
@@ -54,16 +54,6 @@ const onSubmit = async (e: Event) => {
     }
 }
 
-}
-
-// ── Demo / Mock login ───────────────────────────────────────────
-const isDemoLoading = ref(false)
-const loginAsDemoUser = async () => {
-  isDemoLoading.value = true
-  await new Promise(r => setTimeout(r, 500)) // short UX delay
-  authStore.loginAsDummy()
-  router.push({ path: '/admin/dashboard/', query: { section: 'dashboard' } })
-  isDemoLoading.value = false
 }
 </script>
 
@@ -148,38 +138,6 @@ const loginAsDemoUser = async () => {
                   class="w-full bg-[#3F8CFF] hover:bg-[#2a74e0] text-white"
                 >
                   Sign In <ArrowRight class="ml-2 w-4 h-4" />
-                </Button>
-              </div>
-
-              <!-- ── Demo Login Banner ───────────────────────── -->
-              <div class="mx-6 mb-6 rounded-xl border border-dashed border-blue-300 bg-blue-50 p-4 space-y-3">
-                <div class="flex items-center gap-2">
-                  <FlaskConical class="w-4 h-4 text-[#3F8CFF]" />
-                  <span class="text-sm font-semibold text-[#3F8CFF]">Developer Demo Mode</span>
-                </div>
-                <p class="text-xs text-gray-500">Use these credentials to sign in, or click the button below for instant access:</p>
-                <div class="grid grid-cols-2 gap-2 text-xs">
-                  <div class="bg-white rounded-lg p-2 border border-blue-100">
-                    <span class="block text-gray-400 font-medium mb-0.5">Email</span>
-                    <span class="font-mono text-gray-700 select-all">demo@workroom.dev</span>
-                  </div>
-                  <div class="bg-white rounded-lg p-2 border border-blue-100">
-                    <span class="block text-gray-400 font-medium mb-0.5">Password</span>
-                    <span class="font-mono text-gray-700 select-all">Demo@1234</span>
-                  </div>
-                </div>
-                <Button
-                  type="button"
-                  class="w-full bg-[#3F8CFF]/10 hover:bg-[#3F8CFF]/20 text-[#3F8CFF] border border-[#3F8CFF]/30 font-semibold"
-                  variant="outline"
-                  :disabled="isDemoLoading"
-                  @click="loginAsDemoUser"
-                >
-                  <span v-if="isDemoLoading">Logging in…</span>
-                  <span v-else class="flex items-center gap-2">
-                    <FlaskConical class="w-4 h-4" />
-                    Continue as Demo User
-                  </span>
                 </Button>
               </div>
 

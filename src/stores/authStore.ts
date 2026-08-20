@@ -4,15 +4,15 @@ import axiosInstance from "@/plugins/axios";
 import axios from "axios";
 import { DUMMY_LOGGED_IN, DUMMY_COMPANY } from "@/mock/mockData";
 interface Step3Form {
-  selected_types?: number[]
-  use_all_default_task_types?: boolean 
-  company_id: number
+  selected_types?: string[]
+  use_all_default_task_types?: boolean
+  company_id: string
   isStep3Complete: boolean
 }
 interface Step4Form {
-  selected_types?: number[]
-  use_all_default_departments?: boolean    
-  company_id: number
+  selected_types?: string[]
+  use_all_default_departments?: boolean
+  company_id: string
   isStep3Complete: boolean
 }
 
@@ -28,23 +28,30 @@ export const useAuthStore =  defineStore('AuthStore',{
     step2Form:{
         name:'',
         owner:'',
-        sector:0,
+        sector:'',
         isStep2Complete:false
     },
     step3Form:{
       selected_types:[],
       use_all_default_task_types:false,
-      company_id:0,
+      company_id:'',
       isStep3Complete:false
     } as Step3Form,
     step4Form:{
       selected_types:[],
       use_all_default_departments:false,
-      company_id:0,
+      company_id:'',
       isStep3Complete:false
     } as Step4Form ,
     departments:{} as DefaultTaskType[],
-    logedInUserInfo:{} as { user: User; is_authenticated:boolean; access:string },
+    logedInUserInfo:{} as {
+      user: User
+      is_authenticated: boolean
+      access: string
+      role?: "Owner" | "DL" | "DM" | null
+      company_id?: string | null
+      company_name?: string | null
+    },
     company:{} as Company,
     sectors:{} as Sectors,
     defaultTaskTypes: {} as DefaultTaskType[]
@@ -72,19 +79,19 @@ export const useAuthStore =  defineStore('AuthStore',{
       this.step2Form = {
         name:'',
         owner:'',
-        sector:0,
+        sector:'',
         isStep2Complete:false
       }
       this.step3Form={
       selected_types:[],
       use_all_default_task_types:false,
-      company_id:0,
+      company_id:'',
       isStep3Complete:false
     }
       this.step4Form={
       selected_types:[],
       use_all_default_departments:false,
-      company_id:0,
+      company_id:'',
       isStep3Complete:false
     }
     },
@@ -126,11 +133,17 @@ export const useAuthStore =  defineStore('AuthStore',{
     },
     async loginUser(form: Record<string, string>): Promise<{ user?: User; error?: string }> {
       try {
-        const { data } = await axiosInstance.post<ApiResponse<{ user: User; is_authenticated:boolean; access: string;}>>(
+        const { data } = await axiosInstance.post<ApiResponse<{
+          user: User
+          is_authenticated: boolean
+          access: string
+          role: "Owner" | "DL" | "DM" | null
+          company_id: string | null
+          company_name: string | null
+        }>>(
           '/auth/signin/',
           { ...form }
         )
-        console.log(data.data)
         this.logedInUserInfo = data.data
         sessionStorage.setItem("currentUserContent", JSON.stringify(this.logedInUserInfo))
         sessionStorage.setItem("currentAuthTokens", JSON.stringify({accessToken:this.logedInUserInfo.access}))
@@ -142,8 +155,11 @@ export const useAuthStore =  defineStore('AuthStore',{
       }
     },
     logout(){
-      this.logedInUserInfo.access = '',
+      this.logedInUserInfo.access = ''
       this.logedInUserInfo.is_authenticated = false
+      this.logedInUserInfo.role = null
+      this.logedInUserInfo.company_id = null
+      this.logedInUserInfo.company_name = null
       this.logedInUserInfo.user = {
         id:'',
         username:'',
@@ -151,6 +167,7 @@ export const useAuthStore =  defineStore('AuthStore',{
       }
       sessionStorage.removeItem("currentUserContent")
       sessionStorage.removeItem("currentAuthTokens")
+      delete axiosInstance.defaults.headers.common['Authorization']
     },
     async register_company(form: Record<string, string | boolean | number>): Promise<{
       company?: Company;
@@ -191,7 +208,7 @@ export const useAuthStore =  defineStore('AuthStore',{
       return data.data.sectors
 
     },
-    async getDefaultTaskTypes(sectorId: number): Promise<DefaultTaskType[]> {
+    async getDefaultTaskTypes(sectorId: string): Promise<DefaultTaskType[]> {
       try {
         const { data } = await axiosInstance.get<ApiResponse<{ tasktypes: DefaultTaskType[] }>>(
           `/default_task_type/${sectorId}/default-tasktypes/`
@@ -203,7 +220,7 @@ export const useAuthStore =  defineStore('AuthStore',{
         throw error
       }
     },
-    async createTaskType(form:Record<string,number[] | boolean | number |undefined>):Promise<{
+    async createTaskType(form:Record<string,string[] | boolean | string |undefined>):Promise<{
             created_task_types?:any[];
             errors?: Record<string, string[]>;
             message?: string;
@@ -236,19 +253,19 @@ export const useAuthStore =  defineStore('AuthStore',{
         };
       }
     },
-    async getDefaultDepartmentTypes(sectorId: number): Promise<DefaultTaskType[]> {
+    async getDefaultDepartmentTypes(sectorId: string): Promise<DefaultTaskType[]> {
       try {
-        const { data } = await axiosInstance.get<ApiResponse<{ Department_types: DefaultTaskType[] }>>(
+        const { data } = await axiosInstance.get<ApiResponse<{ department_types: DefaultTaskType[] }>>(
           `/department/${sectorId}/dept_types/`
         )
-        this.departments = data.data.Department_types
-        return data.data.Department_types
+        this.departments = data.data.department_types
+        return data.data.department_types
       } catch (error) {
         console.error('Failed to fetch default Department types:', error)
         throw error
       }
     },
-    async createDepartmentType(form:Record<string,number[] | boolean | number |undefined>):Promise<{
+    async createDepartmentType(form:Record<string,string[] | boolean | string |undefined>):Promise<{
             created_departments?:any[];
             errors?: Record<string, string[]>;
             message?: string;
