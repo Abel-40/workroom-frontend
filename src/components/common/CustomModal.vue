@@ -37,9 +37,9 @@ onBeforeUnmount(() => {
     <div class="min-w-[280px] max-h-[700px] overflow-y-auto bg-white  rounded-lg" @click.stop>
       <div class="flex justify-between px-3 py-4">
         <p class="font-semibold">{{ props.title }}</p>
-        <div class="w-5 h-5 bg-[#F4F9FD] flex justify-center items-center rounded-md">
-            <X @click="closeModal" class="w-4 h-4"/>
-        </div>
+        <button type="button" aria-label="Close" class="w-5 h-5 bg-[#F4F9FD] flex justify-center items-center rounded-md" @click="closeModal">
+            <X class="w-4 h-4"/>
+        </button>
         
       </div>
 
