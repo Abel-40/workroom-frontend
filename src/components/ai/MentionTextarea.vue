@@ -6,11 +6,14 @@
 // what was mentioned.
 import { computed, nextTick, ref } from "vue";
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
+import AiAvatar from "@/components/ai/AiAvatar.vue";
 
 export interface MentionItem {
   id: string;
   label: string;
   sublabel?: string;
+  icon?: string;
+  kind?: "project" | "member";
 }
 
 const props = withDefaults(
@@ -21,8 +24,9 @@ const props = withDefaults(
     projectItems?: MentionItem[];
     memberItems?: MentionItem[];
     membersEnabled?: boolean;
+    bare?: boolean;
   }>(),
-  { placeholder: "", rows: 4, projectItems: () => [], memberItems: () => [], membersEnabled: false }
+  { placeholder: "", rows: 4, projectItems: () => [], memberItems: () => [], membersEnabled: false, bare: false }
 );
 
 const emit = defineEmits<{
@@ -101,24 +105,34 @@ function onBlur() {
         :value="modelValue"
         :placeholder="placeholder"
         :rows="rows"
-        class="flex w-full resize-none rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-ink shadow-sm placeholder:text-subtle focus-visible:border-primary focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+        class="flex w-full resize-none text-sm text-ink placeholder:text-subtle focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+        :class="bare ? 'bg-transparent px-0 py-0' : 'rounded-xl border border-gray-200 bg-white px-3 py-2 shadow-sm focus-visible:border-primary'"
         @input="onInput"
         @keyup="detectMention"
         @click="detectMention"
         @blur="onBlur"
       />
     </PopoverAnchor>
-    <PopoverContent class="w-64 p-1" align="start" :avoid-collisions="true" @open-auto-focus.prevent>
-      <p v-if="mentionResults.length === 0" class="px-2 py-1.5 text-xs text-subtle">No matches</p>
+    <PopoverContent class="w-72 rounded-xl p-1.5 shadow-lg" align="start" :avoid-collisions="true" @open-auto-focus.prevent>
+      <p class="px-2 pb-1 pt-0.5 text-[11px] font-medium uppercase tracking-wide text-subtle">
+        {{ mentionMode === "member" ? "Mention a team member" : "Reference a project" }}
+      </p>
+      <p v-if="mentionResults.length === 0" class="px-2 py-2 text-xs text-subtle">No matches</p>
       <button
         v-for="item in mentionResults"
         :key="item.id"
         type="button"
-        class="flex w-full flex-col items-start rounded-lg px-2 py-1.5 text-left text-sm transition hover:bg-page"
+        class="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left text-sm transition hover:bg-page"
         @mousedown.prevent="pick(item)"
       >
-        <span class="font-medium text-ink">{{ item.label }}</span>
-        <span v-if="item.sublabel" class="text-xs text-subtle">{{ item.sublabel }}</span>
+        <AiAvatar v-if="mentionMode === 'member'" :name="item.label" :seed="item.id" />
+        <span v-else class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-page text-sm">
+          {{ item.icon || "📁" }}
+        </span>
+        <span class="min-w-0 flex-1">
+          <span class="block truncate font-medium text-ink">{{ item.label }}</span>
+          <span v-if="item.sublabel" class="block truncate text-xs text-subtle">{{ item.sublabel }}</span>
+        </span>
       </button>
     </PopoverContent>
   </Popover>
