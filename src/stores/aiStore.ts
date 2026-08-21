@@ -2,8 +2,26 @@ import { defineStore } from "pinia";
 import type { ApiResponse } from "@/types/types";
 import axiosInstance from "@/plugins/axios";
 import { createPollSignal, pollUntilTerminal, type PollSignal } from "@/lib/pollUntilTerminal";
+import { useProjectStore, type TaskApi } from "@/stores/projectStore";
 
 export type AiJobStatus = "pending" | "processing" | "completed" | "failed";
+
+export interface AiGeneratedTask {
+  id: string;
+  temporaryId: string;
+  sequence: number;
+  title: string;
+  description: string;
+  priority: "low" | "medium" | "high";
+  estimatedEffort: string;
+  dependencyTempIds: string[];
+  suggestedDepartmentId: string | null;
+  suggestedTaskTypeId: string | null;
+  assignedToId: string | null;
+  reviewerComment: string;
+  commentResolved: boolean;
+  createdTaskId: string | null;
+}
 
 export interface AiGeneration {
   id: string;
@@ -12,6 +30,21 @@ export interface AiGeneration {
   taskCount: number;
   requestedAt: string;
   completedAt: string | null;
+  savedAt: string | null;
+  errorMessage: string;
+  generatedTasks: AiGeneratedTask[];
+}
+
+export interface EligibleAssignee {
+  id: string;
+  name: string;
+  email: string;
+}
+
+export interface AiTaskRegeneration {
+  id: string;
+  taskId: string;
+  status: AiJobStatus;
   errorMessage: string;
 }
 
@@ -37,10 +70,20 @@ export interface AiHealthSummary {
   errorMessage: string;
 }
 
+type GeneratedTaskApi = {
+  id: string; temporary_id: string; sequence: number; title: string; description: string;
+  priority: "low" | "medium" | "high"; estimated_effort: string; dependency_temp_ids: string[];
+  suggested_department_id: string | null; suggested_task_type_id: string | null;
+  assigned_to_id: string | null; reviewer_comment: string; comment_resolved: boolean;
+  created_task_id: string | null;
+};
 type GenerationApi = {
   id: string; project_id: string; status: AiJobStatus; requested_at: string;
-  completed_at: string | null; task_count: number; error_message: string;
+  completed_at: string | null; saved_at: string | null; task_count: number; error_message: string;
+  generated_tasks?: GeneratedTaskApi[];
 };
+type EligibleAssigneeApi = { id: string; first_name: string; last_name: string; username: string; email: string };
+type TaskRegenerationApi = { id: string; task_id: string; status: AiJobStatus; error_message: string; task: TaskApi | null };
 type AssistantQueryApi = {
   id: string; project_id: string; question: string; reference_url: string | null; status: AiJobStatus;
   answer: string; refused: boolean; requested_at: string; error_message: string;
@@ -50,6 +93,23 @@ type HealthSummaryApi = {
   risk_level: "low" | "medium" | "high" | ""; requested_at: string; error_message: string;
 };
 
+const mapGeneratedTask = (api: GeneratedTaskApi): AiGeneratedTask => ({
+  id: api.id,
+  temporaryId: api.temporary_id,
+  sequence: api.sequence,
+  title: api.title,
+  description: api.description,
+  priority: api.priority,
+  estimatedEffort: api.estimated_effort,
+  dependencyTempIds: api.dependency_temp_ids,
+  suggestedDepartmentId: api.suggested_department_id,
+  suggestedTaskTypeId: api.suggested_task_type_id,
+  assignedToId: api.assigned_to_id,
+  reviewerComment: api.reviewer_comment,
+  commentResolved: api.comment_resolved,
+  createdTaskId: api.created_task_id,
+});
+
 const mapGeneration = (api: GenerationApi): AiGeneration => ({
   id: api.id,
   projectId: api.project_id,
@@ -57,7 +117,15 @@ const mapGeneration = (api: GenerationApi): AiGeneration => ({
   taskCount: api.task_count,
   requestedAt: api.requested_at,
   completedAt: api.completed_at,
+  savedAt: api.saved_at,
   errorMessage: api.error_message,
+  generatedTasks: (api.generated_tasks ?? []).map(mapGeneratedTask).sort((a, b) => a.sequence - b.sequence),
+});
+
+const mapEligibleAssignee = (api: EligibleAssigneeApi): EligibleAssignee => ({
+  id: api.id,
+  name: `${api.first_name} ${api.last_name}`.trim() || api.username,
+  email: api.email,
 });
 
 const mapAssistantQuery = (api: AssistantQueryApi): AiAssistantQuery => ({
@@ -97,14 +165,22 @@ export const useAiStore = defineStore("aiStore", {
     generationsByProject: {} as Record<string, AiGeneration[]>,
     assistantQueriesByProject: {} as Record<string, AiAssistantQuery[]>,
     healthSummariesByProject: {} as Record<string, AiHealthSummary[]>,
+    eligibleAssigneesByProject: {} as Record<string, EligibleAssignee[]>,
+    taskRegenerationsByTask: {} as Record<string, AiTaskRegeneration>,
     requestingPlan: false,
     askingAssistant: false,
     requestingHealthSummary: false,
+    regeneratingPlan: false,
   }),
   getters: {
     generationsFor: (state) => (projectId: string) => state.generationsByProject[projectId] || [],
     assistantQueriesFor: (state) => (projectId: string) => state.assistantQueriesByProject[projectId] || [],
     healthSummariesFor: (state) => (projectId: string) => state.healthSummariesByProject[projectId] || [],
+    eligibleAssigneesFor: (state) => (projectId: string) => state.eligibleAssigneesByProject[projectId] || [],
+    latestGenerationFor: (state) => (projectId: string) => state.generationsByProject[projectId]?.[0] ?? null,
+    hasSavedPlan: (state) => (projectId: string) =>
+      (state.generationsByProject[projectId] || []).some((g) => g.savedAt),
+    taskRegenerationFor: (state) => (taskId: string) => state.taskRegenerationsByTask[taskId] ?? null,
   },
   actions: {
     async fetchGenerations(projectId: string) {
@@ -118,11 +194,16 @@ export const useAiStore = defineStore("aiStore", {
       }
     },
 
-    async requestPlan(projectId: string, signal?: PollSignal): Promise<{ generation?: AiGeneration; error?: string }> {
+    async requestPlan(
+      projectId: string,
+      input: { prompt: string; mentionedUserIds?: string[] },
+      signal?: PollSignal
+    ): Promise<{ generation?: AiGeneration; error?: string }> {
       this.requestingPlan = true;
       try {
         const { data } = await axiosInstance.post<ApiResponse<{ generation: GenerationApi }>>(
-          `/projects/${projectId}/ai-plan/`
+          `/projects/${projectId}/ai-plan/`,
+          { prompt: input.prompt, mentioned_user_ids: input.mentionedUserIds || [] }
         );
         let generation = mapGeneration(data.data.generation);
         this.generationsByProject[projectId] = upsertById(this.generationsFor(projectId), generation);
@@ -141,6 +222,176 @@ export const useAiStore = defineStore("aiStore", {
         return { error: error.response?.data?.message || "Failed to request an AI plan" };
       } finally {
         this.requestingPlan = false;
+      }
+    },
+
+    // For a generation that's still pending/processing on mount (e.g. the
+    // user reloaded mid-generation) -- requestPlan/regeneratePlan only start
+    // a poll loop for a generation THEY just created, so without this an
+    // already-in-flight generation fetched via fetchGenerations would sit
+    // there with no active poll and never reach the frontend as terminal.
+    async resumePollingGeneration(generationId: string, projectId: string, signal?: PollSignal) {
+      await pollUntilTerminal(async () => {
+        const { data } = await axiosInstance.get<ApiResponse<{ generation: GenerationApi }>>(
+          `/ai/generations/${generationId}/`
+        );
+        const updated = mapGeneration(data.data.generation);
+        this.generationsByProject[projectId] = upsertById(this.generationsFor(projectId), updated);
+        return updated;
+      }, { signal });
+    },
+
+    // fetchGenerations() (the history list) deliberately omits each row's
+    // generated_tasks to avoid an N+1 fetch -- so a generation loaded that
+    // way (rather than just-created via requestPlan/regeneratePlan, whose
+    // poll loop already fetches full detail) needs this one-off full fetch
+    // before its tasks can be reviewed.
+    async fetchGeneration(generationId: string, projectId: string) {
+      try {
+        const { data } = await axiosInstance.get<ApiResponse<{ generation: GenerationApi }>>(
+          `/ai/generations/${generationId}/`
+        );
+        const updated = mapGeneration(data.data.generation);
+        this.generationsByProject[projectId] = upsertById(this.generationsFor(projectId), updated);
+      } catch (error) {
+        console.error("Failed to fetch generation detail:", error);
+      }
+    },
+
+    async commentOnGeneratedTask(
+      generationId: string, projectId: string, taskId: string, comment: string
+    ): Promise<{ error?: string }> {
+      try {
+        const { data } = await axiosInstance.patch<ApiResponse<{ generated_task: GeneratedTaskApi }>>(
+          `/ai/generations/${generationId}/tasks/${taskId}/comment/`,
+          { comment }
+        );
+        this._patchGeneratedTask(projectId, generationId, mapGeneratedTask(data.data.generated_task));
+        return {};
+      } catch (error: any) {
+        return { error: error.response?.data?.message || "Failed to save the comment" };
+      }
+    },
+
+    async assignGeneratedTask(
+      generationId: string, projectId: string, taskId: string, assignedToId: string | null
+    ): Promise<{ error?: string }> {
+      try {
+        const { data } = await axiosInstance.patch<ApiResponse<{ generated_task: GeneratedTaskApi }>>(
+          `/ai/generations/${generationId}/tasks/${taskId}/assign/`,
+          { assigned_to_id: assignedToId }
+        );
+        this._patchGeneratedTask(projectId, generationId, mapGeneratedTask(data.data.generated_task));
+        return {};
+      } catch (error: any) {
+        return { error: error.response?.data?.message || "Failed to save the assignee" };
+      }
+    },
+
+    _patchGeneratedTask(projectId: string, generationId: string, updatedTask: AiGeneratedTask) {
+      const list = this.generationsFor(projectId);
+      const generation = list.find((g) => g.id === generationId);
+      if (!generation) return;
+      const patched: AiGeneration = {
+        ...generation,
+        generatedTasks: generation.generatedTasks.map((t) => (t.id === updatedTask.id ? updatedTask : t)),
+      };
+      this.generationsByProject[projectId] = upsertById(list, patched);
+    },
+
+    async regeneratePlan(
+      generationId: string, projectId: string, signal?: PollSignal
+    ): Promise<{ generation?: AiGeneration; error?: string }> {
+      this.regeneratingPlan = true;
+      try {
+        const { data } = await axiosInstance.post<ApiResponse<{ generation: GenerationApi }>>(
+          `/ai/generations/${generationId}/regenerate/`
+        );
+        let generation = mapGeneration(data.data.generation);
+        this.generationsByProject[projectId] = upsertById(this.generationsFor(projectId), generation);
+
+        generation = await pollUntilTerminal(async () => {
+          const { data } = await axiosInstance.get<ApiResponse<{ generation: GenerationApi }>>(
+            `/ai/generations/${generation.id}/`
+          );
+          const updated = mapGeneration(data.data.generation);
+          this.generationsByProject[projectId] = upsertById(this.generationsFor(projectId), updated);
+          return updated;
+        }, { signal });
+
+        return { generation };
+      } catch (error: any) {
+        return { error: error.response?.data?.message || "Failed to regenerate the plan" };
+      } finally {
+        this.regeneratingPlan = false;
+      }
+    },
+
+    async savePlan(
+      generationId: string, projectId: string
+    ): Promise<{ error?: string; invalidAssigneeTempIds?: string[] }> {
+      try {
+        const { data } = await axiosInstance.post<
+          ApiResponse<{ tasks: TaskApi[]; invalid_assignee_temp_ids: string[] }>
+        >(`/ai/generations/${generationId}/save/`);
+
+        const projectStore = useProjectStore();
+        projectStore.appendTasks(projectId, data.data.tasks);
+
+        const list = this.generationsFor(projectId);
+        const generation = list.find((g) => g.id === generationId);
+        if (generation) {
+          this.generationsByProject[projectId] = upsertById(list, { ...generation, savedAt: new Date().toISOString() });
+        }
+        return { invalidAssigneeTempIds: data.data.invalid_assignee_temp_ids };
+      } catch (error: any) {
+        return { error: error.response?.data?.message || "Failed to save the plan" };
+      }
+    },
+
+    async fetchEligibleAssignees(projectId: string) {
+      try {
+        const { data } = await axiosInstance.get<ApiResponse<{ results: EligibleAssigneeApi[] }>>(
+          `/projects/${projectId}/eligible-assignees/`
+        );
+        this.eligibleAssigneesByProject[projectId] = data.data.results.map(mapEligibleAssignee);
+      } catch (error) {
+        console.error("Failed to fetch eligible assignees:", error);
+      }
+    },
+
+    async regenerateTaskDescription(
+      taskId: string, instructions: string, signal?: PollSignal
+    ): Promise<{ error?: string }> {
+      try {
+        const { data } = await axiosInstance.post<ApiResponse<{ task_regeneration: TaskRegenerationApi }>>(
+          `/tasks/${taskId}/regenerate-ai-content/`,
+          { instructions }
+        );
+        let regen = data.data.task_regeneration;
+        this.taskRegenerationsByTask[taskId] = {
+          id: regen.id, taskId, status: regen.status, errorMessage: regen.error_message,
+        };
+
+        const projectStore = useProjectStore();
+        regen = await pollUntilTerminal(async () => {
+          const { data } = await axiosInstance.get<ApiResponse<{ task_regeneration: TaskRegenerationApi }>>(
+            `/ai/task-regenerations/${regen.id}/`
+          );
+          const updated = data.data.task_regeneration;
+          this.taskRegenerationsByTask[taskId] = {
+            id: updated.id, taskId, status: updated.status, errorMessage: updated.error_message,
+          };
+          if (updated.status === "completed" && updated.task) {
+            projectStore.applyTaskApiUpdate(updated.task);
+          }
+          return updated;
+        }, { signal });
+
+        if (regen.status === "failed") return { error: regen.error_message || "Failed to regenerate task content" };
+        return {};
+      } catch (error: any) {
+        return { error: error.response?.data?.message || "Failed to regenerate task content" };
       }
     },
 

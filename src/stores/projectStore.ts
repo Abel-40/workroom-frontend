@@ -104,7 +104,7 @@ export interface UpdateProjectInput {
   collaboratorIds?: string[];
 }
 
-type TaskApi = {
+export type TaskApi = {
   id: string;
   project_id: string;
   department_id: string | null;
@@ -318,6 +318,12 @@ export const useProjectStore = defineStore("projectStore", {
       project.task.active = tasks.filter((t) => t.status !== "Done").length;
     },
 
+    // For callers (e.g. aiStore's task-content regeneration poll) that only
+    // have the raw API task shape and shouldn't need to know about mapTask.
+    applyTaskApiUpdate(taskApi: TaskApi) {
+      this._applyUpdatedTask(mapTask(taskApi));
+    },
+
     _applyUpdatedTask(updated: TaskType) {
       const project = this.findProject(updated.projectId);
       const task = project?.task.tasks?.find((t) => t.id === updated.id);
@@ -372,6 +378,17 @@ export const useProjectStore = defineStore("projectStore", {
           errors: error.response?.data?.errors || { title: [error.response?.data?.message || "Failed to create task"] },
         };
       }
+    },
+
+    // Inserts already-created tasks (e.g. from an AI plan save) into the
+    // matching project's in-memory task list without a refetch -- mirrors
+    // what createTask does for a single task, just for a batch.
+    appendTasks(projectId: string, tasksApi: TaskApi[]) {
+      const project = this.findProject(projectId);
+      if (!project) return;
+      if (!project.task.tasks) project.task.tasks = [];
+      project.task.tasks.push(...tasksApi.map(mapTask));
+      this._syncTaskCounts(project);
     },
 
     async updateTask(taskId: string, patch: UpdateTaskInput): Promise<{ task?: TaskType; error?: string }> {
