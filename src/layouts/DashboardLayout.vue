@@ -10,6 +10,8 @@ import InfoPortalView from '@/views/Dashboard/InfoPortalView.vue'
 import MessengerView from '@/views/Dashboard/MessengerView.vue'
 import MyProfileView from '@/views/Dashboard/MyProfileView.vue'
 import SettingsView from '@/views/Dashboard/SettingsView.vue'
+import AiWorkspaceView from '@/views/Dashboard/AiWorkspaceView.vue'
+import AiFloatingButton from '@/components/ai/AiFloatingButton.vue'
 import {useRoute} from "vue-router"
 import {computed} from "vue"
 const route = useRoute()
@@ -25,6 +27,7 @@ const showSection = computed(() => {
   if(section === 'messenger') return MessengerView
   if(section === 'profile') return MyProfileView
   if(section === 'settings') return SettingsView
+  if(section === 'ai-workspace') return AiWorkspaceView
   return null
 })
 </script>
@@ -33,8 +36,9 @@ const showSection = computed(() => {
     <div class="flex flex-col md:flex-row pl-4 pt-3 ml-64">
       <Sidebar class="w-64 fixed left-4 top-3 h-3/4 z-50"/>
       <component :is="showSection" v-if="showSection"/>
-      
+
       <router-view v-else/>
     </div>
+    <AiFloatingButton />
   </div>
 </template>

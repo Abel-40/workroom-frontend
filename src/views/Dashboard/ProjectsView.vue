@@ -25,7 +25,6 @@ import TaskInfoSidebar from "@/components/projects/TaskInfoSidebar.vue";
 import EmptyTasksState from "@/components/projects/EmptyTasksState.vue";
 import AddTaskModal from "@/components/projects/AddTaskModal.vue";
 import CreateProjectModal from "@/components/projects/CreateProjectModal.vue";
-import AiToolsPanel from "@/components/projects/AiToolsPanel.vue";
 import ProjectImage from "@/components/projects/ProjectImage.vue";
 import { useToast } from "@/components/ui/toast/use-toast";
 import { useProjectStore } from "@/stores/projectStore";
@@ -51,6 +50,7 @@ import {
 const { onOpen, isOpen } = filterComposables();
 
 const router = useRouter();
+const route = useRoute();
 const { toast } = useToast();
 const projectsStore = useProjectStore();
 const employeeStore = useEmployeeStore();
@@ -65,7 +65,6 @@ const onClick = (project: Project) => {
 
 const isAddTaskOpen = ref(false);
 const isAddProjectOpen = ref(false);
-const isAiToolsOpen = ref(false);
 const isEditingProject = ref(false);
 
 // Set when the AI panel's "View generated tasks" action is used -- switches
@@ -233,6 +232,9 @@ onMounted(async ()=>{
   if (!directoryStore.loaded) await directoryStore.fetchAll();
   await projectsStore.fetchProjects();
   selectedProject.value = paginatedProjects.value[0]
+  // Reached from the AI workspace's "View tasks in backlog" link -- show
+  // the board filtered to just this project's AI-generated tasks.
+  if (route.query.aiGenerated === "true") onViewGeneratedTasks();
 })
 // Update whenever a new project is added -- createProject unshifts the
 // newest project to the front of the list.
@@ -822,14 +824,6 @@ watch(()=>paginatedProjects.value,()=>{
                   <div class="mt-6 flex gap-2">
                     <button
                       type="button"
-                      class="w-9 h-9 bg-primary/10 rounded-full flex items-center justify-center cursor-pointer"
-                      title="AI Tools"
-                      @click="isAiToolsOpen = true"
-                    >
-                      <Sparkles class="w-4 h-4 text-primary" />
-                    </button>
-                    <button
-                      type="button"
                       class="w-9 h-9 bg-red-100 rounded-full flex items-center justify-center cursor-pointer disabled:opacity-50"
                       title="Archive project"
                       :disabled="archiving"
@@ -1023,10 +1017,4 @@ watch(()=>paginatedProjects.value,()=>{
     :project-id="selectedProject.id"
   />
   <CreateProjectModal v-model:open="isAddProjectOpen" />
-  <AiToolsPanel
-    v-if="selectedProject"
-    v-model:open="isAiToolsOpen"
-    :project-id="selectedProject.id"
-    @view-generated-tasks="onViewGeneratedTasks"
-  />
 </template>

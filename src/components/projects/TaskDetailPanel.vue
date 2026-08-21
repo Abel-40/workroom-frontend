@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from "vue";
-import { Check, Pencil, Trash2, X } from "lucide-vue-next";
+import { Check, Pencil, Sparkles, Trash2, X } from "lucide-vue-next";
 import TaskStatusPill from "@/components/cards/TaskStatusPill.vue";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -15,8 +15,10 @@ import {
 import { useAuthStore } from "@/stores/authStore";
 import { useDirectoryStore } from "@/stores/directoryStore";
 import { useProjectStore } from "@/stores/projectStore";
+import { useAiStore } from "@/stores/aiStore";
 import { useToast } from "@/components/ui/toast/use-toast";
 import { formatHoursToDuration, parseDurationToMinutes } from "@/lib/duration";
+import { createPollSignal, type PollSignal } from "@/lib/pollUntilTerminal";
 import type { TaskType } from "@/types/types";
 
 const props = defineProps<{
@@ -30,6 +32,7 @@ const emit = defineEmits<{
 const authStore = useAuthStore();
 const directoryStore = useDirectoryStore();
 const projectsStore = useProjectStore();
+const aiStore = useAiStore();
 const { toast } = useToast();
 const archiving = ref(false);
 
@@ -110,6 +113,21 @@ const archiveTask = async () => {
   }
   emit("close");
 };
+
+// Regenerating a saved AI-generated task's description never changes
+// creator/assignee/project -- the API contract for this call simply doesn't
+// accept those fields, so there's nothing here that could touch them.
+let regenSignal: PollSignal | null = null;
+const regeneration = computed(() => aiStore.taskRegenerationFor(props.task.id));
+const regenerating = computed(() => {
+  const status = regeneration.value?.status;
+  return status === "pending" || status === "processing";
+});
+const regenerateAiContent = async () => {
+  regenSignal = createPollSignal();
+  const { error } = await aiStore.regenerateTaskDescription(props.task.id, "", regenSignal);
+  if (error) toast({ title: "Regeneration failed", description: error, variant: "destructive" });
+};
 </script>
 
 <template>
@@ -117,6 +135,16 @@ const archiveTask = async () => {
     <div class="mb-4 flex items-center justify-between">
       <h3 class="text-sm font-semibold text-ink">Task Details</h3>
       <div class="flex items-center gap-2">
+        <button
+          v-if="canEdit && task.source === 'ai_generated'"
+          type="button"
+          class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:border-primary/40 disabled:opacity-50"
+          title="Regenerate AI content"
+          :disabled="regenerating"
+          @click="regenerateAiContent"
+        >
+          <Sparkles class="h-3.5 w-3.5" :class="{ 'animate-pulse text-primary': regenerating }" />
+        </button>
         <button
           v-if="canEdit"
           type="button"
