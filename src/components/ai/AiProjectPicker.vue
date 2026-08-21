@@ -39,10 +39,13 @@ function pick(project: Project) {
     <PopoverTrigger as-child>
       <button
         type="button"
-        class="flex w-full items-center justify-between gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-ink shadow-sm hover:border-primary/40"
+        class="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white py-1.5 pl-3 pr-2.5 text-sm text-ink shadow-sm transition hover:border-primary/40"
       >
-        <span :class="selected ? 'text-ink' : 'text-subtle'">{{ selected?.title || "Select a project…" }}</span>
-        <ChevronsUpDown class="h-4 w-4 shrink-0 text-subtle" />
+        <span class="text-[11px] font-medium uppercase tracking-wide text-subtle">Project</span>
+        <span class="max-w-[14rem] truncate font-medium" :class="selected ? 'text-ink' : 'text-subtle'">
+          {{ selected?.title || "Select…" }}
+        </span>
+        <ChevronsUpDown class="h-3.5 w-3.5 shrink-0 text-subtle" />
       </button>
     </PopoverTrigger>
     <PopoverContent class="w-[--reka-popover-trigger-width] p-0" align="start">
