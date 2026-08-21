@@ -39,10 +39,10 @@ const onClick = ()=>{
 </script>
 <template>
   <div class="w-full flex justify-between items-center p-4 gap-5 bg-white rounded-3xl border border-gray-200 shadow-sm cursor-pointer" @click="onClick">
-    <div class="min-w-[20%]">
-      <div class="flex flex-col gap-3 justify-center ">
+    <div class="min-w-[20%] max-w-[28%]">
+      <div class="flex min-w-0 flex-col gap-3 justify-center ">
         <p class="text-sm text-left whitespace-nowrap text-[#91929E]">Task Name</P>
-        <p class="whitespace-nowrap">{{props.Task.title}}</p>
+        <p class="line-clamp-2 break-words" :title="props.Task.title">{{props.Task.title}}</p>
       </div>
     </div>
     <!-- left side properties -->
