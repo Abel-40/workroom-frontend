@@ -13,6 +13,8 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 import { useToast } from "@/components/ui/toast/use-toast";
 import { useAiStore, type AiGeneratedTask, type EligibleAssignee } from "@/stores/aiStore";
 import { useDirectoryStore } from "@/stores/directoryStore";
+import { priorityBadgeClass } from "@/lib/aiBadges";
+import AiAvatar from "@/components/ai/AiAvatar.vue";
 
 const props = defineProps<{
   task: AiGeneratedTask | null;
@@ -21,6 +23,7 @@ const props = defineProps<{
   allTasks: AiGeneratedTask[];
   eligibleAssignees: EligibleAssignee[];
   readOnly: boolean;
+  generationPrompt: string;
 }>();
 
 const open = defineModel<boolean>("open", { required: true });
@@ -48,6 +51,19 @@ const dependencyTitles = computed(() => {
     .map((tempId) => props.allTasks.find((t) => t.temporaryId === tempId)?.title)
     .filter((title): title is string => !!title);
 });
+
+const stepLabel = computed(() => {
+  if (!props.task) return "";
+  const index = props.allTasks.findIndex((t) => t.id === props.task!.id);
+  return index >= 0 ? `Step ${index + 1} of ${props.allTasks.length}` : "";
+});
+const promptExcerpt = computed(() => {
+  const prompt = props.generationPrompt?.trim();
+  if (!prompt) return "";
+  return prompt.length > 160 ? `${prompt.slice(0, 160)}…` : prompt;
+});
+
+const selectedAssignee = computed(() => props.eligibleAssignees.find((a) => a.id === props.task?.assignedToId) ?? null);
 
 const departmentName = computed(
   () => directoryStore.departments.find((d) => d.id === props.task?.suggestedDepartmentId)?.name ?? null
@@ -79,21 +95,17 @@ const saveComment = async () => {
   if (error) toast({ title: "Comment not saved", description: error, variant: "destructive" });
 };
 
-const priorityBadge = (priority: string) => {
-  switch (priority) {
-    case "high": return "bg-red-100 text-red-600";
-    case "low": return "bg-emerald-100 text-emerald-600";
-    default: return "bg-amber-100 text-amber-600";
-  }
-};
 </script>
 
 <template>
   <CustomModal v-model:open="open" title="Review Generated Task">
     <div v-if="task" class="w-[380px] space-y-4 p-3">
       <div class="flex items-start justify-between gap-2">
-        <h4 class="text-base font-semibold text-ink">{{ task.title }}</h4>
-        <span class="shrink-0 rounded-full px-2 py-0.5 text-xs font-medium capitalize" :class="priorityBadge(task.priority)">
+        <div>
+          <p v-if="stepLabel" class="text-xs font-medium text-subtle">{{ stepLabel }}</p>
+          <h4 class="text-base font-semibold text-ink">{{ task.title }}</h4>
+        </div>
+        <span class="shrink-0 rounded-full px-2 py-0.5 text-xs font-medium capitalize" :class="priorityBadgeClass(task.priority)">
           {{ task.priority }}
         </span>
       </div>
@@ -101,6 +113,11 @@ const priorityBadge = (priority: string) => {
       <p class="whitespace-pre-line text-sm leading-relaxed text-subtle">
         {{ task.description || "No description generated." }}
       </p>
+
+      <div v-if="promptExcerpt" class="rounded-xl border border-primary/10 bg-primary/5 p-3 text-xs">
+        <p class="mb-0.5 font-medium text-primary">Generated from your request</p>
+        <p class="italic text-ink/70">"{{ promptExcerpt }}"</p>
+      </div>
 
       <div class="grid grid-cols-2 gap-3 text-sm">
         <div v-if="task.estimatedEffort">
@@ -127,12 +144,26 @@ const priorityBadge = (priority: string) => {
       <div class="space-y-1">
         <p class="text-xs font-medium text-subtle">Assignee</p>
         <Select v-model="assigneeValue" :disabled="readOnly || savingAssignee">
-          <SelectTrigger class="rounded-xl"><SelectValue /></SelectTrigger>
+          <SelectTrigger class="rounded-xl">
+            <span v-if="selectedAssignee" class="flex items-center gap-2">
+              <AiAvatar :name="selectedAssignee.name" :seed="selectedAssignee.id" />
+              {{ selectedAssignee.name }}
+            </span>
+            <SelectValue v-else placeholder="Unassigned" />
+          </SelectTrigger>
           <SelectContent>
             <SelectGroup>
               <SelectItem :value="NONE">Unassigned</SelectItem>
               <SelectItem v-for="person in eligibleAssignees" :key="person.id" :value="person.id">
-                {{ person.name }}
+                <span class="flex items-center gap-2">
+                  <AiAvatar :name="person.name" :seed="person.id" />
+                  <span>
+                    {{ person.name }}
+                    <span v-if="person.roleLabel || person.department" class="text-xs text-subtle">
+                      · {{ [person.roleLabel, person.department].filter(Boolean).join(" · ") }}
+                    </span>
+                  </span>
+                </span>
               </SelectItem>
             </SelectGroup>
           </SelectContent>
