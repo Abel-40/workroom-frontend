@@ -32,13 +32,26 @@ export interface AiGeneration {
   completedAt: string | null;
   savedAt: string | null;
   errorMessage: string;
+  prompt: string;
   generatedTasks: AiGeneratedTask[];
 }
+
+export type EligibleAssigneeRole = "Owner" | "CM" | "DL" | "DM";
+
+export const ROLE_LABELS: Record<EligibleAssigneeRole, string> = {
+  Owner: "Owner",
+  CM: "Company Manager",
+  DL: "Department Leader",
+  DM: "Department Member",
+};
 
 export interface EligibleAssignee {
   id: string;
   name: string;
   email: string;
+  role: EligibleAssigneeRole | null;
+  roleLabel: string | null;
+  department: string | null;
 }
 
 export interface AiTaskRegeneration {
@@ -80,9 +93,12 @@ type GeneratedTaskApi = {
 type GenerationApi = {
   id: string; project_id: string; status: AiJobStatus; requested_at: string;
   completed_at: string | null; saved_at: string | null; task_count: number; error_message: string;
-  generated_tasks?: GeneratedTaskApi[];
+  prompt: string; generated_tasks?: GeneratedTaskApi[];
 };
-type EligibleAssigneeApi = { id: string; first_name: string; last_name: string; username: string; email: string };
+type EligibleAssigneeApi = {
+  id: string; first_name: string; last_name: string; username: string; email: string;
+  role: EligibleAssigneeRole | null; department: string | null;
+};
 type TaskRegenerationApi = { id: string; task_id: string; status: AiJobStatus; error_message: string; task: TaskApi | null };
 type AssistantQueryApi = {
   id: string; project_id: string; question: string; reference_url: string | null; status: AiJobStatus;
@@ -119,6 +135,7 @@ const mapGeneration = (api: GenerationApi): AiGeneration => ({
   completedAt: api.completed_at,
   savedAt: api.saved_at,
   errorMessage: api.error_message,
+  prompt: api.prompt,
   generatedTasks: (api.generated_tasks ?? []).map(mapGeneratedTask).sort((a, b) => a.sequence - b.sequence),
 });
 
@@ -126,6 +143,9 @@ const mapEligibleAssignee = (api: EligibleAssigneeApi): EligibleAssignee => ({
   id: api.id,
   name: `${api.first_name} ${api.last_name}`.trim() || api.username,
   email: api.email,
+  role: api.role,
+  roleLabel: api.role ? ROLE_LABELS[api.role] : null,
+  department: api.department,
 });
 
 const mapAssistantQuery = (api: AssistantQueryApi): AiAssistantQuery => ({

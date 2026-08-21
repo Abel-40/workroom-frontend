@@ -50,6 +50,36 @@ const PRIORITY_COLOR: Record<ProjectApi["priority"], string> = {
   low: "green",
 };
 
+// Mirrors analytics/services.py::get_project_stats' return shape exactly --
+// real, already-computed numbers only, used to give the AI Health Check
+// panel a structured basis instead of relying solely on the AI's free text.
+export interface ProjectStats {
+  totalTasks: number;
+  completedTasks: number;
+  inProgressTasks: number;
+  todoTasks: number;
+  inReviewTasks: number;
+  overdueTasks: number;
+  unassignedTasks: number;
+  completionPercent: number;
+}
+
+type ProjectStatsApi = {
+  total_tasks: number; completed_tasks: number; in_progress_tasks: number; todo_tasks: number;
+  in_review_tasks: number; overdue_tasks: number; unassigned_tasks: number; completion_percent: number;
+};
+
+const mapProjectStats = (api: ProjectStatsApi): ProjectStats => ({
+  totalTasks: api.total_tasks,
+  completedTasks: api.completed_tasks,
+  inProgressTasks: api.in_progress_tasks,
+  todoTasks: api.todo_tasks,
+  inReviewTasks: api.in_review_tasks,
+  overdueTasks: api.overdue_tasks,
+  unassignedTasks: api.unassigned_tasks,
+  completionPercent: api.completion_percent,
+});
+
 function mapProject(api: ProjectApi): Project {
   const employeeStore = useEmployeeStore();
   const creator = employeeStore.employees.find((e) => e.id === api.created_by);
@@ -176,11 +206,13 @@ export const useProjectStore = defineStore("projectStore", {
     selectedProject: null as Project | null,
     showDetial: false as boolean,
     selectedTask: null as TaskType | null,
+    statsByProject: {} as Record<string, ProjectStats>,
   }),
   getters: {
     getSelectedState(state) {
       return state.projects[0];
     },
+    statsFor: (state) => (projectId: string) => state.statsByProject[projectId] ?? null,
   },
   actions: {
     async fetchProjects() {
@@ -389,6 +421,19 @@ export const useProjectStore = defineStore("projectStore", {
       if (!project.task.tasks) project.task.tasks = [];
       project.task.tasks.push(...tasksApi.map(mapTask));
       this._syncTaskCounts(project);
+    },
+
+    // Real, already-computed task-status breakdown for a project -- powers
+    // the AI Health Check panel's stat cards (see analytics/services.py
+    // ::get_project_stats, the same function the AI health summary itself
+    // is generated from).
+    async fetchProjectStats(projectId: string) {
+      try {
+        const { data } = await axiosInstance.get<ApiResponse<ProjectStatsApi>>(`/analytics/projects/${projectId}/`);
+        this.statsByProject[projectId] = mapProjectStats(data.data);
+      } catch (error) {
+        console.error("Failed to fetch project stats:", error);
+      }
     },
 
     async updateTask(taskId: string, patch: UpdateTaskInput): Promise<{ task?: TaskType; error?: string }> {
