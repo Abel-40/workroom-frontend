@@ -33,6 +33,7 @@ const emit = defineEmits<{
   (e: "update:modelValue", value: string): void;
   (e: "mention-project", item: MentionItem): void;
   (e: "mention-member", item: MentionItem): void;
+  (e: "submit"): void;
 }>();
 
 const textareaEl = ref<HTMLTextAreaElement | null>(null);
@@ -95,6 +96,15 @@ function onBlur() {
     mentionMode.value = null;
   }, 150);
 }
+
+// Mention suggestions are picked with the mouse only (see @mousedown.prevent
+// above), so Enter always means "submit" here, never "accept suggestion".
+function onKeydown(event: KeyboardEvent) {
+  if (event.key === "Enter" && !event.shiftKey) {
+    event.preventDefault();
+    emit("submit");
+  }
+}
 </script>
 
 <template>
@@ -109,6 +119,7 @@ function onBlur() {
         :class="bare ? 'bg-transparent px-0 py-0' : 'rounded-xl border border-gray-200 bg-white px-3 py-2 shadow-sm focus-visible:border-primary'"
         @input="onInput"
         @keyup="detectMention"
+        @keydown="onKeydown"
         @click="detectMention"
         @blur="onBlur"
       />

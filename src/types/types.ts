@@ -145,6 +145,8 @@ export interface Project {
   createdById?: string | null;
   currentOwnerId?: string | null;
   currentOwnerName?: string | null;
+  hasSavedPlan?: boolean;
+  updatedAt?: string;
 }
 
 export type Departments = Department[];

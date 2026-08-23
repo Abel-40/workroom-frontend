@@ -17,6 +17,7 @@ export interface AiGeneratedTask {
   dependencyTempIds: string[];
   suggestedDepartmentId: string | null;
   suggestedTaskTypeId: string | null;
+  suggestedAssigneeId: string | null;
   assignedToId: string | null;
   reviewerComment: string;
   commentResolved: boolean;
@@ -28,6 +29,8 @@ export interface AiGeneration {
   projectId: string;
   status: AiJobStatus;
   taskCount: number;
+  maxTasks: number | null;
+  requestedAssigneeIds: string[];
   requestedAt: string;
   completedAt: string | null;
   savedAt: string | null;
@@ -61,6 +64,12 @@ export interface AiTaskRegeneration {
   errorMessage: string;
 }
 
+export interface AiAssistantQueryPage {
+  id: string;
+  title: string;
+  folderName: string;
+}
+
 export interface AiAssistantQuery {
   id: string;
   projectId: string;
@@ -71,6 +80,7 @@ export interface AiAssistantQuery {
   refused: boolean;
   requestedAt: string;
   errorMessage: string;
+  pages: AiAssistantQueryPage[];
 }
 
 export interface AiHealthSummary {
@@ -87,12 +97,14 @@ type GeneratedTaskApi = {
   id: string; temporary_id: string; sequence: number; title: string; description: string;
   priority: "low" | "medium" | "high"; estimated_effort: string; dependency_temp_ids: string[];
   suggested_department_id: string | null; suggested_task_type_id: string | null;
+  suggested_assignee_id: string | null;
   assigned_to_id: string | null; reviewer_comment: string; comment_resolved: boolean;
   created_task_id: string | null;
 };
 type GenerationApi = {
   id: string; project_id: string; status: AiJobStatus; requested_at: string;
-  completed_at: string | null; saved_at: string | null; task_count: number; error_message: string;
+  completed_at: string | null; saved_at: string | null; task_count: number;
+  max_tasks: number | null; requested_assignee_ids: string[]; error_message: string;
   prompt: string; generated_tasks?: GeneratedTaskApi[];
 };
 type EligibleAssigneeApi = {
@@ -100,9 +112,11 @@ type EligibleAssigneeApi = {
   role: EligibleAssigneeRole | null; department: string | null;
 };
 type TaskRegenerationApi = { id: string; task_id: string; status: AiJobStatus; error_message: string; task: TaskApi | null };
+type AssistantQueryPageApi = { id: string; title: string; folder_name: string };
 type AssistantQueryApi = {
   id: string; project_id: string; question: string; reference_url: string | null; status: AiJobStatus;
   answer: string; refused: boolean; requested_at: string; error_message: string;
+  pages: AssistantQueryPageApi[];
 };
 type HealthSummaryApi = {
   id: string; project_id: string; status: AiJobStatus; summary: string;
@@ -120,6 +134,7 @@ const mapGeneratedTask = (api: GeneratedTaskApi): AiGeneratedTask => ({
   dependencyTempIds: api.dependency_temp_ids,
   suggestedDepartmentId: api.suggested_department_id,
   suggestedTaskTypeId: api.suggested_task_type_id,
+  suggestedAssigneeId: api.suggested_assignee_id,
   assignedToId: api.assigned_to_id,
   reviewerComment: api.reviewer_comment,
   commentResolved: api.comment_resolved,
@@ -131,6 +146,8 @@ const mapGeneration = (api: GenerationApi): AiGeneration => ({
   projectId: api.project_id,
   status: api.status,
   taskCount: api.task_count,
+  maxTasks: api.max_tasks,
+  requestedAssigneeIds: api.requested_assignee_ids,
   requestedAt: api.requested_at,
   completedAt: api.completed_at,
   savedAt: api.saved_at,
@@ -158,6 +175,7 @@ const mapAssistantQuery = (api: AssistantQueryApi): AiAssistantQuery => ({
   refused: api.refused,
   requestedAt: api.requested_at,
   errorMessage: api.error_message,
+  pages: (api.pages ?? []).map((p) => ({ id: p.id, title: p.title, folderName: p.folder_name })),
 });
 
 const mapHealthSummary = (api: HealthSummaryApi): AiHealthSummary => ({
@@ -216,14 +234,17 @@ export const useAiStore = defineStore("aiStore", {
 
     async requestPlan(
       projectId: string,
-      input: { prompt: string; mentionedUserIds?: string[] },
+      input: { prompt: string; mentionedUserIds?: string[]; assigneeIds?: string[]; maxTasks?: number },
       signal?: PollSignal
     ): Promise<{ generation?: AiGeneration; error?: string }> {
       this.requestingPlan = true;
       try {
         const { data } = await axiosInstance.post<ApiResponse<{ generation: GenerationApi }>>(
           `/projects/${projectId}/ai-plan/`,
-          { prompt: input.prompt, mentioned_user_ids: input.mentionedUserIds || [] }
+          {
+            prompt: input.prompt, mentioned_user_ids: input.mentionedUserIds || [],
+            assignee_ids: input.assigneeIds || [], max_tasks: input.maxTasks ?? 10,
+          }
         );
         let generation = mapGeneration(data.data.generation);
         this.generationsByProject[projectId] = upsertById(this.generationsFor(projectId), generation);
@@ -369,6 +390,19 @@ export const useAiStore = defineStore("aiStore", {
       }
     },
 
+    // Persists the "New plan" / discard-draft action server-side, so the
+    // abandoned draft stops coming back as this project's latest generation
+    // after a refresh (it's excluded from /ai-generations/ once discarded).
+    async discardGeneration(generationId: string, projectId: string): Promise<{ error?: string }> {
+      try {
+        await axiosInstance.post(`/ai/generations/${generationId}/discard/`);
+        this.generationsByProject[projectId] = this.generationsFor(projectId).filter((g) => g.id !== generationId);
+        return {};
+      } catch (error: any) {
+        return { error: error.response?.data?.message || "Failed to discard the draft plan" };
+      }
+    },
+
     async fetchEligibleAssignees(projectId: string) {
       try {
         const { data } = await axiosInstance.get<ApiResponse<{ results: EligibleAssigneeApi[] }>>(
@@ -428,14 +462,14 @@ export const useAiStore = defineStore("aiStore", {
 
     async askAssistant(
       projectId: string,
-      input: { question: string; referenceUrl?: string },
+      input: { question: string; referenceUrl?: string; pageIds?: string[] },
       signal?: PollSignal
     ): Promise<{ query?: AiAssistantQuery; error?: string }> {
       this.askingAssistant = true;
       try {
         const { data } = await axiosInstance.post<ApiResponse<{ assistant_query: AssistantQueryApi }>>(
           `/projects/${projectId}/ai-assistant/`,
-          { question: input.question, reference_url: input.referenceUrl || undefined }
+          { question: input.question, reference_url: input.referenceUrl || undefined, page_ids: input.pageIds || [] }
         );
         let query = mapAssistantQuery(data.data.assistant_query);
         this.assistantQueriesByProject[projectId] = upsertById(this.assistantQueriesFor(projectId), query);
@@ -491,6 +525,38 @@ export const useAiStore = defineStore("aiStore", {
         return { error: error.response?.data?.message || "Failed to request a health summary" };
       } finally {
         this.requestingHealthSummary = false;
+      }
+    },
+
+    async saveAssistantQueryAsPage(
+      queryId: string, input: { title: string; folderId?: string; newFolderName?: string }
+    ): Promise<{ pageId?: string; error?: string }> {
+      try {
+        const { data } = await axiosInstance.post<ApiResponse<{ page: { id: string; folder_id: string; title: string } }>>(
+          `/ai/assistant-queries/${queryId}/save-as-page/`,
+          { title: input.title, folder_id: input.folderId, new_folder_name: input.newFolderName }
+        );
+        return { pageId: data.data.page.id };
+      } catch (error: any) {
+        return { error: error.response?.data?.message || "Failed to save this response as a page" };
+      }
+    },
+
+    // Downloads the .xlsx workbook and hands the caller a blob URL to open/
+    // save -- no full-page navigation (no window.location to the endpoint).
+    async exportHealthReport(projectId: string, summaryId: string): Promise<{ url?: string; filename?: string; error?: string }> {
+      try {
+        const response = await axiosInstance.get(
+          `/projects/${projectId}/ai-health-summary/${summaryId}/export/`,
+          { responseType: "blob" }
+        );
+        const disposition: string = response.headers["content-disposition"] || "";
+        const match = /filename="?([^"]+)"?/.exec(disposition);
+        const filename = match?.[1] || "health-report.xlsx";
+        const url = URL.createObjectURL(response.data);
+        return { url, filename };
+      } catch (error: any) {
+        return { error: error.response?.data?.message || "Failed to export the health report" };
       }
     },
   },

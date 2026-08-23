@@ -29,6 +29,7 @@ type ProjectApi = {
   completion_percent: number;
   collaborator_ids: string[];
   image: ProjectImageApi;
+  has_saved_plan: boolean;
 };
 
 const STATUS_FROM_API: Record<ProjectApi["status"], Project["status"]> = {
@@ -112,6 +113,8 @@ function mapProject(api: ProjectApi): Project {
     currentOwnerId: api.current_owner_id,
     currentOwnerName: api.current_owner_name,
     image: api.image,
+    hasSavedPlan: api.has_saved_plan,
+    updatedAt: api.updated_at,
   };
 }
 

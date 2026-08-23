@@ -23,29 +23,26 @@ const showDetail = ref(false);
 </script>
 
 <template>
-  <div class="rounded-2xl border border-red-100 bg-red-50/60 p-4">
-    <div class="flex items-start gap-3">
-      <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600">
-        <AlertTriangle class="h-4 w-4" />
-      </span>
+  <div class="rounded-xl border border-red-100 bg-red-50/60 px-3 py-2">
+    <div class="flex items-center gap-2.5">
+      <AlertTriangle class="h-3.5 w-3.5 shrink-0 text-red-500" />
       <div class="min-w-0 flex-1">
-        <p class="text-sm font-semibold text-red-700">{{ title }}</p>
-        <p class="mt-0.5 text-sm text-red-600/90">{{ message }}</p>
+        <p class="truncate text-xs font-medium text-red-700">{{ title }}</p>
         <button
-          v-if="detail"
           type="button"
-          class="mt-1.5 text-xs font-medium text-red-500/80 underline-offset-2 hover:underline"
+          class="text-[10.5px] font-medium text-red-500/80 underline-offset-2 hover:underline"
           @click="showDetail = !showDetail"
         >
           {{ showDetail ? "Hide details" : "Show details" }}
         </button>
-        <p v-if="showDetail && detail" class="mt-1 break-words rounded-lg bg-white/60 p-2 font-mono text-[11px] text-red-500">
-          {{ detail }}
-        </p>
-        <Button size="sm" variant="outline" class="mt-3 rounded-lg border-red-200 text-red-700 hover:bg-red-100" @click="emit('retry')">
-          <RefreshCw class="h-3.5 w-3.5" /> Try Again
-        </Button>
       </div>
+      <Button size="sm" variant="outline" class="h-7 shrink-0 rounded-lg border-red-200 px-2.5 text-xs text-red-700 hover:bg-red-100" @click="emit('retry')">
+        <RefreshCw class="h-3 w-3" /> Try Again
+      </Button>
+    </div>
+    <div v-if="showDetail" class="mt-1.5 space-y-1">
+      <p class="text-[11px] text-red-600/90">{{ message }}</p>
+      <p v-if="detail" class="break-words rounded-lg bg-white/60 p-2 font-mono text-[10.5px] text-red-500">{{ detail }}</p>
     </div>
   </div>
 </template>

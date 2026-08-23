@@ -11,6 +11,7 @@ import {
   Headset,
   LogOut,
   BarChart3,
+  Sparkles,
 } from "lucide-vue-next";
 
 import { ref, watch } from "vue";
@@ -45,6 +46,7 @@ watch(
 const navItems = [
   { title: "Dashboard", sectionName: "dashboard" },
   { title: "Projects", sectionName: "projects" },
+  { title: "AI Workspace", sectionName: "ai-workspace" },
   { title: "Calendar", sectionName: "calendar" },
   { title: "Employees", sectionName: "employees" },
   { title: "Departments", sectionName: "departments" },
@@ -59,6 +61,8 @@ const setNavIcon = (title: string) => {
       return LayoutDashboard;
     case "Projects":
       return SquareDashedKanban;
+    case "AI Workspace":
+      return Sparkles;
     case "Calendar":
       return CalendarDays;
     case "Employees":

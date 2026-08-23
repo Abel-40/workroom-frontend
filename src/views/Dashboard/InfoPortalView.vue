@@ -1,25 +1,40 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+// Backed by the real Folder/Page API (pagesStore/pages app) -- the same
+// system the AI Assistant's page picker and "save as page" features use.
+// Editing a page keeps a local draft while isEditingPage is true and
+// persists it in one PATCH when the user finishes editing, rather than a
+// request per keystroke.
+import { computed, ref, watch } from "vue";
 import { Check, FolderOpen, MoveLeft, Paperclip, Pencil, Plus, Share2, Sparkles, Trash2, X } from "lucide-vue-next";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/toast/use-toast";
 import Header from "@/components/layout/Header.vue";
 import ShareFolderModal from "@/components/info-portal/ShareFolderModal.vue";
-import { useInfoPortalStore, type InfoFolder, type InfoPageBlock } from "@/stores/infoPortalStore";
+import { usePagesStore, type PageBlock, type PageFolder } from "@/stores/pagesStore";
 
-const infoStore = useInfoPortalStore();
-const selectedFolder = ref<InfoFolder | null>(null);
+const pagesStore = usePagesStore();
+const { toast } = useToast();
+const selectedFolder = ref<PageFolder | null>(null);
 const selectedPageId = ref<string | null>(null);
 const isShareOpen = ref(false);
 const isEditingPage = ref(false);
 const searchQuery = ref("");
+const draftTitle = ref("");
+const draftBlocks = ref<PageBlock[]>([]);
+const saving = ref(false);
 const onSearch = (value: string) => {
   searchQuery.value = value;
 };
 
-const openFolder = (folder: InfoFolder) => {
+if (!pagesStore.loaded) pagesStore.fetchFolders();
+
+const openFolder = async (folder: PageFolder) => {
   selectedFolder.value = folder;
-  selectedPageId.value = folder.pages[0]?.id ?? null;
   isEditingPage.value = false;
+  await pagesStore.fetchPages(folder.id);
+  const firstPageId = pagesStore.pagesFor(folder.id)[0]?.id ?? null;
+  selectedPageId.value = firstPageId;
+  if (firstPageId) pagesStore.fetchPage(firstPageId, folder.id);
 };
 const backToPortal = () => {
   selectedFolder.value = null;
@@ -29,65 +44,76 @@ const backToPortal = () => {
 const selectPage = (pageId: string) => {
   selectedPageId.value = pageId;
   isEditingPage.value = false;
+  // The folder listing omits blocks -- hydrate this page's real content
+  // before it's rendered/edited.
+  if (selectedFolder.value) pagesStore.fetchPage(pageId, selectedFolder.value.id);
 };
 
-const selectedPage = computed(() =>
-  selectedFolder.value?.pages.find((p) => p.id === selectedPageId.value) ?? null
-);
+const folderPages = computed(() => (selectedFolder.value ? pagesStore.pagesFor(selectedFolder.value.id) : []));
+const selectedPage = computed(() => folderPages.value.find((p) => p.id === selectedPageId.value) ?? null);
 
 const filteredFolders = computed(() => {
   const query = searchQuery.value.trim().toLowerCase();
-  if (!query) return infoStore.folders;
-  return infoStore.folders.filter((folder) => folder.name.toLowerCase().includes(query));
+  if (!query) return pagesStore.folders;
+  return pagesStore.folders.filter((folder) => folder.name.toLowerCase().includes(query));
 });
 
 const filteredPages = computed(() => {
-  if (!selectedFolder.value) return [];
   const query = searchQuery.value.trim().toLowerCase();
-  if (!query) return selectedFolder.value.pages;
-  return selectedFolder.value.pages.filter((page) => page.title.toLowerCase().includes(query));
+  if (!query) return folderPages.value;
+  return folderPages.value.filter((page) => page.title.toLowerCase().includes(query));
 });
 
-const toggleEditPage = () => {
+watch(selectedPage, (page) => {
+  draftTitle.value = page?.title ?? "";
+  draftBlocks.value = page ? JSON.parse(JSON.stringify(page.blocks)) : [];
+});
+
+const toggleEditPage = async () => {
+  if (isEditingPage.value && selectedFolder.value && selectedPage.value) {
+    saving.value = true;
+    const { error } = await pagesStore.updatePage(selectedPage.value.id, selectedFolder.value.id, {
+      title: draftTitle.value, blocks: draftBlocks.value,
+    });
+    saving.value = false;
+    if (error) {
+      toast({ title: "Couldn't save the page", description: error, variant: "destructive" });
+      return;
+    }
+  }
   isEditingPage.value = !isEditingPage.value;
 };
 
-const touchPage = () => {
-  if (selectedPage.value) selectedPage.value.lastModified = new Date().toISOString().slice(0, 10);
+const addBlock = (type: PageBlock["type"]) => {
+  draftBlocks.value.push(type === "list" ? { type, items: [""] } : { type, text: "" });
 };
-
-const addBlock = (type: InfoPageBlock["type"]) => {
-  if (!selectedPage.value) return;
-  selectedPage.value.blocks.push(type === "list" ? { type, items: [""] } : { type, text: "" });
-  touchPage();
-};
-
 const removeBlock = (index: number) => {
-  if (!selectedPage.value) return;
-  selectedPage.value.blocks.splice(index, 1);
-  touchPage();
+  draftBlocks.value.splice(index, 1);
 };
-
-const addListItem = (block: InfoPageBlock) => {
+const addListItem = (block: PageBlock) => {
   block.items = block.items ? [...block.items, ""] : [""];
-  touchPage();
 };
-
-const removeListItem = (block: InfoPageBlock, index: number) => {
+const removeListItem = (block: PageBlock, index: number) => {
   block.items?.splice(index, 1);
-  touchPage();
 };
 
-const addPage = () => {
+const addPage = async () => {
   if (!selectedFolder.value) return;
-  const title = `New Page ${selectedFolder.value.pages.length + 1}`;
-  const page = infoStore.addPage(selectedFolder.value.id, title);
+  const title = `New Page ${folderPages.value.length + 1}`;
+  const { page, error } = await pagesStore.createPage(selectedFolder.value.id, {
+    title, blocks: [{ type: "paragraph", text: "" }],
+  });
+  if (error) {
+    toast({ title: "Couldn't create the page", description: error, variant: "destructive" });
+    return;
+  }
   if (page) selectedPageId.value = page.id;
 };
 
-const addFolder = () => {
-  const name = `New Folder ${infoStore.folders.length + 1}`;
-  infoStore.addFolder(name);
+const addFolder = async () => {
+  const name = `New Folder ${pagesStore.folders.length + 1}`;
+  const { error } = await pagesStore.createFolder(name);
+  if (error) toast({ title: "Couldn't create the folder", description: error, variant: "destructive" });
 };
 
 const folderColor: Record<string, string> = {
@@ -130,10 +156,10 @@ const folderColor: Record<string, string> = {
           <FolderOpen class="pointer-events-none absolute -right-4 -top-4 h-32 w-32 text-primary/10" />
         </div>
         <div class="rounded-2xl border border-gray-100 bg-white p-6">
-          <p class="text-sm text-subtle">Current Projects</p>
-          <p class="mt-1 text-3xl font-semibold text-ink">{{ infoStore.folders.length }}</p>
+          <p class="text-sm text-subtle">Folders</p>
+          <p class="mt-1 text-3xl font-semibold text-ink">{{ pagesStore.folders.length }}</p>
           <p class="mt-1 flex items-center gap-1 text-xs font-medium text-emerald-500">
-            <Sparkles class="h-3 w-3" /> Growth +3
+            <Sparkles class="h-3 w-3" /> Shared across your company
           </p>
         </div>
       </div>
@@ -153,7 +179,7 @@ const folderColor: Record<string, string> = {
             <FolderOpen class="h-5 w-5" />
           </div>
           <p class="mt-3 font-medium text-ink">{{ folder.name }}</p>
-          <p class="text-xs text-subtle">{{ folder.pages.length }} pages</p>
+          <p class="text-xs text-subtle">{{ pagesStore.pagesFor(folder.id).length || "—" }} pages</p>
         </button>
       </div>
     </template>
@@ -176,7 +202,7 @@ const folderColor: Record<string, string> = {
           @click="selectPage(page.id)"
         >
           <p class="text-sm font-medium">{{ page.title }}</p>
-          <p class="text-xs text-subtle">Last modified {{ page.lastModified }}</p>
+          <p class="text-xs text-subtle">Last modified {{ page.updatedAt.slice(0, 10) }}</p>
         </button>
         <p v-if="!filteredPages.length" class="px-4 py-6 text-center text-sm text-subtle">
           No pages match "{{ searchQuery }}"
@@ -187,18 +213,18 @@ const folderColor: Record<string, string> = {
         <div class="mb-4 flex items-center justify-between gap-3">
           <input
             v-if="isEditingPage"
-            v-model="selectedPage.title"
+            v-model="draftTitle"
             placeholder="Page title"
             class="flex-1 rounded-lg border border-gray-200 px-2 py-1 text-sm font-semibold text-ink focus:border-primary focus:outline-none"
-            @input="touchPage"
           />
           <h3 v-else class="text-sm font-semibold text-ink">{{ selectedPage.title }}</h3>
           <div class="flex shrink-0 gap-2">
             <button
               type="button"
-              class="flex h-8 w-8 items-center justify-center rounded-lg border hover:border-primary/40"
+              class="flex h-8 w-8 items-center justify-center rounded-lg border hover:border-primary/40 disabled:opacity-50"
               :class="isEditingPage ? 'border-primary bg-primary/10 text-primary' : 'border-gray-200'"
-              :title="isEditingPage ? 'Done editing' : 'Edit page'"
+              :disabled="saving"
+              :title="isEditingPage ? 'Save and stop editing' : 'Edit page'"
               @click="toggleEditPage"
             >
               <Check v-if="isEditingPage" class="h-4 w-4" />
@@ -211,13 +237,12 @@ const folderColor: Record<string, string> = {
         </div>
 
         <div class="space-y-3">
-          <div v-for="(block, index) in selectedPage.blocks" :key="index" class="group relative">
+          <div v-for="(block, index) in (isEditingPage ? draftBlocks : selectedPage.blocks)" :key="index" class="group relative">
             <input
               v-if="block.type === 'heading' && isEditingPage"
               v-model="block.text"
               placeholder="Heading"
               class="w-full rounded-lg border border-transparent bg-page/40 px-2 py-1.5 font-semibold text-ink focus:border-primary focus:bg-white focus:outline-none"
-              @input="touchPage"
             />
             <h4 v-else-if="block.type === 'heading'" class="font-semibold text-ink">{{ block.text }}</h4>
 
@@ -227,7 +252,6 @@ const folderColor: Record<string, string> = {
               rows="3"
               placeholder="Write something..."
               class="w-full resize-y rounded-lg border border-transparent bg-page/40 px-2 py-1.5 text-sm leading-relaxed text-ink focus:border-primary focus:bg-white focus:outline-none"
-              @input="touchPage"
             />
             <p v-else-if="block.type === 'paragraph'" class="text-sm leading-relaxed text-subtle">{{ block.text }}</p>
 
@@ -241,7 +265,6 @@ const folderColor: Record<string, string> = {
                   v-model="block.items![i]"
                   placeholder="List item"
                   class="flex-1 rounded-lg border border-transparent bg-page/40 px-2 py-1 text-sm text-ink focus:border-primary focus:bg-white focus:outline-none"
-                  @input="touchPage"
                 />
                 <button type="button" class="text-subtle hover:text-red-500" @click="removeListItem(block, i)">
                   <X class="h-3.5 w-3.5" />
@@ -267,7 +290,7 @@ const folderColor: Record<string, string> = {
             </button>
           </div>
 
-          <p v-if="!selectedPage.blocks.length" class="text-sm text-subtle">This page is empty.</p>
+          <p v-if="!(isEditingPage ? draftBlocks : selectedPage.blocks).length" class="text-sm text-subtle">This page is empty.</p>
         </div>
 
         <div v-if="isEditingPage" class="mt-4 flex flex-wrap gap-2 border-t border-dashed border-gray-200 pt-4">

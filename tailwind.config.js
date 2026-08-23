@@ -49,6 +49,14 @@ export default {
   			ink: '#0A1629',
   			subtle: '#91929E',
   			page: '#E6EDF5',
+  			// AI Workspace design tokens -- additive only, scoped to the new AI
+  			// Workspace screens. `page` above stays untouched since it's already
+  			// used across unrelated existing screens.
+  			surface: '#F4F9FD',
+  			success: { DEFAULT: '#D8F5E3', foreground: '#0A7C4A' },
+  			warning: { DEFAULT: '#FFF3D6', foreground: '#8A6A2F' },
+  			danger: { DEFAULT: '#FDE1E4', foreground: '#C0384A' },
+  			info: { DEFAULT: '#E8F3FF', foreground: '#2155A0' },
   			chart: {
   				'1': 'hsl(var(--chart-1))',
   				'2': 'hsl(var(--chart-2))',

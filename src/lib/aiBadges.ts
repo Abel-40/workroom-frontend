@@ -1,5 +1,5 @@
 // Shared pill-badge color helpers for the AI workspace -- extracted so
-// AiGeneratedTaskReviewModal and AiHealthCheckPanel don't each keep their own
+// AiPlanInspectorPanel and AiHealthCheckPanel don't each keep their own
 // near-identical inline switch statement.
 export function priorityBadgeClass(priority: string): string {
   switch (priority) {
