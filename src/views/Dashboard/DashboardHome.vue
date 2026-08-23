@@ -21,7 +21,7 @@ import {Calendar} from "lucide-vue-next";
               class="flex items-center gap-2 bg-[#E6EDF5] px-3 py-2 rounded-md border border-[#3F8CFF]/10 shadow-sm hover:bg-[#DCE7F6] transition-colors duration-200"
             >
               <Calendar class="w-4 h-4 text-[#3F8CFF]" />
-              <span class="text-sm font-medium text-[#0A1629]">feb 16, 2025 - April 16, 2025</span>
+              <span class="text-sm font-medium text-[#0A1629]">April 16, 2025</span>
             </div>
           </div>
     </div>

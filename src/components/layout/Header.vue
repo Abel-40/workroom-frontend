@@ -72,7 +72,7 @@ const onLogout = () => {
               <Popover v-model:open="isNotificationsOpen">
                 <PopoverTrigger as-child>
                   <Button variant="ghost" size="icon" class="relative bg-white shadow-sm">
-                    <Bell class="w-5 h-5" />
+                    <Bell class="w-6 h-6" />
                     <span
                       v-if="notificationStore.unreadCount"
                       class="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold text-white"
@@ -86,10 +86,10 @@ const onLogout = () => {
                 </PopoverContent>
               </Popover>
               <DropdownMenu>
-                <DropdownMenuTrigger as-child>
-                  <button type="button" class="rounded-lg">
+                <DropdownMenuTrigger as-child >
+                  <button type="button" class="rounded-lg ">
                     <span class="flex items-center gap-2 bg-white p-2 rounded-lg shadow-sm">
-                      <Avatar size="sm" class="h-8 w-8 text-xs">
+                      <Avatar size="sm" class="h-6 w-6 text-xs">
                         <AvatarFallback>{{ initials(displayName) }}</AvatarFallback>
                       </Avatar>
                       <span class="text-sm">{{ displayName }}</span>
