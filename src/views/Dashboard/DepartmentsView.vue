@@ -9,10 +9,17 @@ import CreateTeamModal from "@/components/departments/CreateTeamModal.vue";
 import { useAuthStore } from "@/stores/authStore";
 import { useDirectoryStore } from "@/stores/directoryStore";
 import { useEmployeeStore } from "@/stores/employeeStore";
+import { useRouter } from "vue-router";
 
 const authStore = useAuthStore();
 const directoryStore = useDirectoryStore();
 const employeeStore = useEmployeeStore();
+const router = useRouter();
+
+const openDepartment = (departmentId: string) =>
+  router.push({ name: "admin-dashboard", query: { section: "department-detail", departmentId } });
+const openTeam = (teamId: string) =>
+  router.push({ name: "admin-dashboard", query: { section: "team-detail", teamId } });
 
 const tab = ref<"departments" | "teams">("departments");
 const isDepartmentModalOpen = ref(false);
@@ -27,10 +34,12 @@ onMounted(() => {
   if (!employeeStore.employees.length) employeeStore.fetchEmployees();
 });
 
-// Mirrors the backend's "managed company" check (company.services.get_managed_company):
-// only the owner or a department leader may create departments/teams.
+// Mirrors the backend's departments:manage/teams:manage permission grants
+// (permissions and roles/roles_permission.yaml): Owner, Company Manager, and
+// Department Leader may create/edit departments and teams -- Department
+// Member may not.
 const canManage = computed(() =>
-  ["Owner", "DL"].includes(authStore.logedInUserInfo?.role ?? "")
+  ["Owner", "CM", "DL"].includes(authStore.logedInUserInfo?.role ?? "")
 );
 
 const initials = (name: string) =>
@@ -114,7 +123,11 @@ const teamMembers = (memberIds: string[]) =>
         <div
           v-for="department in filteredDepartments"
           :key="department.id"
-          class="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm"
+          class="cursor-pointer rounded-2xl border border-gray-100 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+          role="button"
+          tabindex="0"
+          @click="openDepartment(department.id)"
+          @keydown.enter="openDepartment(department.id)"
         >
           <div class="flex items-start justify-between gap-2">
             <p class="min-w-0 truncate font-semibold text-ink" :title="department.name">{{ department.name }}</p>
@@ -167,7 +180,11 @@ const teamMembers = (memberIds: string[]) =>
         <div
           v-for="team in filteredTeams"
           :key="team.id"
-          class="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm"
+          class="cursor-pointer rounded-2xl border border-gray-100 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+          role="button"
+          tabindex="0"
+          @click="openTeam(team.id)"
+          @keydown.enter="openTeam(team.id)"
         >
           <div class="flex items-start justify-between gap-2">
             <p class="min-w-0 truncate font-semibold text-ink" :title="team.name">{{ team.name }}</p>

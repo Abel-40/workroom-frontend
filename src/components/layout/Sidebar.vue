@@ -10,6 +10,7 @@ import {
   FolderKanban,
   Headset,
   LogOut,
+  BarChart3,
 } from "lucide-vue-next";
 
 import { ref, watch } from "vue";
@@ -47,6 +48,7 @@ const navItems = [
   { title: "Calendar", sectionName: "calendar" },
   { title: "Employees", sectionName: "employees" },
   { title: "Departments", sectionName: "departments" },
+  { title: "Analytics", sectionName: "analytics" },
   { title: "Messenger", sectionName: "messenger" },
   { title: "Info Portal", sectionName: "info-portal" },
 ];
@@ -63,6 +65,8 @@ const setNavIcon = (title: string) => {
       return Users;
     case "Departments":
       return Building2;
+    case "Analytics":
+      return BarChart3;
     case "Messenger":
       return MessageSquare;
     case "Info Portal":

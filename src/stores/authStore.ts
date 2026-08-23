@@ -48,7 +48,7 @@ export const useAuthStore =  defineStore('AuthStore',{
       user: User
       is_authenticated: boolean
       access: string
-      role?: "Owner" | "DL" | "DM" | null
+      role?: "Owner" | "CM" | "DL" | "DM" | null
       company_id?: string | null
       company_name?: string | null
     },

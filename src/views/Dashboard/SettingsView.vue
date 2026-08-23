@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { onMounted, ref, watch } from "vue";
 import {
   Blocks,
   Building2,
@@ -10,13 +10,56 @@ import {
   User,
 } from "lucide-vue-next";
 import { RouterLink } from "vue-router";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
+import { useToast } from "@/components/ui/toast/use-toast";
 import Header from "@/components/layout/Header.vue";
+import { useAuthStore } from "@/stores/authStore";
 import { useUserProfileStore } from "@/stores/userProfileStore";
+import { useCompanyConfigStore } from "@/stores/companyConfigStore";
+import { useDirectoryStore } from "@/stores/directoryStore";
 
+const authStore = useAuthStore();
 const profileStore = useUserProfileStore();
+const companyConfigStore = useCompanyConfigStore();
+const directoryStore = useDirectoryStore();
+const { toast } = useToast();
 const activeTab = ref<"account" | "notifications" | "company" | "apps" | "payments" | "confidentiality" | "safety">("notifications");
+
+onMounted(() => {
+  const userId = authStore.logedInUserInfo?.user?.id;
+  if (userId) profileStore.fetchEmailPreference(userId);
+});
+
+watch(
+  activeTab,
+  (tab) => {
+    if (tab === "company" && !companyConfigStore.departments.length && !companyConfigStore.taskTypes.length) {
+      companyConfigStore.fetchDefaults();
+    }
+  },
+  { immediate: true }
+);
+
+const onToggleEmailNotifications = async (checked: boolean) => {
+  const { error } = await profileStore.setEmailNotificationsEnabled(checked);
+  if (error) toast({ title: "Preference not saved", description: error, variant: "destructive" });
+};
+
+const enablingId = ref<string | null>(null);
+const enableDepartment = async (id: string) => {
+  enablingId.value = id;
+  const { error } = await companyConfigStore.enableDepartment(id);
+  enablingId.value = null;
+  if (error) toast({ title: "Not enabled", description: error, variant: "destructive" });
+  else directoryStore.fetchAll();
+};
+const enableTaskType = async (id: string) => {
+  enablingId.value = id;
+  const { error } = await companyConfigStore.enableTaskType(id);
+  enablingId.value = null;
+  if (error) toast({ title: "Not enabled", description: error, variant: "destructive" });
+  else directoryStore.fetchAll();
+};
 
 const TABS = [
   { key: "account", label: "Account", icon: User },
@@ -59,29 +102,82 @@ const TABS = [
           <div class="space-y-4">
             <div class="flex items-center justify-between">
               <div>
-                <p class="text-sm font-medium text-ink">Issue Activity</p>
-                <p class="text-xs text-subtle">Send me email notifications for issue activity</p>
+                <p class="text-sm font-medium text-ink">Email me for time-sensitive notifications</p>
+                <p class="text-xs text-subtle">
+                  Task assignments and AI generation failures always email you. Everything else (task
+                  completions, invitations, AI plans ready) follows this preference.
+                </p>
               </div>
-              <Switch v-model:checked="profileStore.notifications.issueActivity" />
+              <Switch
+                :model-value="profileStore.emailNotificationsEnabled"
+                :disabled="profileStore.loadingPreference"
+                @update:model-value="onToggleEmailNotifications"
+              />
             </div>
-            <div class="flex items-center justify-between border-t border-gray-100 pt-4">
-              <div>
-                <p class="text-sm font-medium text-ink">Tracking Activity</p>
-                <p class="text-xs text-subtle">Send me notifications when someone's tracked time in tasks</p>
+          </div>
+        </template>
+
+        <template v-else-if="activeTab === 'company'">
+          <h3 class="mb-1 text-sm font-semibold text-ink">My Company</h3>
+          <p class="mb-4 text-xs text-subtle">
+            Manage the default departments and task types available to your company. Enabling a default adds it
+            once -- it won't create a duplicate if you've already added it manually or enabled it before.
+          </p>
+
+          <div class="space-y-6">
+            <div>
+              <h4 class="mb-2 text-xs font-semibold uppercase tracking-wide text-subtle">Department Defaults</h4>
+              <div v-if="!companyConfigStore.departments.length" class="text-sm text-subtle">
+                No default departments available for your sector.
               </div>
-              <Switch v-model:checked="profileStore.notifications.trackingActivity" />
-            </div>
-            <div class="flex items-center justify-between border-t border-gray-100 pt-4">
-              <div>
-                <p class="text-sm font-medium text-ink">New Comments</p>
-                <p class="text-xs text-subtle">Send me notifications when someone's sent the comment</p>
+              <div v-else class="divide-y divide-gray-50">
+                <div v-for="d in companyConfigStore.departments" :key="d.id" class="flex items-center justify-between py-2">
+                  <div>
+                    <p class="text-sm text-ink">{{ d.name }}</p>
+                    <p v-if="d.description" class="text-xs text-subtle">{{ d.description }}</p>
+                  </div>
+                  <span v-if="d.enabled" class="rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-600">
+                    Enabled
+                  </span>
+                  <button
+                    v-else
+                    type="button"
+                    class="rounded-lg bg-primary px-3 py-1 text-xs font-medium text-white disabled:opacity-50"
+                    :disabled="enablingId === d.id"
+                    @click="enableDepartment(d.id)"
+                  >
+                    Add
+                  </button>
+                </div>
               </div>
-              <Switch v-model:checked="profileStore.notifications.newComments" />
             </div>
-            <label class="flex items-center gap-2 border-t border-gray-100 pt-4 text-sm text-ink">
-              <Checkbox v-model:checked="profileStore.notifications.muteAfter9pm" />
-              Don't send me notifications after 9:00 PM
-            </label>
+
+            <div>
+              <h4 class="mb-2 text-xs font-semibold uppercase tracking-wide text-subtle">Task Type Defaults</h4>
+              <div v-if="!companyConfigStore.taskTypes.length" class="text-sm text-subtle">
+                No default task types available for your sector.
+              </div>
+              <div v-else class="divide-y divide-gray-50">
+                <div v-for="t in companyConfigStore.taskTypes" :key="t.id" class="flex items-center justify-between py-2">
+                  <div>
+                    <p class="text-sm text-ink">{{ t.name }}</p>
+                    <p v-if="t.description" class="text-xs text-subtle">{{ t.description }}</p>
+                  </div>
+                  <span v-if="t.enabled" class="rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-600">
+                    Enabled
+                  </span>
+                  <button
+                    v-else
+                    type="button"
+                    class="rounded-lg bg-primary px-3 py-1 text-xs font-medium text-white disabled:opacity-50"
+                    :disabled="enablingId === t.id"
+                    @click="enableTaskType(t.id)"
+                  >
+                    Add
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </template>
 

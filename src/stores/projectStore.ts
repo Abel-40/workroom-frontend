@@ -20,6 +20,8 @@ type ProjectApi = {
   start_date: string;
   deadline: string;
   created_by: string | null;
+  current_owner_id: string | null;
+  current_owner_name: string | null;
   created_at: string;
   updated_at: string;
   total_tasks: number;
@@ -107,6 +109,8 @@ function mapProject(api: ProjectApi): Project {
     visibility: api.visibility,
     startDate: api.start_date,
     createdById: api.created_by,
+    currentOwnerId: api.current_owner_id,
+    currentOwnerName: api.current_owner_name,
     image: api.image,
   };
 }
@@ -268,6 +272,20 @@ export const useProjectStore = defineStore("projectStore", {
         return { project: updated };
       } catch (error: any) {
         return { error: error.response?.data?.message || "Failed to update project" };
+      }
+    },
+
+    async transferOwnership(projectId: string, newOwnerId: string): Promise<{ project?: Project; error?: string }> {
+      try {
+        const { data } = await axiosInstance.patch<ApiResponse<{ project: ProjectApi }>>(
+          `/projects/${projectId}/owner/`,
+          { new_owner_id: newOwnerId }
+        );
+        const updated = mapProject(data.data.project);
+        this._applyUpdatedProject(updated);
+        return { project: updated };
+      } catch (error: any) {
+        return { error: error.response?.data?.message || "Failed to transfer ownership" };
       }
     },
 

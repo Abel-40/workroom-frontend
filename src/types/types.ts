@@ -143,6 +143,8 @@ export interface Project {
   startDate?: string;
   assigneeIds?: string[];
   createdById?: string | null;
+  currentOwnerId?: string | null;
+  currentOwnerName?: string | null;
 }
 
 export type Departments = Department[];

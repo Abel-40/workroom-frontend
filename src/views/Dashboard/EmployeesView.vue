@@ -11,15 +11,63 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useToast } from "@/components/ui/toast/use-toast";
 import Header from "@/components/layout/Header.vue";
 import EmployeeInviteModal from "@/components/employees/EmployeeInviteModal.vue";
-import { useEmployeeStore, type EmployeeRole } from "@/stores/employeeStore";
+import { useEmployeeStore, type Employee, type EmployeeRole, type RemovalBlockers } from "@/stores/employeeStore";
 import { useDirectoryStore } from "@/stores/directoryStore";
+import { useRouter } from "vue-router";
 
 const employeeStore = useEmployeeStore();
 const directoryStore = useDirectoryStore();
+const router = useRouter();
+const { toast } = useToast();
 const layout = ref<"list" | "activity">("list");
 const isInviteOpen = ref(false);
+
+const openProfile = (employee: Employee) =>
+  router.push({ name: "admin-dashboard", query: { section: "employee-detail", employeeId: employee.id } });
+
+const removingId = ref<string | null>(null);
+const reassignTarget = ref<{ employee: Employee; blockers: RemovalBlockers } | null>(null);
+const reassignToId = ref("");
+const reassigning = ref(false);
+
+const confirmRemove = async (employee: Employee) => {
+  if (!window.confirm(`Remove ${employee.name} from the company?`)) return;
+  removingId.value = employee.id;
+  const result = await employeeStore.remove(employee.id);
+  removingId.value = null;
+  if (result.reassignmentRequired) {
+    reassignTarget.value = { employee, blockers: result.reassignmentRequired };
+    reassignToId.value = "";
+    return;
+  }
+  if (result.error) {
+    toast({ title: "Member not removed", description: result.error, variant: "destructive" });
+  }
+};
+
+const confirmReassignAndRemove = async () => {
+  if (!reassignTarget.value || !reassignToId.value) return;
+  reassigning.value = true;
+  const result = await employeeStore.remove(reassignTarget.value.employee.id, reassignToId.value);
+  reassigning.value = false;
+  if (result.ok) {
+    reassignTarget.value = null;
+    return;
+  }
+  toast({ title: "Member not removed", description: result.error ?? "Failed to reassign and remove", variant: "destructive" });
+};
 const currentPage = ref(1);
 const perPage = 8;
 const searchQuery = ref("");
@@ -43,6 +91,7 @@ const initials = (name: string) =>
 
 const ROLE_OPTIONS: { value: EmployeeRole; label: string }[] = [
   { value: "Owner", label: "Owner" },
+  { value: "CM", label: "Company Manager" },
   { value: "DL", label: "Department Leader" },
   { value: "DM", label: "Department Member" },
 ];
@@ -93,6 +142,7 @@ const rangeLabel = computed(() => {
 
 const roleBadgeClass: Record<string, string> = {
   Owner: "bg-violet-50 text-violet-600",
+  CM: "bg-indigo-50 text-indigo-600",
   DL: "bg-blue-50 text-primary",
   DM: "bg-slate-100 text-slate-600",
 };
@@ -241,9 +291,14 @@ const roleBadgeClass: Record<string, string> = {
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem>View Profile</DropdownMenuItem>
-              <DropdownMenuItem>Message</DropdownMenuItem>
-              <DropdownMenuItem class="text-red-500">Remove</DropdownMenuItem>
+              <DropdownMenuItem @click="openProfile(employee)">View Profile</DropdownMenuItem>
+              <DropdownMenuItem
+                class="text-red-500"
+                :disabled="removingId === employee.id"
+                @click="confirmRemove(employee)"
+              >
+                Remove
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -255,7 +310,11 @@ const roleBadgeClass: Record<string, string> = {
       <div
         v-for="employee in paginated"
         :key="employee.id"
-        class="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+        class="cursor-pointer rounded-2xl border border-gray-100 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+        role="button"
+        tabindex="0"
+        @click="openProfile(employee)"
+        @keydown.enter="openProfile(employee)"
       >
         <div class="flex flex-col items-center text-center">
           <Avatar size="sm" class="h-14 w-14 text-sm">
@@ -293,5 +352,45 @@ const roleBadgeClass: Record<string, string> = {
         <ArrowRight class="h-4 w-4" />
       </button>
     </div>
+
+    <Dialog :open="!!reassignTarget" @update:open="(v) => { if (!v) reassignTarget = null }">
+      <DialogContent class="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Reassign before removing {{ reassignTarget?.employee.name }}</DialogTitle>
+        </DialogHeader>
+        <div class="space-y-3 text-sm">
+          <p class="text-subtle">
+            This member currently owns active projects or tasks. Choose someone to take them over before removal.
+          </p>
+          <ul v-if="reassignTarget?.blockers.projects.length" class="list-inside list-disc space-y-1">
+            <li v-for="p in reassignTarget.blockers.projects" :key="p.id">Project: {{ p.title }}</li>
+          </ul>
+          <ul v-if="reassignTarget?.blockers.tasks.length" class="list-inside list-disc space-y-1">
+            <li v-for="t in reassignTarget.blockers.tasks" :key="t.id">Task: {{ t.title }}</li>
+          </ul>
+          <Select v-model="reassignToId">
+            <SelectTrigger class="rounded-xl">
+              <SelectValue placeholder="Reassign to…" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                <SelectItem
+                  v-for="person in employeeStore.employees.filter((e) => e.id !== reassignTarget?.employee.id)"
+                  :key="person.id"
+                  :value="person.id"
+                >
+                  {{ person.name }}
+                </SelectItem>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </div>
+        <DialogFooter>
+          <Button class="rounded-xl" :disabled="!reassignToId || reassigning" @click="confirmReassignAndRemove">
+            {{ reassigning ? "Reassigning…" : "Reassign & Remove" }}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>

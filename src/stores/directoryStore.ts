@@ -128,5 +128,100 @@ export const useDirectoryStore = defineStore("directoryStore", {
         return { errors: error.response?.data?.errors || { name: [error.response?.data?.message || "Failed to create team"] } };
       }
     },
+
+    async updateDepartment(
+      id: string,
+      input: { name?: string; description?: string }
+    ): Promise<{ department?: DepartmentEntry; errors?: Record<string, string[]> }> {
+      try {
+        const body: Record<string, unknown> = {};
+        if (input.name !== undefined) body.name = input.name;
+        if (input.description !== undefined) body.description = input.description;
+        const { data } = await axiosInstance.patch<ApiResponse<{ department: DepartmentApi }>>(
+          `/departments/${id}/`,
+          body
+        );
+        const department = mapDepartment(data.data.department);
+        const index = this.departments.findIndex((d) => d.id === id);
+        if (index !== -1) this.departments[index] = department;
+        return { department };
+      } catch (error: any) {
+        return { errors: error.response?.data?.errors || { name: [error.response?.data?.message || "Failed to update department"] } };
+      }
+    },
+
+    async setDepartmentLeader(id: string, userId: string): Promise<{ department?: DepartmentEntry; error?: string }> {
+      try {
+        const { data } = await axiosInstance.post<ApiResponse<{ department: DepartmentApi }>>(
+          `/departments/${id}/leader/`,
+          { user_id: userId }
+        );
+        const department = mapDepartment(data.data.department);
+        const index = this.departments.findIndex((d) => d.id === id);
+        if (index !== -1) this.departments[index] = department;
+        return { department };
+      } catch (error: any) {
+        return { error: error.response?.data?.message || "Failed to assign department leader" };
+      }
+    },
+
+    async revokeDepartmentLeader(id: string): Promise<{ department?: DepartmentEntry; error?: string }> {
+      try {
+        const { data } = await axiosInstance.delete<ApiResponse<{ department: DepartmentApi }>>(
+          `/departments/${id}/leader/`
+        );
+        const department = mapDepartment(data.data.department);
+        const index = this.departments.findIndex((d) => d.id === id);
+        if (index !== -1) this.departments[index] = department;
+        return { department };
+      } catch (error: any) {
+        return { error: error.response?.data?.message || "Failed to revoke department leader" };
+      }
+    },
+
+    async updateTeam(
+      id: string,
+      input: { name?: string; description?: string; memberIds?: string[] }
+    ): Promise<{ team?: TeamEntry; errors?: Record<string, string[]> }> {
+      try {
+        const body: Record<string, unknown> = {};
+        if (input.name !== undefined) body.name = input.name;
+        if (input.description !== undefined) body.description = input.description;
+        if (input.memberIds !== undefined) body.member_ids = input.memberIds;
+        const { data } = await axiosInstance.patch<ApiResponse<{ team: TeamApi }>>(`/teams/${id}/`, body);
+        const team = mapTeam(data.data.team);
+        const index = this.teams.findIndex((t) => t.id === id);
+        if (index !== -1) this.teams[index] = team;
+        return { team };
+      } catch (error: any) {
+        return { errors: error.response?.data?.errors || { name: [error.response?.data?.message || "Failed to update team"] } };
+      }
+    },
+
+    async setTeamLeader(id: string, userId: string): Promise<{ team?: TeamEntry; error?: string }> {
+      try {
+        const { data } = await axiosInstance.post<ApiResponse<{ team: TeamApi }>>(`/teams/${id}/leader/`, {
+          user_id: userId,
+        });
+        const team = mapTeam(data.data.team);
+        const index = this.teams.findIndex((t) => t.id === id);
+        if (index !== -1) this.teams[index] = team;
+        return { team };
+      } catch (error: any) {
+        return { error: error.response?.data?.message || "Failed to assign team leader" };
+      }
+    },
+
+    async revokeTeamLeader(id: string): Promise<{ team?: TeamEntry; error?: string }> {
+      try {
+        const { data } = await axiosInstance.delete<ApiResponse<{ team: TeamApi }>>(`/teams/${id}/leader/`);
+        const team = mapTeam(data.data.team);
+        const index = this.teams.findIndex((t) => t.id === id);
+        if (index !== -1) this.teams[index] = team;
+        return { team };
+      } catch (error: any) {
+        return { error: error.response?.data?.message || "Failed to revoke team leader" };
+      }
+    },
   },
 });

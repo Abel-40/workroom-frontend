@@ -18,6 +18,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useNotificationStore } from "@/stores/notificationStore";
 import { useAuthStore } from "@/stores/authStore";
 import { useRouter } from "vue-router";
@@ -50,8 +51,6 @@ const onLogout = () => {
 
 <template>
           <!-- Header -->
-          <NotificationsPanel v-model:open="isNotificationsOpen" />
-
           <div
             class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6"
           >
@@ -70,15 +69,22 @@ const onLogout = () => {
 
             <!-- User Controls -->
             <div class="flex items-center gap-3">
-              <Button variant="ghost" size="icon" class="relative bg-white shadow-sm" @click="isNotificationsOpen = true">
-                <Bell class="w-5 h-5" />
-                <span
-                  v-if="notificationStore.unreadCount"
-                  class="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold text-white"
-                >
-                  {{ notificationStore.unreadCount }}
-                </span>
-              </Button>
+              <Popover v-model:open="isNotificationsOpen">
+                <PopoverTrigger as-child>
+                  <Button variant="ghost" size="icon" class="relative bg-white shadow-sm">
+                    <Bell class="w-5 h-5" />
+                    <span
+                      v-if="notificationStore.unreadCount"
+                      class="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold text-white"
+                    >
+                      {{ notificationStore.unreadCount }}
+                    </span>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent class="w-auto p-0" align="end">
+                  <NotificationsPanel />
+                </PopoverContent>
+              </Popover>
               <DropdownMenu>
                 <DropdownMenuTrigger as-child>
                   <button type="button" class="rounded-lg">

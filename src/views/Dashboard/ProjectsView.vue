@@ -169,6 +169,18 @@ const onCoverRemove = async () => {
   if (error) toast({ title: "Cover image not removed", description: error, variant: "destructive" });
 };
 
+const transferringOwner = ref(false);
+const ownerValue = computed({
+  get: () => selectedProject.value?.currentOwnerId ?? selectedProject.value?.createdById ?? "",
+  set: async (value: string) => {
+    if (!selectedProject.value || !value || value === selectedProject.value.currentOwnerId) return;
+    transferringOwner.value = true;
+    const { error } = await projectsStore.transferOwnership(selectedProject.value.id, value);
+    transferringOwner.value = false;
+    if (error) toast({ title: "Ownership not transferred", description: error, variant: "destructive" });
+  },
+});
+
 const archiving = ref(false);
 const archiveCurrentProject = async () => {
   if (!selectedProject.value) return;
@@ -729,6 +741,23 @@ watch(()=>paginatedProjects.value,()=>{
                         selectedProject?.assignedBy
                       }}</span>
                     </div>
+                  </div>
+
+                  <!-- Owner (current, transferable -- distinct from the immutable Created By above) -->
+                  <div class="mt-4">
+                    <div class="text-sm text-gray-400">Owner</div>
+                    <Select v-model="ownerValue" :disabled="transferringOwner">
+                      <SelectTrigger class="mt-1 rounded-xl">
+                        <SelectValue placeholder="Unowned" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectItem v-for="person in employeeStore.employees" :key="person.id" :value="person.id">
+                            {{ person.name }}
+                          </SelectItem>
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <!-- Assignees -->

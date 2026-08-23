@@ -1,11 +1,16 @@
 <script setup lang="ts">
  defineProps<{customClass?:string; imageSrc?:string; name?:string; role?:string; department?:string}>()
+ defineEmits<{ (e: "click"): void }>()
 </script>
 
 <template>
             <div
-              class="group relative max-w-[175px] h-[180px] bg-background flex flex-col justify-center items-center rounded-lg p-3 m-2 border border-gray-100 shadow-sm overflow-hidden hover:shadow-lg hover:-translate-y-1 hover:scale-[1.02] hover:border-[#3F8CFF]/30 transition-all duration-300 ease-out"
+              class="group relative max-w-[175px] h-[180px] bg-background flex flex-col justify-center items-center rounded-lg p-3 m-2 border border-gray-100 shadow-sm overflow-hidden cursor-pointer hover:shadow-lg hover:-translate-y-1 hover:scale-[1.02] hover:border-[#3F8CFF]/30 transition-all duration-300 ease-out"
               :class="customClass"
+              role="button"
+              tabindex="0"
+              @click="$emit('click')"
+              @keydown.enter="$emit('click')"
             >
               <span class="pointer-events-none absolute -top-8 -right-8 w-24 h-24 rounded-full bg-[#3F8CFF]/15 blur-2xl transition-all duration-300 group-hover:bg-[#3F8CFF]/30 group-hover:scale-125"></span>
               <div class="relative z-10 w-full rounded-full flex justify-center">
