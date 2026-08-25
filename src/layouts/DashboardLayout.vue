@@ -4,7 +4,6 @@ import Dashboard from '@/views/Dashboard/DashboardHome.vue';
 import EventContainer from '@/views/Dashboard/EventsView.vue'
 import EventDetailView from '@/views/Dashboard/EventDetailView.vue';
 import ProjectsTask from '@/views/Dashboard/ProjectsView.vue'
-import CalendarView from '@/views/Dashboard/CalendarView.vue'
 import EmployeesView from '@/views/Dashboard/EmployeesView.vue'
 import EmployeeDetailView from '@/views/Dashboard/EmployeeDetailView.vue'
 import DepartmentsView from '@/views/Dashboard/DepartmentsView.vue'
@@ -27,7 +26,6 @@ const showSection = computed(() => {
   if (section === 'events') return EventContainer
   if (section === 'event-detail') return EventDetailView
   if(section === 'projects') return ProjectsTask
-  if(section === 'calendar') return CalendarView
   if(section === 'employees') return EmployeesView
   if(section === 'employee-detail') return EmployeeDetailView
   if(section === 'departments') return DepartmentsView

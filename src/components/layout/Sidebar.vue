@@ -47,7 +47,7 @@ const navItems = [
   { title: "Dashboard", sectionName: "dashboard" },
   { title: "Projects", sectionName: "projects" },
   { title: "AI Workspace", sectionName: "ai-workspace" },
-  { title: "Calendar", sectionName: "calendar" },
+  { title: "Events", sectionName: "events" },
   { title: "Employees", sectionName: "employees" },
   { title: "Departments", sectionName: "departments" },
   { title: "Analytics", sectionName: "analytics" },
@@ -63,7 +63,7 @@ const setNavIcon = (title: string) => {
       return SquareDashedKanban;
     case "AI Workspace":
       return Sparkles;
-    case "Calendar":
+    case "Events":
       return CalendarDays;
     case "Employees":
       return Users;

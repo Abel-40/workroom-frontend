@@ -2,12 +2,16 @@
 import { onMounted } from "vue";
 import { ChevronRight } from "lucide-vue-next";
 import { Button } from "@/components/ui/button";
-import EventCard from "@/components/cards/EventCard.vue";
+import EventCardCompact from "@/components/cards/EventCardCompact.vue";
 import { useEventStore } from "@/stores/eventStore";
 const eventStore = useEventStore();
 
 onMounted(() => {
-  if (!eventStore.events.length) eventStore.fetchEvents({ pageSize: 50 });
+  // Scope to "from today onward" and always refetch: this store is shared
+  // with the Events page, so relying on `events.length` as a cache guard
+  // meant this widget could silently render whatever page another view had
+  // last fetched (e.g. an unrelated month, or the oldest historical page).
+  eventStore.fetchEvents({ startDate: new Date().toISOString().slice(0, 10), pageSize: 50 });
 });
 </script>
 
@@ -21,8 +25,8 @@ onMounted(() => {
         </Button>
       </div>
 
-      <div v-if="eventStore.nearest.length" class="space-y-4">
-        <EventCard v-for="event in eventStore.nearest" :key="event.id" :event="event" />
+      <div v-if="eventStore.nearest.length" class="space-y-3">
+        <EventCardCompact v-for="event in eventStore.nearest" :key="event.id" :event="event" />
       </div>
       <div v-else class="rounded-2xl border border-dashed border-gray-200 p-6 text-center text-sm text-subtle">
         No upcoming events.

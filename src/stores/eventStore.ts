@@ -125,10 +125,17 @@ export const useEventStore = defineStore("eventStore", {
     loading: false,
   }),
   getters: {
+    // Day-boundary, not exact-timestamp: a meeting scheduled for 9am today
+    // is still "today's event" at 5pm, not something to drop off the
+    // dashboard the moment its start time ticks past. Comparing against the
+    // precise current timestamp meant the widget could go blank all
+    // afternoon on a day that still has events on it.
     nearest(state) {
-      const now = Date.now();
+      const startOfToday = new Date();
+      startOfToday.setHours(0, 0, 0, 0);
+      const cutoff = startOfToday.getTime();
       return [...state.events]
-        .filter((e) => new Date(e.startAt).getTime() >= now)
+        .filter((e) => new Date(e.startAt).getTime() >= cutoff)
         .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime())
         .slice(0, 3);
     },

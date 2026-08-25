@@ -49,6 +49,22 @@ export function formatShortDate(iso: string | null | undefined): string {
   }).format(date);
 }
 
+// "AUG" -- for the compact month/day date badge on event cards.
+export function formatMonthShort(iso: string | null | undefined): string {
+  const date = toDate(iso);
+  if (!date) return "—";
+  return new Intl.DateTimeFormat("en-US", { month: "short", timeZone: currentTimeZone() })
+    .format(date)
+    .toUpperCase();
+}
+
+// "25" -- day-of-month only, paired with formatMonthShort in the same badge.
+export function formatDayNumber(iso: string | null | undefined): string {
+  const date = toDate(iso);
+  if (!date) return "—";
+  return new Intl.DateTimeFormat("en-US", { day: "numeric", timeZone: currentTimeZone() }).format(date);
+}
+
 // "3:45 PM"
 export function formatTime(iso: string | null | undefined): string {
   const date = toDate(iso);

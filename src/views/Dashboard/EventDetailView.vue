@@ -9,6 +9,7 @@ import Header from "@/components/layout/Header.vue";
 import { useAuthStore } from "@/stores/authStore";
 import { useEventStore, type EventEntry } from "@/stores/eventStore";
 import { formatDateTime } from "@/lib/dates";
+import { canManageEvent } from "@/lib/eventPermissions";
 
 const route = useRoute();
 const router = useRouter();
@@ -31,14 +32,9 @@ watch(eventId, (id) => {
   if (id) load();
 });
 
-// Coarse client-side gate for showing the controls at all -- the backend
-// (event_management.services.user_can_manage_event) remains authoritative
-// for department-leader scoping, which isn't modeled on the frontend.
-const canManage = computed(() => {
-  if (!event.value) return false;
-  if (event.value.organizerId === authStore.logedInUserInfo?.user?.id) return true;
-  return ["Owner", "CM", "DL"].includes(authStore.logedInUserInfo?.role ?? "");
-});
+const canManage = computed(() =>
+  canManageEvent(event.value, authStore.logedInUserInfo?.user?.id, authStore.logedInUserInfo?.role)
+);
 
 const initials = (name: string) =>
   (name || "?").split(" ").map((p) => p[0]).join("").slice(0, 2).toUpperCase();
