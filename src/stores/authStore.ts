@@ -51,6 +51,7 @@ export const useAuthStore =  defineStore('AuthStore',{
       role?: "Owner" | "CM" | "DL" | "DM" | null
       company_id?: string | null
       company_name?: string | null
+      company_created_at?: string | null
     },
     company:{} as Company,
     sectors:{} as Sectors,
@@ -131,6 +132,16 @@ export const useAuthStore =  defineStore('AuthStore',{
         return {errors:errorMsg}
       }
     },
+    async acceptInvite(form: FormData): Promise<{ error?: string }> {
+      try {
+        await axiosInstance.post('/emp/accept_invite/', form)
+        return {}
+      } catch (error: any) {
+        const fieldErrors = error.response?.data?.errors
+        const passwordError = fieldErrors?.password?.[0]
+        return { error: passwordError || error.response?.data?.message || 'Unable to accept this invitation.' }
+      }
+    },
     async loginUser(form: Record<string, string>): Promise<{ user?: User; error?: string }> {
       try {
         const { data } = await axiosInstance.post<ApiResponse<{
@@ -140,6 +151,7 @@ export const useAuthStore =  defineStore('AuthStore',{
           role: "Owner" | "DL" | "DM" | null
           company_id: string | null
           company_name: string | null
+          company_created_at: string | null
         }>>(
           '/auth/signin/',
           { ...form }
@@ -160,6 +172,7 @@ export const useAuthStore =  defineStore('AuthStore',{
       this.logedInUserInfo.role = null
       this.logedInUserInfo.company_id = null
       this.logedInUserInfo.company_name = null
+      this.logedInUserInfo.company_created_at = null
       this.logedInUserInfo.user = {
         id:'',
         username:'',
