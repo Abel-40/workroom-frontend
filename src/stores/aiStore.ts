@@ -532,6 +532,16 @@ export const useAiStore = defineStore("aiStore", {
       }
     },
 
+    async deleteAssistantQuery(queryId: string, projectId: string): Promise<{ error?: string }> {
+      try {
+        await axiosInstance.delete(`/ai/assistant-queries/${queryId}/`);
+        this.assistantQueriesByProject[projectId] = this.assistantQueriesFor(projectId).filter((q) => q.id !== queryId);
+        return {};
+      } catch (error: any) {
+        return { error: error.response?.data?.message || "Failed to delete this assistant query" };
+      }
+    },
+
     async saveAssistantQueryAsPage(
       queryId: string, input: { title: string; folderId?: string; newFolderName?: string }
     ): Promise<{ pageId?: string; error?: string }> {

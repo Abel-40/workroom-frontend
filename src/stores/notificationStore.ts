@@ -30,12 +30,16 @@ type NotificationApi = {
 
 type PaginationMeta = { count: number; page: number; page_size: number; has_next: boolean };
 
+const FRIENDLY_AI_PLAN_FAILURE = "We could not create this AI plan right now. Please try again in a few minutes.";
+
 const mapNotification = (n: NotificationApi): NotificationEntry => ({
   id: n.id,
   type: n.type,
   category: n.category,
   title: n.title,
-  message: n.message,
+  // Older records may already contain raw provider exceptions. Never expose
+  // those implementation details in the employee notification UI.
+  message: n.type === "ai_generation_failed" ? FRIENDLY_AI_PLAN_FAILURE : n.message,
   relatedObjectType: n.related_object_type,
   relatedObjectId: n.related_object_id,
   isRead: n.is_read,
