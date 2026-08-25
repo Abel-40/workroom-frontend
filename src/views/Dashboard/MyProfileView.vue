@@ -15,6 +15,7 @@ import { useUserProfileStore } from "@/stores/userProfileStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { useEmployeeStore, type EmployeeRole } from "@/stores/employeeStore";
 import { useDirectoryStore } from "@/stores/directoryStore";
+import { formatShortDate } from "@/lib/dates";
 
 const authStore = useAuthStore();
 const profileStore = useUserProfileStore();
@@ -289,7 +290,7 @@ const roleBadgeClass: Record<string, string> = {
               <div class="min-w-0">
                 <p class="text-xs text-subtle" :title="project.id">{{ shortProjectId(project.id) }}</p>
                 <p class="truncate font-medium text-ink" :title="project.title">{{ project.title }}</p>
-                <p class="flex items-center gap-1 text-xs text-subtle"><Calendar class="h-3 w-3" /> Created {{ project.createdAt }}</p>
+                <p class="flex items-center gap-1 text-xs text-subtle"><Calendar class="h-3 w-3" /> Created {{ formatShortDate(project.createdAt) }}</p>
               </div>
             </div>
             <div class="flex shrink-0 items-center gap-6 text-sm">

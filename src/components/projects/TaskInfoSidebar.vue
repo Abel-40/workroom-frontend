@@ -15,6 +15,7 @@ import { useToast } from "@/components/ui/toast/use-toast";
 import { useEmployeeStore } from "@/stores/employeeStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { formatHoursToDuration } from "@/lib/duration";
+import { formatShortDate } from "@/lib/dates";
 import type { Project, TaskType } from "@/types/types";
 import TimeTrackingModal from "./TimeTrackingModal.vue";
 
@@ -138,12 +139,12 @@ const assigneeValue = computed({
 
       <div>
         <p class="text-xs text-subtle">Dead Line</p>
-        <p class="mt-1 font-medium text-ink">{{ task.deadline || "Not set" }}</p>
+        <p class="mt-1 font-medium text-ink">{{ formatShortDate(task.deadline) }}</p>
       </div>
 
       <div class="flex items-center gap-2 text-subtle">
         <Calendar class="h-4 w-4" />
-        <span>Created {{ task.createdAt }}</span>
+        <span>Created {{ formatShortDate(task.createdAt) }}</span>
       </div>
     </div>
 

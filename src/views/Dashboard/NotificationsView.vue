@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import Header from "@/components/layout/Header.vue";
 import { useNotificationStore } from "@/stores/notificationStore";
 import { useProjectStore } from "@/stores/projectStore";
+import { formatDateTime } from "@/lib/dates";
 
 const notificationStore = useNotificationStore();
 const projectStore = useProjectStore();
@@ -70,11 +71,7 @@ watch([typeFilter, projectFilter, taskFilter, dateFrom, dateTo], () => {
 });
 watch(page, load);
 
-const formatTime = (iso: string) => {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return iso;
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(date);
-};
+const formatTime = formatDateTime;
 const initials = (title: string) =>
   (title || "?").split(" ").map((p) => p[0]).join("").slice(0, 2).toUpperCase();
 

@@ -13,12 +13,12 @@ import {
   UserMinus,
   Building2,
 } from "lucide-vue-next";
-import { formatDistanceToNowStrict } from "date-fns";
 import Header from "@/components/layout/Header.vue";
 import UserCard from "@/components/cards/UserCard.vue";
 import { useAnalyticsStore } from "@/stores/analyticsStore";
 import { useActivityStore, type ActivityType } from "@/stores/activityStore";
 import { useEmployeeStore } from "@/stores/employeeStore";
+import { formatRelativeTime } from "@/lib/dates";
 
 const analyticsStore = useAnalyticsStore();
 const activityStore = useActivityStore();
@@ -63,13 +63,6 @@ const ICONS: Record<ActivityType, typeof FolderPlus> = {
   team_created: Users,
 };
 const iconFor = (type: ActivityType) => ICONS[type] ?? FolderPlus;
-const relativeTime = (iso: string) => {
-  try {
-    return formatDistanceToNowStrict(new Date(iso), { addSuffix: true });
-  } catch {
-    return "";
-  }
-};
 </script>
 
 <template>
@@ -158,7 +151,7 @@ const relativeTime = (iso: string) => {
               </span>
               <div class="min-w-0">
                 <p class="text-sm text-ink">{{ activity.summary }}</p>
-                <p class="text-xs text-subtle">{{ relativeTime(activity.createdAt) }}</p>
+                <p class="text-xs text-subtle">{{ formatRelativeTime(activity.createdAt) }}</p>
               </div>
             </div>
             <button

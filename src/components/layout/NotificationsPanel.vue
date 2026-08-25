@@ -4,6 +4,7 @@ import { useRouter } from "vue-router";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useNotificationStore } from "@/stores/notificationStore";
+import { formatRelativeTime } from "@/lib/dates";
 
 const notificationStore = useNotificationStore();
 const router = useRouter();
@@ -21,14 +22,7 @@ const initials = (title: string) =>
     .slice(0, 2)
     .toUpperCase();
 
-const formatTime = (iso: string) => {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return iso;
-  const diffMs = Date.now() - date.getTime();
-  const diffHrs = Math.round(diffMs / (1000 * 60 * 60));
-  if (diffHrs >= 0 && diffHrs < 24) return `${diffHrs || 1}h ago`;
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(date);
-};
+const formatTime = formatRelativeTime;
 
 const viewAll = () => router.push({ name: "admin-dashboard", query: { section: "notifications" } });
 </script>

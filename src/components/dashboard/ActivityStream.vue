@@ -13,9 +13,9 @@ import {
   Users,
   Sparkles,
 } from "lucide-vue-next";
-import { formatDistanceToNowStrict } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { useActivityStore, type ActivityType } from "@/stores/activityStore";
+import { formatRelativeTime } from "@/lib/dates";
 
 const DASHBOARD_LIMIT = 3;
 
@@ -51,14 +51,6 @@ const COLORS: Record<ActivityType, string> = {
 const iconFor = (type: ActivityType) => ICONS[type] ?? Sparkles;
 const colorFor = (type: ActivityType) => COLORS[type] ?? "text-[#3F8CFF]";
 
-const relativeTime = (iso: string) => {
-  try {
-    return formatDistanceToNowStrict(new Date(iso), { addSuffix: true });
-  } catch {
-    return "";
-  }
-};
-
 const items = computed(() => activityStore.activities.slice(0, DASHBOARD_LIMIT));
 </script>
 
@@ -82,7 +74,7 @@ const items = computed(() => activityStore.activities.slice(0, DASHBOARD_LIMIT))
                 </span>
                 <div class="min-w-0">
                   <p class="text-sm text-[#0A1629]">{{ activity.summary }}</p>
-                  <p class="text-xs text-[#91929E]">{{ relativeTime(activity.createdAt) }}</p>
+                  <p class="text-xs text-[#91929E]">{{ formatRelativeTime(activity.createdAt) }}</p>
                 </div>
               </div>
 

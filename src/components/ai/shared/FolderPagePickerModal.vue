@@ -6,6 +6,7 @@ import { Check, FileText, Search } from "lucide-vue-next";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { usePagesStore, type WorkroomPage } from "@/stores/pagesStore";
 import { useEmployeeStore } from "@/stores/employeeStore";
+import { formatShortDate } from "@/lib/dates";
 
 const props = withDefaults(defineProps<{ initialSelectedIds?: string[] }>(), { initialSelectedIds: () => [] });
 
@@ -42,10 +43,7 @@ const groups = computed(() => {
 function authorName(page: WorkroomPage) {
   return employeeStore.employees.find((e) => e.id === page.createdBy)?.name ?? "Unknown";
 }
-function formatDate(iso: string) {
-  const date = new Date(iso);
-  return Number.isNaN(date.getTime()) ? "" : date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-}
+const formatDate = formatShortDate;
 function toggle(id: string) {
   selectedIds.value = selectedIds.value.includes(id)
     ? selectedIds.value.filter((existing) => existing !== id)
