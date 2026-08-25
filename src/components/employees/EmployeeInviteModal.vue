@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { Plus, UserPlus } from "lucide-vue-next";
 import {
   Dialog,
@@ -9,22 +9,33 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useEmployeeStore } from "@/stores/employeeStore";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useDirectoryStore } from "@/stores/directoryStore";
+import { useEmployeeStore, type EmployeeRole } from "@/stores/employeeStore";
 import { useToast } from "@/components/ui/toast/use-toast";
 
 const open = defineModel<boolean>("open", { required: true });
 const employeeStore = useEmployeeStore();
+const directoryStore = useDirectoryStore();
 const { toast } = useToast();
 
+const NO_DEPARTMENT = "__no_department__";
 const emails = ref<string[]>([""]);
+const departmentId = ref(NO_DEPARTMENT);
+const role = ref<Exclude<EmployeeRole, "Owner">>("DM");
 const sent = ref(false);
 const sending = ref(false);
+const departmentRequired = computed(() => role.value === "DL");
 
 watch(open, (isOpen) => {
   if (isOpen) {
     emails.value = [""];
+    departmentId.value = NO_DEPARTMENT;
+    role.value = "DM";
     sent.value = false;
     sending.value = false;
+    if (!directoryStore.loaded) directoryStore.fetchAll();
   }
 });
 
@@ -32,9 +43,20 @@ const addAnother = () => emails.value.push("");
 const removeAt = (index: number) => emails.value.splice(index, 1);
 
 const approve = async () => {
+  if (!emails.value.some((email) => email.trim())) {
+    toast({ title: "Add an email address", description: "Enter at least one employee email before sending an invitation.", variant: "destructive" });
+    return;
+  }
+  if (departmentRequired.value && departmentId.value === NO_DEPARTMENT) {
+    toast({ title: "Select a department", description: "A Department Leader must be assigned to a department.", variant: "destructive" });
+    return;
+  }
   sending.value = true;
   try {
-    const { sent: invited, errors } = await employeeStore.invite(emails.value);
+    const { sent: invited, errors } = await employeeStore.invite(emails.value, {
+      departmentId: departmentId.value === NO_DEPARTMENT ? null : departmentId.value,
+      role: role.value,
+    });
     for (const [email, message] of Object.entries(errors)) {
       toast({ title: `Couldn't invite ${email}`, description: message, variant: "destructive" });
     }
@@ -73,6 +95,41 @@ const approve = async () => {
             </button>
           </div>
         </div>
+
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div class="space-y-2">
+            <Label for="invite-department">Department <span v-if="departmentRequired" class="text-destructive">*</span></Label>
+            <Select v-model="departmentId">
+              <SelectTrigger id="invite-department" class="rounded-xl">
+                <SelectValue placeholder="No department" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectItem :value="NO_DEPARTMENT">No department</SelectItem>
+                  <SelectItem v-for="department in directoryStore.departments" :key="department.id" :value="department.id">
+                    {{ department.name }}
+                  </SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
+          <div class="space-y-2">
+            <Label for="invite-role">Role</Label>
+            <Select v-model="role">
+              <SelectTrigger id="invite-role" class="rounded-xl">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectItem value="DM">Department Member</SelectItem>
+                  <SelectItem value="DL">Department Leader</SelectItem>
+                  <SelectItem value="CM">Company Manager</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <p class="text-xs text-subtle">The selected department and role are applied when the invited employee accepts the invitation.</p>
 
         <button
           type="button"

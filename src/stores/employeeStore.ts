@@ -11,6 +11,7 @@ export interface Employee {
   role: EmployeeRole;
   roleLabel: string;
   department: string | null;
+  profilePictureUrl: string | null;
   isActive: boolean;
   activeTaskCount: number;
   todoCount: number;
@@ -31,6 +32,7 @@ type MemberApi = {
   email: string;
   role: EmployeeRole;
   department: string | null;
+  profile_picture_url: string | null;
   is_active: boolean;
   active_task_count: number;
   todo_count: number;
@@ -46,6 +48,7 @@ type MemberDetailApi = {
   last_name: string;
   role: EmployeeRole;
   department_name: string | null;
+  profile_picture_url: string | null;
   is_active: boolean;
   workload: { active_task_count: number; todo_count: number; in_progress_count: number; in_review_count: number };
 };
@@ -56,6 +59,11 @@ export const ROLE_LABELS: Record<EmployeeRole, string> = {
   DL: "Department Leader",
   DM: "Department Member",
 };
+
+export interface InviteOptions {
+  departmentId?: string | null;
+  role?: Exclude<EmployeeRole, "Owner">;
+}
 
 export const useEmployeeStore = defineStore("employeeStore", {
   state: () => ({
@@ -79,6 +87,7 @@ export const useEmployeeStore = defineStore("employeeStore", {
           role: m.role,
           roleLabel: ROLE_LABELS[m.role] ?? m.role,
           department: m.department,
+          profilePictureUrl: m.profile_picture_url,
           isActive: m.is_active,
           activeTaskCount: m.active_task_count,
           todoCount: m.todo_count,
@@ -97,14 +106,18 @@ export const useEmployeeStore = defineStore("employeeStore", {
     // Sends one invitation per email via the real invite endpoint (the
     // backend accepts one address at a time); returns which addresses were
     // sent and which failed so the UI can surface partial failures.
-    async invite(emails: string[]): Promise<{ sent: string[]; errors: Record<string, string> }> {
+    async invite(emails: string[], options: InviteOptions = {}): Promise<{ sent: string[]; errors: Record<string, string> }> {
       const sent: string[] = [];
       const errors: Record<string, string> = {};
       for (const raw of emails) {
         const email = raw.trim();
         if (!email) continue;
         try {
-          await axiosInstance.post("/auth/send_invite/", { email });
+          await axiosInstance.post("/auth/send_invite/", {
+            email,
+            department: options.departmentId ?? null,
+            role: options.role ?? "DM",
+          });
           sent.push(email);
         } catch (error: any) {
           errors[email] = error.response?.data?.message || "Failed to send invitation";
@@ -126,6 +139,7 @@ export const useEmployeeStore = defineStore("employeeStore", {
           role: m.role,
           roleLabel: ROLE_LABELS[m.role] ?? m.role,
           department: m.department_name,
+          profilePictureUrl: m.profile_picture_url,
           isActive: m.is_active,
           activeTaskCount: m.workload.active_task_count,
           todoCount: m.workload.todo_count,

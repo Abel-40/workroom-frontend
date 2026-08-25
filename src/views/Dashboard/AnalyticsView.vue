@@ -127,6 +127,7 @@ const iconFor = (type: ActivityType) => ICONS[type] ?? FolderPlus;
               :name="user.name"
               :role="user.roleLabel"
               :department="user.department ?? undefined"
+              :profile-picture-url="user.profilePictureUrl"
               @click="openEmployee(user.id)"
             />
           </div>
