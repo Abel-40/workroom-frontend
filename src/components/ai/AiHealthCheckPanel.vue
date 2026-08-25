@@ -7,7 +7,6 @@
 // this tool only ever generates/downloads a report, it doesn't hold a
 // conversation (that's what the AI Assistant is for).
 import { computed, reactive, ref, watch } from "vue";
-import { format } from "date-fns";
 import { ChevronDown, Clock3, Download, Sparkles, UserX } from "lucide-vue-next";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast/use-toast";
@@ -15,9 +14,11 @@ import { useAiStore } from "@/stores/aiStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { createPollSignal, type PollSignal } from "@/lib/pollUntilTerminal";
 import { riskBadgeClass } from "@/lib/aiBadges";
+import { formatDateTime } from "@/lib/dates";
 import type { AiMode } from "@/types/aiWorkspace";
 import AiStatusIndicator from "@/components/projects/AiStatusIndicator.vue";
 import AiErrorState from "@/components/ai/AiErrorState.vue";
+import MarkdownText from "@/components/ai/shared/MarkdownText.vue";
 import StatusTag from "@/components/ai/shared/StatusTag.vue";
 import ProjectSelectionModal from "@/components/ai/shared/ProjectSelectionModal.vue";
 import AiToolModeDropdown from "@/components/ai/shared/AiToolModeDropdown.vue";
@@ -55,10 +56,7 @@ const teamPeople = computed(() =>
 const RISK_LABEL: Record<string, string> = { low: "On track", medium: "At risk", high: "Delayed" };
 const riskTone = (risk: string) => (risk === "low" ? "success" : risk === "medium" ? "warning" : risk === "high" ? "danger" : "neutral");
 
-const formatWhen = (iso: string) => {
-  const date = new Date(iso);
-  return Number.isNaN(date.getTime()) ? iso : format(date, "MMM d, h:mm a");
-};
+const formatWhen = formatDateTime;
 
 const request = async () => {
   if (!props.projectId) return;
@@ -107,7 +105,12 @@ watch(
 <template>
   <div class="mx-auto flex h-full w-full max-w-6xl min-h-[420px] gap-4 pb-4">
     <div class="flex min-w-0 flex-1 flex-col gap-3">
-      <div class="flex-1 space-y-4  overflow-y-auto pr-0.5">
+      <!-- Report (left) and AI Insight (right) sit side by side so both are
+           visible at once -- previously stacked in one column, which forced
+           scrolling the whole panel just to reach the AI Insight card below
+           a long task table. Each column scrolls independently instead. -->
+      <div class="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row">
+      <div class="min-h-0 flex-1 space-y-4 overflow-y-auto pr-0.5">
         <div v-if="!projectId" class="rounded-2xl border border-dashed border-gray-200 bg-white p-8 text-center text-sm text-subtle">
           Select a project below to see its health report.
         </div>
@@ -210,35 +213,36 @@ watch(
             </table>
           </div>
         </div>
+      </div>
 
-        <div v-if="projectId" class="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-          <div class="mb-3 flex items-center gap-2">
-            <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-indigo-500 text-white">
-              <Sparkles class="h-3.5 w-3.5" />
-            </span>
-            <p class="text-sm font-medium text-ink">AI Insight</p>
-          </div>
-
-          <p v-if="!latest" class="text-sm text-subtle">Generate a report below to see the AI's risk assessment here.</p>
-
-          <AiStatusIndicator v-if="latest && ['pending', 'processing'].includes(latest.status)" :status="latest.status" />
-
-          <div v-if="latest?.status === 'completed'" class="mt-3 rounded-xl bg-page p-3">
-            <span class="inline-block rounded-full px-2 py-0.5 text-xs font-semibold capitalize" :class="riskBadgeClass(latest.riskLevel)">
-              {{ latest.riskLevel || "unknown" }} risk
-            </span>
-            <p class="mt-2 whitespace-pre-line text-sm text-ink">{{ latest.summary }}</p>
-          </div>
-
-          <AiErrorState
-            v-if="latest?.status === 'failed'"
-            class="mt-3"
-            title="Summary failed"
-            message="The AI service ran into a problem while analyzing this project."
-            :detail="latest.errorMessage"
-            @retry="request"
-          />
+      <div v-if="projectId" class="flex w-full min-h-0 flex-col overflow-y-auto rounded-2xl border border-gray-100 bg-white p-4 shadow-sm lg:w-72 lg:shrink-0">
+        <div class="mb-3 flex items-center gap-2">
+          <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-indigo-500 text-white">
+            <Sparkles class="h-3.5 w-3.5" />
+          </span>
+          <p class="text-sm font-medium text-ink">AI Insight</p>
         </div>
+
+        <p v-if="!latest" class="text-sm text-subtle">Generate a report below to see the AI's risk assessment here.</p>
+
+        <AiStatusIndicator v-if="latest && ['pending', 'processing'].includes(latest.status)" :status="latest.status" />
+
+        <div v-if="latest?.status === 'completed'" class="mt-3 rounded-xl bg-page p-3">
+          <span class="inline-block rounded-full px-2 py-0.5 text-xs font-semibold capitalize" :class="riskBadgeClass(latest.riskLevel)">
+            {{ latest.riskLevel || "unknown" }} risk
+          </span>
+          <MarkdownText class="mt-2 text-sm text-ink" :text="latest.summary" />
+        </div>
+
+        <AiErrorState
+          v-if="latest?.status === 'failed'"
+          class="mt-3"
+          title="Summary failed"
+          message="The AI service ran into a problem while analyzing this project."
+          :detail="latest.errorMessage"
+          @retry="request"
+        />
+      </div>
       </div>
 
       <!-- Footer: row 1 is the context/action cluster, row 2 is the

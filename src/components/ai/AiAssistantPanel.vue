@@ -6,10 +6,17 @@
 // ai-assistant-queries history endpoint), and "save this answer as a page"
 // (real Workroom page, via pagesStore/pages API).
 import { computed, reactive, ref, watch, type ComponentPublicInstance } from "vue";
-import { format } from "date-fns";
-import { ChevronDown, Copy, FileText, Link2, Save, Send, Sparkles } from "lucide-vue-next";
+import { formatDateTime } from "@/lib/dates";
+import { ChevronDown, Copy, FileText, Info, Link2, MoreVertical, Save, Send, Sparkles, Trash2 } from "lucide-vue-next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useToast } from "@/components/ui/toast/use-toast";
 import { useAiStore, type AiAssistantQuery } from "@/stores/aiStore";
 import { useProjectStore } from "@/stores/projectStore";
@@ -18,11 +25,13 @@ import type { AiMode } from "@/types/aiWorkspace";
 import MentionTextarea from "@/components/ai/MentionTextarea.vue";
 import AiStatusIndicator from "@/components/projects/AiStatusIndicator.vue";
 import AiErrorState from "@/components/ai/AiErrorState.vue";
+import ConfirmDeleteDialog from "@/components/common/ConfirmDeleteDialog.vue";
 import FolderPagePickerModal from "@/components/ai/shared/FolderPagePickerModal.vue";
 import SaveResponseAsPageModal from "@/components/ai/shared/SaveResponseAsPageModal.vue";
 import ProjectSelectionModal from "@/components/ai/shared/ProjectSelectionModal.vue";
 import AiToolModeDropdown from "@/components/ai/shared/AiToolModeDropdown.vue";
 import AvatarStack from "@/components/ai/shared/AvatarStack.vue";
+import MarkdownText from "@/components/ai/shared/MarkdownText.vue";
 import type { WorkroomPage } from "@/stores/pagesStore";
 
 const props = defineProps<{
@@ -62,10 +71,7 @@ const teamPeople = computed(() =>
   props.projectId ? aiStore.eligibleAssigneesFor(props.projectId).map((m) => ({ id: m.id, name: m.name })) : []
 );
 
-const formatWhen = (iso: string) => {
-  const date = new Date(iso);
-  return Number.isNaN(date.getTime()) ? iso : format(date, "MMM d, h:mm a");
-};
+const formatWhen = formatDateTime;
 
 const messageRefs = ref<Record<string, HTMLElement | null>>({});
 const highlightedId = ref<string | null>(null);
@@ -119,6 +125,28 @@ async function copyAnswer(answer: string) {
   } catch {
     toast({ title: "Couldn't copy", variant: "destructive" });
   }
+}
+
+const detailsQuery = ref<AiAssistantQuery | null>(null);
+const deletingId = ref<string | null>(null);
+const queryPendingDelete = ref<AiAssistantQuery | null>(null);
+
+function deleteQuery(q: AiAssistantQuery) {
+  queryPendingDelete.value = q;
+}
+
+async function confirmDeleteQuery() {
+  const q = queryPendingDelete.value;
+  if (!q || !props.projectId) return;
+  deletingId.value = q.id;
+  const { error } = await aiStore.deleteAssistantQuery(q.id, props.projectId);
+  deletingId.value = null;
+  queryPendingDelete.value = null;
+  if (error) {
+    toast({ title: "Couldn't delete this entry", description: error, variant: "destructive" });
+    return;
+  }
+  if (detailsQuery.value?.id === q.id) detailsQuery.value = null;
 }
 
 async function saveAsPage(input: { title: string; folderId?: string; newFolderName?: string }) {
@@ -189,7 +217,7 @@ watch(
                       <span class="rounded-md bg-white px-1.5 py-0.5 text-[9.5px] font-semibold uppercase tracking-wide text-primary">AI response</span>
                       <span v-if="q.pages.length" class="text-[11px] text-subtle">Generated from {{ q.pages.length }} selected page{{ q.pages.length === 1 ? "" : "s" }}</span>
                     </div>
-                    <p class="whitespace-pre-line">{{ q.answer }}</p>
+                    <MarkdownText :text="q.answer" />
 
                     <div v-if="q.pages.length || q.referenceUrl" class="mt-2.5 flex flex-col gap-1 border-t border-gray-200/70 pt-2">
                       <span class="text-[10px] font-semibold uppercase tracking-wide text-subtle">Sources &amp; links</span>
@@ -328,17 +356,48 @@ watch(
       <p class="mb-2 px-1 text-xs font-semibold uppercase tracking-wide text-subtle">History</p>
       <div class="flex-1 space-y-1 overflow-y-auto">
         <p v-if="!answeredQueries.length" class="px-1 py-4 text-center text-xs text-subtle">No answers yet.</p>
-        <button
+        <div
           v-for="q in answeredQueries" :key="q.id"
-          type="button"
-          class="block w-full rounded-xl px-2.5 py-2 text-left transition"
+          role="button"
+          tabindex="0"
+          class="group relative block w-full cursor-pointer rounded-xl bg-page/60 px-2.5 py-2 pr-7 text-left transition"
           :class="highlightedId === q.id ? 'bg-primary/10' : 'hover:bg-page'"
           @click="jumpToMessage(q.id)"
+          @keydown.enter="jumpToMessage(q.id)"
         >
-          <p class="line-clamp-2 text-xs font-medium text-ink">{{ q.question }}</p>
-          <p class="mt-0.5 line-clamp-2 text-[10.5px] text-subtle">{{ q.refused ? "Out of scope for this assistant." : q.answer }}</p>
+          <div class="history-marquee">
+            <span class="history-marquee-text text-xs font-medium text-ink">{{ q.question }}</span>
+          </div>
           <p class="mt-1 text-[10px] text-subtle/70">{{ formatWhen(q.requestedAt) }}</p>
-        </button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger as-child>
+              <button
+                type="button"
+                title="More options"
+                class="absolute right-1 top-1.5 flex h-6 w-6 items-center justify-center rounded-lg text-subtle opacity-0 transition hover:bg-white hover:text-ink group-hover:opacity-100 focus-visible:opacity-100"
+                :disabled="deletingId === q.id"
+                @click.stop
+              >
+                <MoreVertical class="h-3.5 w-3.5" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" @click.stop>
+              <DropdownMenuItem @click="detailsQuery = q">
+                <Info class="h-3.5 w-3.5" /> Details
+              </DropdownMenuItem>
+              <DropdownMenuItem v-if="q.status === 'completed' && !q.refused" @click="copyAnswer(q.answer)">
+                <Copy class="h-3.5 w-3.5" /> Copy answer
+              </DropdownMenuItem>
+              <DropdownMenuItem v-if="q.status === 'completed' && !q.refused" @click="saveModalQuery = q">
+                <Save class="h-3.5 w-3.5" /> Save to folder as a page
+              </DropdownMenuItem>
+              <DropdownMenuItem class="text-red-500" :disabled="deletingId === q.id" @click="deleteQuery(q)">
+                <Trash2 class="h-3.5 w-3.5" /> Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
     </div>
 
@@ -363,5 +422,72 @@ watch(
       continue-label="Select project"
       @confirm="(id) => emit('update:project-id', id)"
     />
+
+    <Dialog :open="!!detailsQuery" @update:open="(v) => { if (!v) detailsQuery = null; }">
+      <DialogContent class="max-w-md rounded-2xl">
+        <DialogHeader>
+          <DialogTitle>Question details</DialogTitle>
+        </DialogHeader>
+        <div v-if="detailsQuery" class="space-y-3 text-sm">
+          <p class="rounded-xl bg-page px-3 py-2 text-ink">{{ detailsQuery.question }}</p>
+          <div class="grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
+            <span class="text-subtle">Project</span>
+            <span class="text-right font-medium text-ink">{{ project?.title || "—" }}</span>
+            <span class="text-subtle">Created</span>
+            <span class="text-right font-medium text-ink">{{ formatWhen(detailsQuery.requestedAt) }}</span>
+            <span class="text-subtle">Status</span>
+            <span class="text-right font-medium capitalize text-ink">{{ detailsQuery.refused ? "Out of scope" : detailsQuery.status }}</span>
+            <span class="text-subtle">Sources attached</span>
+            <span class="text-right font-medium text-ink">{{ detailsQuery.pages.length || "None" }}</span>
+            <template v-if="detailsQuery.referenceUrl">
+              <span class="text-subtle">Reference URL</span>
+              <a :href="detailsQuery.referenceUrl" target="_blank" rel="noopener" class="truncate text-right font-medium text-primary">{{ detailsQuery.referenceUrl }}</a>
+            </template>
+          </div>
+          <div v-if="detailsQuery.pages.length" class="space-y-1">
+            <p class="text-[11px] font-semibold uppercase tracking-wide text-subtle">Pages used</p>
+            <p v-for="page in detailsQuery.pages" :key="page.id" class="flex items-center gap-1.5 text-xs text-subtle">
+              <Link2 class="h-3 w-3" /> {{ page.title }} <span class="text-subtle/70">· {{ page.folderName }}</span>
+            </p>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+
+    <ConfirmDeleteDialog
+      :open="!!queryPendingDelete"
+      title="Delete this question?"
+      description="Delete this question and its answer from your history? This can't be undone."
+      :loading="!!deletingId"
+      @update:open="(v) => { if (!v) queryPendingDelete = null; }"
+      @confirm="confirmDeleteQuery"
+    />
   </div>
 </template>
+
+<style scoped>
+/* Long history titles would otherwise force line-clamping or blow out the
+   fixed-width card -- instead the full title slides into view on hover.
+   translateX(-100%) is relative to the text's own width (not the track), so
+   this holds regardless of how long the title is. */
+.history-marquee {
+  overflow: hidden;
+  white-space: nowrap;
+}
+.history-marquee-text {
+  display: inline-block;
+}
+.history-marquee:hover .history-marquee-text {
+  animation: history-marquee-scroll 7s linear infinite;
+}
+@keyframes history-marquee-scroll {
+  0%,
+  20% {
+    transform: translateX(0);
+  }
+  80%,
+  100% {
+    transform: translateX(-100%);
+  }
+}
+</style>

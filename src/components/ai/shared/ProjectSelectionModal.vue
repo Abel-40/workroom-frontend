@@ -2,10 +2,12 @@
 // Shared project-selection modal used identically by Planner, Assistant and
 // Health Check (spec: "one shared component"). Single select.
 import { computed, ref, watch } from "vue";
-import { ArrowRight, Search, SlidersHorizontal } from "lucide-vue-next";
+import { ArrowRight, Search, SlidersHorizontal, X } from "lucide-vue-next";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import StatusTag from "@/components/ai/shared/StatusTag.vue";
+import { avatarPalette } from "@/lib/avatarPalette";
+import { formatShortDate } from "@/lib/dates";
 import type { Project } from "@/types/types";
 
 type SortKey = "updated" | "name" | "status";
@@ -53,10 +55,7 @@ const filtered = computed(() => {
 const statusTone = (status: Project["status"]) =>
   status === "Done" ? "success" : status === "In Active" ? "neutral" : "info";
 
-function formatDate(iso: string) {
-  const date = new Date(iso);
-  return Number.isNaN(date.getTime()) ? "" : date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-}
+const formatDate = formatShortDate;
 
 function confirm() {
   if (!selected.value) return;
@@ -67,18 +66,26 @@ function confirm() {
 
 <template>
   <Dialog v-model:open="open">
-    <DialogContent class="max-w-[620px] gap-0 rounded-3xl p-0">
+    <DialogContent hide-close class="max-w-[620px] gap-0 rounded-3xl p-0">
       <div class="flex flex-col gap-4 p-6 pb-5">
-        <div class="flex items-start gap-3">
+        <div class="flex items-start justify-between gap-3">
           <div class="flex flex-col gap-1">
             <span v-if="stepLabel" class="text-[10.5px] font-semibold uppercase tracking-wide text-subtle">{{ stepLabel }}</span>
             <span class="text-xl font-bold tracking-tight text-ink">Select a project</span>
             <span class="text-sm text-subtle">Only projects you have access to are listed.</span>
           </div>
+          <button
+            type="button"
+            title="Close"
+            class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-page text-subtle transition hover:bg-gray-200 hover:text-ink"
+            @click="open = false"
+          >
+            <X class="h-4 w-4" />
+          </button>
         </div>
 
         <div class="flex items-center gap-2.5">
-          <div class="flex flex-1 items-center gap-2 rounded-xl bg-surface px-3.5 py-2.5 text-subtle">
+          <div class="flex flex-1 items-center gap-2 rounded-xl bg-surface px-3.5 py-2.5 text-subtle border-2">
             <Search class="h-4 w-4 shrink-0" />
             <input
               v-model="query"
@@ -88,8 +95,9 @@ function confirm() {
             />
           </div>
           <Select v-model="sort">
-            <SelectTrigger class="w-[190px] gap-2 rounded-xl text-sm">
+            <SelectTrigger class="w-[220px] gap-2 rounded-xl text-sm">
               <SlidersHorizontal class="h-3.5 w-3.5 text-subtle" />
+              <span class="text-subtle">Sort</span>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -108,21 +116,26 @@ function confirm() {
             v-for="project in filtered"
             :key="project.id"
             type="button"
-            class="flex items-center gap-3.5 rounded-2xl border p-3.5 text-left transition"
-            :class="selected === project.id ? 'border-primary bg-info/40' : 'border-transparent bg-surface hover:border-gray-200'"
+            class="flex items-center gap-3.5 rounded-2xl border-2 p-3.5 text-left transition"
+            :class="selected === project.id ? 'border-primary bg-info/40' : 'border-2 bg-surface hover:border-gray-200 '"
             @click="selected = project.id"
           >
-            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] bg-white text-xs font-bold text-primary shadow-sm">
+            <span
+              class="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] text-xs font-bold"
+              :class="[avatarPalette(project.id).bg, avatarPalette(project.id).text]"
+            >
               {{ project.title.slice(0, 2).toUpperCase() }}
             </span>
             <span class="min-w-0 flex-1">
-              <span class="flex flex-wrap items-center gap-2">
-                <span class="truncate text-sm font-medium text-ink">{{ project.title }}</span>
+              <span class="flex justify-between items-center gap-2">
+                <span class="block max-w-[260px] truncate text-sm font-medium text-ink">
+                  {{ project.title }}
+                </span>
                 <StatusTag :label="project.status" :tone="statusTone(project.status)" />
                 <StatusTag v-if="project.hasSavedPlan" label="AI plan already saved" tone="warning" />
               </span>
               <span class="mt-0.5 block truncate text-xs text-subtle">
-                {{ project.task.total }} tasks · updated {{ formatDate(project.updatedAt || project.createdAt) }}
+                {{ project.task.total }} tasks · {{ project.assigneeIds?.length ?? 0 }} members · updated {{ formatDate(project.updatedAt || project.createdAt) }}
               </span>
             </span>
             <span
