@@ -26,8 +26,11 @@ import EmptyTasksState from "@/components/projects/EmptyTasksState.vue";
 import AddTaskModal from "@/components/projects/AddTaskModal.vue";
 import CreateProjectModal from "@/components/projects/CreateProjectModal.vue";
 import ProjectImage from "@/components/projects/ProjectImage.vue";
+import ConfirmDeleteDialog from "@/components/common/ConfirmDeleteDialog.vue";
 import { useToast } from "@/components/ui/toast/use-toast";
+import { formatShortDate } from "@/lib/dates";
 import { useProjectStore } from "@/stores/projectStore";
+import { useAuthStore } from "@/stores/authStore";
 import { useEmployeeStore } from "@/stores/employeeStore";
 import { useDirectoryStore } from "@/stores/directoryStore";
 import type { Project, TaskType } from "@/types/types";
@@ -53,6 +56,7 @@ const router = useRouter();
 const route = useRoute();
 const { toast } = useToast();
 const projectsStore = useProjectStore();
+const authStore = useAuthStore();
 const employeeStore = useEmployeeStore();
 const directoryStore = useDirectoryStore();
 const { selectedProject, selectedTask } = storeToRefs(projectsStore);
@@ -182,11 +186,13 @@ const ownerValue = computed({
 });
 
 const archiving = ref(false);
+const isDeleteProjectDialogOpen = ref(false);
 const archiveCurrentProject = async () => {
   if (!selectedProject.value) return;
   archiving.value = true;
   const ok = await projectsStore.archiveProject(selectedProject.value.id);
   archiving.value = false;
+  isDeleteProjectDialogOpen.value = false;
   if (ok) goBack();
 };
 const onSelectTask = (task: TaskType) => {
@@ -197,7 +203,7 @@ const closeTaskDetail = () => projectsStore.selectTask(null);
 
 const projectDeadline = (project: Project | null) => {
   if (!project) return "Not set";
-  if (project.deadline) return project.deadline;
+  if (project.deadline) return formatShortDate(project.deadline);
   const created = new Date(project.createdAt);
   if (Number.isNaN(created.getTime())) return "Not set";
   return format(addDays(created, 30), "MMM d, yyyy");
@@ -237,23 +243,45 @@ watch(
   { immediate: true }
 );
 
+// Selects the project named by ?id=... (set when arriving via a project
+// card's click-through, e.g. from the Dashboard widget) if it's present and
+// found in the already-fetched, already-authorized project list; otherwise
+// falls back to the first project, same as before this existed.
+const selectProjectFromRoute = () => {
+  const id = route.query.id;
+  if (typeof id === "string") {
+    const match = projectsStore.projects.find((p) => p.id === id);
+    if (match) {
+      selectedProject.value = match;
+      showDetial.value = true;
+      return;
+    }
+  }
+  selectedProject.value = paginatedProjects.value[0];
+};
+
 // first selected project value
 onMounted(async ()=>{
   // Employees load first so project creator names resolve when mapping.
   await employeeStore.fetchEmployees();
   if (!directoryStore.loaded) await directoryStore.fetchAll();
   await projectsStore.fetchProjects();
-  selectedProject.value = paginatedProjects.value[0]
+  selectProjectFromRoute();
   // Reached from the AI workspace's "View tasks in backlog" link -- show
   // the board filtered to just this project's AI-generated tasks.
   if (route.query.aiGenerated === "true") onViewGeneratedTasks();
 })
+// Re-select when the ?id= query param changes (e.g. clicking a different
+// project card while already on this section).
+watch(() => route.query.id, (id) => {
+  if (typeof id === "string" && projectsStore.projects.length) selectProjectFromRoute();
+});
 // Update whenever a new project is added -- createProject unshifts the
 // newest project to the front of the list.
 watch(
   () => projectsStore.projects.length,
   () => {
-    if (projectsStore.projects.length > 0) {
+    if (projectsStore.projects.length > 0 && typeof route.query.id !== "string") {
       selectedProject.value = projectsStore.projects[0];
     }
   }
@@ -846,7 +874,7 @@ watch(()=>paginatedProjects.value,()=>{
                   <!-- Created -->
                   <div class="mt-4 flex items-center gap-2 text-sm text-gray-400">
                     <Calendar class="w-4 h-4" />
-                    <span>{{ selectedProject?.createdAt }}</span>
+                    <span>{{ formatShortDate(selectedProject?.createdAt) }}</span>
                   </div>
 
                   <!-- Action Icons -->
@@ -856,7 +884,7 @@ watch(()=>paginatedProjects.value,()=>{
                       class="w-9 h-9 bg-red-100 rounded-full flex items-center justify-center cursor-pointer disabled:opacity-50"
                       title="Archive project"
                       :disabled="archiving"
-                      @click="archiveCurrentProject"
+                      @click="isDeleteProjectDialogOpen = true"
                     >
                       <Trash2 class="w-4 h-4 text-red-600" />
                     </button>
@@ -1033,6 +1061,7 @@ watch(()=>paginatedProjects.value,()=>{
           <TaskTimelineView
             v-else-if="selectedTaskStyle === 'ChartNoAxesGantt'"
             :tasks="selectedProject?.task.tasks || []"
+            :company-created-at="authStore.logedInUserInfo.company_created_at"
             @select="onSelectTask"
           />
         </template>
@@ -1046,4 +1075,11 @@ watch(()=>paginatedProjects.value,()=>{
     :project-id="selectedProject.id"
   />
   <CreateProjectModal v-model:open="isAddProjectOpen" />
+  <ConfirmDeleteDialog
+    v-model:open="isDeleteProjectDialogOpen"
+    title="Delete this project?"
+    :description="`This permanently deletes “${selectedProject?.title}” and all of its tasks. This can't be undone.`"
+    :loading="archiving"
+    @confirm="archiveCurrentProject"
+  />
 </template>

@@ -1,10 +1,16 @@
 <script setup lang="ts">
 import { Calendar, ArrowUp, ArrowDown } from "lucide-vue-next";
+import { useRouter } from "vue-router";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import ProjectImage from "@/components/projects/ProjectImage.vue";
+import { formatShortDate } from "@/lib/dates";
 import type { Project } from "@/types/types";
 
 const props = defineProps<{ project: Project }>();
+
+const router = useRouter();
+const goToDetail = () =>
+  router.push({ name: "admin-dashboard", query: { section: "projects", id: props.project.id } });
 
 const shortId = (id: string) => id.slice(0, 8).toUpperCase();
 
@@ -13,7 +19,13 @@ const initials = (name: string) =>
 </script>
 
 <template>
-  <div class="w-full flex p-4 gap-5 bg-white rounded-3xl border border-gray-200 shadow-sm hover:shadow-md hover:border-[#3F8CFF]/20 transition-all duration-200">
+  <div
+    class="w-full flex p-4 gap-5 bg-white rounded-3xl border border-gray-200 shadow-sm hover:shadow-md hover:border-[#3F8CFF]/20 transition-all duration-200 cursor-pointer"
+    role="button"
+    tabindex="0"
+    @click="goToDetail"
+    @keydown.enter="goToDetail"
+  >
     <div class="w-full grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x">
       <!-- Left Side -->
       <div class="p-4 min-w-0">
@@ -34,7 +46,7 @@ const initials = (name: string) =>
         <div class="flex justify-between items-center">
           <div class="flex items-center gap-1 text-sm text-[#91929E]">
             <Calendar class="w-4 h-4" />
-            <span>Created {{ props.project.createdAt }}</span>
+            <span>Created {{ formatShortDate(props.project.createdAt) }}</span>
           </div>
           <div class="flex items-center gap-1 rounded-full bg-gray-50 px-2 py-1" :class="props.project.priority.color">
             <component :is="props.project.priority.icon === 'ArrowDown' ? ArrowDown : ArrowUp" class="w-3.5 h-3.5" />

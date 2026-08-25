@@ -2,6 +2,7 @@
 import { computed, reactive, ref } from "vue";
 import { Check, Pencil, Sparkles, Trash2, X } from "lucide-vue-next";
 import TaskStatusPill from "@/components/cards/TaskStatusPill.vue";
+import ConfirmDeleteDialog from "@/components/common/ConfirmDeleteDialog.vue";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -18,6 +19,7 @@ import { useProjectStore } from "@/stores/projectStore";
 import { useAiStore } from "@/stores/aiStore";
 import { useToast } from "@/components/ui/toast/use-toast";
 import { formatHoursToDuration, parseDurationToMinutes } from "@/lib/duration";
+import { formatDateTime } from "@/lib/dates";
 import { createPollSignal, type PollSignal } from "@/lib/pollUntilTerminal";
 import type { TaskType } from "@/types/types";
 
@@ -92,21 +94,14 @@ const toggleEdit = () => {
   else startEditing();
 };
 
-const formatTimestamp = (iso: string) => {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return iso;
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(date);
-};
+const formatTimestamp = formatDateTime;
 
+const isDeleteDialogOpen = ref(false);
 const archiveTask = async () => {
   archiving.value = true;
   const ok = await projectsStore.archiveTask(props.task.id);
   archiving.value = false;
+  isDeleteDialogOpen.value = false;
   if (!ok) {
     toast({ title: "Task not archived", description: "Something went wrong. Please try again.", variant: "destructive" });
     return;
@@ -162,7 +157,7 @@ const regenerateAiContent = async () => {
           class="text-subtle hover:text-red-500 disabled:opacity-50"
           title="Archive task"
           :disabled="archiving"
-          @click="archiveTask"
+          @click="isDeleteDialogOpen = true"
         >
           <Trash2 class="h-4 w-4" />
         </button>
@@ -247,5 +242,13 @@ const regenerateAiContent = async () => {
     <div class="border-t border-gray-100 pt-4 text-sm text-subtle">
       Last updated {{ formatTimestamp(task.updatedAt) }}
     </div>
+
+    <ConfirmDeleteDialog
+      v-model:open="isDeleteDialogOpen"
+      title="Delete this task?"
+      :description="`This permanently deletes “${task.title}”. This can't be undone.`"
+      :loading="archiving"
+      @confirm="archiveTask"
+    />
   </div>
 </template>

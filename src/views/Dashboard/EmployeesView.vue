@@ -23,6 +23,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { useToast } from "@/components/ui/toast/use-toast";
 import Header from "@/components/layout/Header.vue";
 import EmployeeInviteModal from "@/components/employees/EmployeeInviteModal.vue";
+import ConfirmDeleteDialog from "@/components/common/ConfirmDeleteDialog.vue";
 import { useEmployeeStore, type Employee, type EmployeeRole, type RemovalBlockers } from "@/stores/employeeStore";
 import { useDirectoryStore } from "@/stores/directoryStore";
 import { useRouter } from "vue-router";
@@ -41,12 +42,19 @@ const removingId = ref<string | null>(null);
 const reassignTarget = ref<{ employee: Employee; blockers: RemovalBlockers } | null>(null);
 const reassignToId = ref("");
 const reassigning = ref(false);
+const employeePendingRemoval = ref<Employee | null>(null);
 
-const confirmRemove = async (employee: Employee) => {
-  if (!window.confirm(`Remove ${employee.name} from the company?`)) return;
+const confirmRemove = (employee: Employee) => {
+  employeePendingRemoval.value = employee;
+};
+
+const removeEmployee = async () => {
+  const employee = employeePendingRemoval.value;
+  if (!employee) return;
   removingId.value = employee.id;
   const result = await employeeStore.remove(employee.id);
   removingId.value = null;
+  employeePendingRemoval.value = null;
   if (result.reassignmentRequired) {
     reassignTarget.value = { employee, blockers: result.reassignmentRequired };
     reassignToId.value = "";
@@ -352,6 +360,16 @@ const roleBadgeClass: Record<string, string> = {
         <ArrowRight class="h-4 w-4" />
       </button>
     </div>
+
+    <ConfirmDeleteDialog
+      :open="!!employeePendingRemoval"
+      title="Remove team member?"
+      :description="`Remove ${employeePendingRemoval?.name} from the company? This can't be undone.`"
+      confirm-label="Remove"
+      :loading="removingId === employeePendingRemoval?.id"
+      @update:open="(v) => { if (!v) employeePendingRemoval = null; }"
+      @confirm="removeEmployee"
+    />
 
     <Dialog :open="!!reassignTarget" @update:open="(v) => { if (!v) reassignTarget = null }">
       <DialogContent class="max-w-md">
