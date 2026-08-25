@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from "vue";
-import { Check, Sparkles, X } from "lucide-vue-next";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { Sparkles } from "lucide-vue-next";
 import type { AiJobStatus } from "@/stores/aiStore";
 
 const props = defineProps<{
@@ -10,60 +10,39 @@ const props = defineProps<{
 
 // Purely cosmetic, time-based message cycling -- never implies a fake
 // percentage, just communicates that real work is happening in stages.
+// Every caller only ever mounts this while status is pending/processing
+// (each page swaps it out for its own completed/error UI once the job
+// reaches a terminal state), so it holds on the last message instead of
+// looping back to the first -- whatever the backend is doing right before
+// it actually finishes, "Finalizing…" is always the last thing shown.
 const MESSAGES = ["Understanding your request…", "Structuring the details…", "Finalizing…"];
 const messageIndex = ref(0);
 let timer: ReturnType<typeof setInterval> | null = null;
 
-function startCycle() {
-  stopCycle();
-  timer = setInterval(() => {
-    messageIndex.value = (messageIndex.value + 1) % MESSAGES.length;
-  }, 2200);
-}
 function stopCycle() {
   if (timer) clearInterval(timer);
   timer = null;
 }
+function startCycle() {
+  stopCycle();
+  timer = setInterval(() => {
+    if (messageIndex.value < MESSAGES.length - 1) messageIndex.value++;
+    else stopCycle();
+  }, 2200);
+}
 
-watch(
-  () => props.status,
-  (status) => {
-    if (status === "pending" || status === "processing") {
-      messageIndex.value = 0;
-      startCycle();
-    } else {
-      stopCycle();
-    }
-  },
-  { immediate: true }
-);
+onMounted(startCycle);
 onBeforeUnmount(stopCycle);
 
 const activeMessage = computed(() => props.label || MESSAGES[messageIndex.value]);
 </script>
 
 <template>
-  <div class="flex items-center gap-3 rounded-xl border border-gray-100 bg-white px-3.5 py-3 shadow-sm">
-    <template v-if="status === 'completed'">
-      <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
-        <Check class="h-4 w-4" />
-      </span>
-      <p class="text-sm font-medium text-ink">{{ label || "Done" }}</p>
-    </template>
-
-    <template v-else-if="status === 'failed'">
-      <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600">
-        <X class="h-4 w-4" />
-      </span>
-      <p class="text-sm font-medium text-ink">{{ label || "Failed" }}</p>
-    </template>
-
-    <template v-else>
-      <span class="ai-spark-ring flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-indigo-500 text-white">
-        <Sparkles class="h-4 w-4" />
-      </span>
-      <p class="text-sm font-medium text-ink transition-opacity duration-300">{{ activeMessage }}</p>
-    </template>
+  <div class="flex items-center gap-2.5">
+    <span class="ai-spark-ring flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-indigo-500 text-white">
+      <Sparkles class="h-3.5 w-3.5" />
+    </span>
+    <p class="text-sm font-medium text-ink transition-opacity duration-300">{{ activeMessage }}</p>
   </div>
 </template>
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// A plain textarea with @project and @@member mention autocomplete.
+// A plain textarea with @project and #member mention autocomplete.
 // Deliberately plain-text-with-bracket-notation ("@[Name] ") rather than a
 // true contenteditable rich-mention editor -- the resolved id is emitted
 // alongside the pick, so callers never need to re-parse the text to know
@@ -52,17 +52,17 @@ function detectMention() {
   if (!el) return;
   const cursor = el.selectionStart ?? 0;
   const textBeforeCursor = props.modelValue.slice(0, cursor);
-  const match = /(@{1,2})([^\s@]*)$/.exec(textBeforeCursor);
+  const match = /([@#])([^\s@#]*)$/.exec(textBeforeCursor);
   if (!match) {
     mentionMode.value = null;
     return;
   }
-  const [full, at, query] = match;
-  if (at === "@@" && !props.membersEnabled) {
+  const [full, trigger, query] = match;
+  if (trigger === "#" && !props.membersEnabled) {
     mentionMode.value = null;
     return;
   }
-  mentionMode.value = at === "@@" ? "member" : "project";
+  mentionMode.value = trigger === "#" ? "member" : "project";
   mentionQuery.value = query;
   mentionStart.value = cursor - full.length;
 }
@@ -76,7 +76,7 @@ function pick(item: MentionItem) {
   const el = textareaEl.value;
   if (!el) return;
   const cursor = el.selectionStart ?? props.modelValue.length;
-  const prefix = mentionMode.value === "member" ? "@@" : "@";
+  const prefix = mentionMode.value === "member" ? "#" : "@";
   const before = props.modelValue.slice(0, mentionStart.value);
   const after = props.modelValue.slice(cursor);
   const inserted = `${prefix}[${item.label}] `;

@@ -53,7 +53,7 @@ const firstVisitLabel = computed(() => {
           <div
             v-for="tool in TOOLS" :key="tool.mode"
             class="rounded-2xl p-4 transition"
-            :class="tool.mode === activeMode ? 'border border-primary/40 bg-info/30' : 'border border-gray-100 bg-white'"
+            :class="tool.mode === activeMode ? 'border border-primary/40 bg-info/30' : 'border border-gray-100 bg-white opacity-50'"
           >
             <div class="flex items-start gap-3">
               <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-primary shadow-sm">
@@ -84,7 +84,14 @@ const firstVisitLabel = computed(() => {
                 </template>
                 <div v-else class="mt-1 flex items-center justify-between">
                   <span class="text-xs text-subtle">{{ stepCount(tool.mode) }} steps</span>
-                  <button type="button" class="text-sm font-medium text-primary" @click="emit('start', tool.mode)">Start</button>
+                  <button
+                    type="button"
+                    class="cursor-not-allowed text-sm font-medium text-subtle"
+                    disabled
+                    title="Open this tool first to start its walkthrough"
+                  >
+                    Start
+                  </button>
                 </div>
               </div>
             </div>

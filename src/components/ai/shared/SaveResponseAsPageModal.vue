@@ -5,6 +5,7 @@ import { ref, watch } from "vue";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import MarkdownText from "@/components/ai/shared/MarkdownText.vue";
 import { usePagesStore } from "@/stores/pagesStore";
 
 const props = defineProps<{
@@ -78,7 +79,7 @@ function confirm() {
         <div class="flex flex-col gap-1.5">
           <label class="text-xs font-medium text-subtle">Content preview</label>
           <div class="max-h-40 overflow-y-auto rounded-xl bg-surface p-3 text-sm text-subtle">
-            {{ contentPreview }}
+            <MarkdownText :text="contentPreview" />
           </div>
         </div>
 

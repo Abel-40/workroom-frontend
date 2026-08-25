@@ -55,6 +55,9 @@ export interface EligibleAssignee {
   role: EligibleAssigneeRole | null;
   roleLabel: string | null;
   department: string | null;
+  // Open (not-Done, not-deleted) task count on the project being planned --
+  // see api/routers/projects.py::list_eligible_assignees.
+  openTaskCount: number;
 }
 
 export interface AiTaskRegeneration {
@@ -109,7 +112,7 @@ type GenerationApi = {
 };
 type EligibleAssigneeApi = {
   id: string; first_name: string; last_name: string; username: string; email: string;
-  role: EligibleAssigneeRole | null; department: string | null;
+  role: EligibleAssigneeRole | null; department: string | null; open_task_count: number;
 };
 type TaskRegenerationApi = { id: string; task_id: string; status: AiJobStatus; error_message: string; task: TaskApi | null };
 type AssistantQueryPageApi = { id: string; title: string; folder_name: string };
@@ -163,6 +166,7 @@ const mapEligibleAssignee = (api: EligibleAssigneeApi): EligibleAssignee => ({
   role: api.role,
   roleLabel: api.role ? ROLE_LABELS[api.role] : null,
   department: api.department,
+  openTaskCount: api.open_task_count,
 });
 
 const mapAssistantQuery = (api: AssistantQueryApi): AiAssistantQuery => ({

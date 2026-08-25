@@ -87,8 +87,14 @@ const memberItems = computed<MentionItem[]>(() =>
 );
 
 const generation = computed(() => (props.projectId ? aiStore.latestGenerationFor(props.projectId) : null));
-const planInFlight = computed(
-  () => aiStore.requestingPlan || (visibleGeneration.value && ["pending", "processing"].includes(visibleGeneration.value.status))
+// Once a generation record exists, its own status is authoritative -- never
+// fall back to aiStore.requestingPlan here, since that flag can still read
+// true for a render or two after the record has already turned terminal
+// (failed/completed), which used to flash the "Finalizing…" indicator back
+// on right after an error. requestingPlan is only consulted pre-generation,
+// to cover the gap between clicking Generate and the initial POST landing.
+const planInFlight = computed(() =>
+  visibleGeneration.value ? ["pending", "processing"].includes(visibleGeneration.value.status) : aiStore.requestingPlan
 );
 const alreadySaved = computed(() => (props.projectId ? aiStore.hasSavedPlan(props.projectId) : false));
 const hasPendingComments = computed(
@@ -170,6 +176,10 @@ function openAssigneeModal() {
 }
 function onAssigneesConfirmed(ids: string[]) {
   assigneeIds.value = ids;
+}
+function backToProjectStep() {
+  assigneeModalOpen.value = false;
+  projectModalOpen.value = true;
 }
 
 const onMentionProject = (item: MentionItem) => {
@@ -410,7 +420,7 @@ watch(
             v-model="prompt"
             bare
             :rows="1"
-            placeholder="Type your message here… @project name, @@username"
+            placeholder="Type your message here… @project name, #username"
             :project-items="projectItems"
             :member-items="memberItems"
             :members-enabled="!!projectId"
@@ -444,7 +454,9 @@ watch(
       :project-name="selectedProject?.title || ''"
       :members="aiStore.eligibleAssigneesFor(projectId)"
       :initial-selected-ids="assigneeIds"
+      step-label="STEP 2 OF 2"
       @confirm="onAssigneesConfirmed"
+      @back="backToProjectStep"
     />
 
     <ProjectSelectionModal
