@@ -1,9 +1,14 @@
 <script setup lang="ts">
-import {ChevronRight} from "lucide-vue-next";
+import { onMounted } from "vue";
+import { ChevronRight } from "lucide-vue-next";
 import { Button } from "@/components/ui/button";
 import EventCard from "@/components/cards/EventCard.vue";
 import { useEventStore } from "@/stores/eventStore";
 const eventStore = useEventStore();
+
+onMounted(() => {
+  if (!eventStore.events.length) eventStore.fetchEvents({ pageSize: 50 });
+});
 </script>
 
 <template>
@@ -16,18 +21,11 @@ const eventStore = useEventStore();
         </Button>
       </div>
 
-      <div class="space-y-4">
-        <EventCard
-          v-for="event in eventStore.nearest"
-          :title="event.title"
-          :key="event.id"
-          :date="event.date"
-          :time="event.time"
-          :duration="event.duration"
-          :icon="event.icon"
-          :priority="event.priority"
-          :color="event.color"
-        />
+      <div v-if="eventStore.nearest.length" class="space-y-4">
+        <EventCard v-for="event in eventStore.nearest" :key="event.id" :event="event" />
+      </div>
+      <div v-else class="rounded-2xl border border-dashed border-gray-200 p-6 text-center text-sm text-subtle">
+        No upcoming events.
       </div>
     </div>
 </template>

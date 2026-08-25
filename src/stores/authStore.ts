@@ -55,7 +55,8 @@ export const useAuthStore =  defineStore('AuthStore',{
     },
     company:{} as Company,
     sectors:{} as Sectors,
-    defaultTaskTypes: {} as DefaultTaskType[]
+    defaultTaskTypes: {} as DefaultTaskType[],
+    defaultEventTypes: {} as DefaultTaskType[]
   }),
   actions:{
     updateStep1Form(payload:Partial<typeof this.step1Form>){
@@ -276,6 +277,41 @@ export const useAuthStore =  defineStore('AuthStore',{
         return {
           message: error.response?.data?.message ||'failed to create task types',
         };
+      }
+    },
+    // Unlike getDefaultTaskTypes/createTaskType above (the onboarding-wizard
+    // pair, which needs an explicit sectorId/company_id since those legacy
+    // endpoints predate auth-derived company resolution), event types are
+    // fetched/enabled through company_config.py's post-registration
+    // endpoints, which resolve the caller's company from the JWT -- no id
+    // params needed. See the backend router's docstring for why.
+    async getDefaultEventTypes(): Promise<DefaultTaskType[]> {
+      try {
+        const { data } = await axiosInstance.get<ApiResponse<{ event_types: DefaultTaskType[] }>>(
+          '/company/default-config/'
+        )
+        this.defaultEventTypes = data.data.event_types
+        return data.data.event_types
+      } catch (error) {
+        console.error('Failed to fetch default event types:', error)
+        throw error
+      }
+    },
+    async createEventTypes(form: { selected_ids: string[]; use_all: boolean }): Promise<{
+      created_event_types?: any[]
+      errors?: Record<string, string[]>
+      message?: string
+    }> {
+      try {
+        const { data } = await axiosInstance.post<ApiResponse<{ created_event_types: any[] }>>(
+          '/company/default-config/event-types/', form
+        )
+        if (data.success) return { created_event_types: data.data.created_event_types }
+        return data.errors
+          ? { errors: data.errors, message: data.message || 'Validation failed' }
+          : { message: data.message || 'Something went wrong' }
+      } catch (error: any) {
+        return { message: error.response?.data?.message || 'failed to create event types' }
       }
     },
     async getDefaultDepartmentTypes(sectorId: string): Promise<DefaultTaskType[]> {

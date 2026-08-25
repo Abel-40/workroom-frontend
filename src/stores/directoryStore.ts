@@ -26,6 +26,12 @@ export interface TaskTypeEntry {
   description: string;
 }
 
+export interface EventTypeEntry {
+  id: string;
+  name: string;
+  description: string;
+}
+
 type DepartmentApi = {
   id: string; name: string; description: string;
   leader_id: string | null; leader_name: string | null; member_count: number;
@@ -35,6 +41,7 @@ type TeamApi = {
   leader_id: string | null; leader_name: string | null; member_ids: string[];
 };
 type TaskTypeApi = { id: string; name: string; description: string };
+type EventTypeApi = { id: string; name: string; description: string };
 
 const mapDepartment = (d: DepartmentApi): DepartmentEntry => ({
   id: d.id,
@@ -75,15 +82,17 @@ export const useDirectoryStore = defineStore("directoryStore", {
     departments: [] as DepartmentEntry[],
     teams: [] as TeamEntry[],
     taskTypes: [] as TaskTypeEntry[],
+    eventTypes: [] as EventTypeEntry[],
     loaded: false,
   }),
   actions: {
     async fetchAll() {
       try {
-        const [departmentsRes, teamsRes, taskTypesRes] = await Promise.all([
+        const [departmentsRes, teamsRes, taskTypesRes, eventTypesRes] = await Promise.all([
           axiosInstance.get<ApiResponse<{ results: DepartmentApi[] }>>("/departments/"),
           axiosInstance.get<ApiResponse<{ results: TeamApi[] }>>("/teams/"),
           axiosInstance.get<ApiResponse<{ results: TaskTypeApi[] }>>("/task-types/"),
+          axiosInstance.get<ApiResponse<{ results: EventTypeApi[] }>>("/event-types/"),
         ]);
         this.departments = departmentsRes.data.data.results.map(mapDepartment);
         this.teams = teamsRes.data.data.results.map(mapTeam);
@@ -92,9 +101,14 @@ export const useDirectoryStore = defineStore("directoryStore", {
           name: t.name,
           description: t.description,
         }));
+        this.eventTypes = eventTypesRes.data.data.results.map((t) => ({
+          id: t.id,
+          name: t.name,
+          description: t.description,
+        }));
         this.loaded = true;
       } catch (error) {
-        console.error("Failed to fetch departments/teams/task types:", error);
+        console.error("Failed to fetch departments/teams/task types/event types:", error);
       }
     },
 

@@ -5,6 +5,7 @@ import StepOne from '@/views/Auth/StepOne.vue'
 import StepTwo from '@/views/Auth/StepTwo.vue'
 import StepThree from '@/views/Auth/StepThree.vue'
 import StepFour from '@/views/Auth/StepFour.vue'
+import StepFive from '@/views/Auth/StepFive.vue'
 import RegistrationSuccess from '@/views/Auth/RegistrationSuccess.vue'
 import { WorkflowIcon, ArrowRight } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/authStore'
@@ -16,7 +17,8 @@ const stepMap:Record<string,number> = {
   step1: 1,
   step2: 2,
   step3: 3,
-  step4: 4
+  step4: 4,
+  step5: 5
 }
 
 const activeStep = computed(() => {
@@ -30,6 +32,7 @@ const showSection = computed(() => {
   if (section === "step2") return StepTwo
   if (section === "step3") return StepThree
   if (section === "step4") return StepFour
+  if (section === "step5") return StepFive
   if (section === "success") return RegistrationSuccess
 })
 </script>
@@ -100,26 +103,41 @@ const showSection = computed(() => {
               <div class="flex items-start space-x-4">
                 <div class="flex flex-col items-center">
                   <div class="w-8 h-8 rounded-full flex items-center justify-center"
-                       :class="activeStep === 4 ? 'border-black border-2 bg-white text-black' : 'border-2 border-white text-white'">
+                       :class="activeStep >= 4 ? 'border-black border-2 bg-white text-black' : 'border-2 border-white text-white'">
                     <span>4</span>
                   </div>
+                  <div class="w-0.5 h-6 my-1" :class="activeStep >= 5 ? 'bg-black/50' : 'bg-white/50'"></div>
                 </div>
                 <div>
                   <p class="font-medium">Departments</p>
                   <p class="text-sm text-white/80 mt-1">Departments in your company</p>
                 </div>
               </div>
+
+              <!-- Step 5 -->
+              <div class="flex items-start space-x-4">
+                <div class="flex flex-col items-center">
+                  <div class="w-8 h-8 rounded-full flex items-center justify-center"
+                       :class="activeStep === 5 ? 'border-black border-2 bg-white text-black' : 'border-2 border-white text-white'">
+                    <span>5</span>
+                  </div>
+                </div>
+                <div>
+                  <p class="font-medium">Event Types</p>
+                  <p class="text-sm text-white/80 mt-1">Events relevant to your company</p>
+                </div>
+              </div>
             </div>
 
             <!-- Mobile Steps -->
-            <div class="lg:hidden grid grid-cols-4 gap-4">
-              <div v-for="i in 4" :key="i" class="flex flex-col items-center">
+            <div class="lg:hidden grid grid-cols-5 gap-4">
+              <div v-for="i in 5" :key="i" class="flex flex-col items-center">
                 <div class="w-8 h-8 rounded-full flex items-center justify-center"
                      :class="activeStep >= i ? 'border-black border-2 bg-white text-black' : 'border-2 border-white text-white'">
                   <span>{{ i }}</span>
                 </div>
                 <p class="text-xs mt-1 text-center">
-                  {{ ['Owner Info', 'Company Info', 'Task Type', 'Departments'][i - 1] }}
+                  {{ ['Owner Info', 'Company Info', 'Task Type', 'Departments', 'Event Types'][i - 1] }}
                 </p>
               </div>
             </div>

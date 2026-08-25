@@ -65,16 +65,16 @@ const handleSubmit = async ()=>{
   } else {
     router.push({
       path:'/auth/',
-      query:{section:'success'}
+      query:{section:'step5'}
     })
   }
-  
+
 }
 
 const skip = ()=>{
     router.push({
-      path:'/admin/dashboard/',
-      query:{section:'dashboard'}
+      path:'/auth/',
+      query:{section:'step5'}
     })
 }
 
