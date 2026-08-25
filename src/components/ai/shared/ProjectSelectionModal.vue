@@ -66,8 +66,8 @@ function confirm() {
 
 <template>
   <Dialog v-model:open="open">
-    <DialogContent hide-close class="max-w-[620px] gap-0 rounded-3xl p-0">
-      <div class="flex flex-col gap-4 p-6 pb-5">
+    <DialogContent hide-close class="flex h-[660px] max-h-[calc(100vh-2rem)] w-[calc(100%-2rem)] max-w-[680px] flex-col gap-0 overflow-hidden rounded-[24px] border-0 bg-white p-0 shadow-2xl">
+      <div class="flex h-full min-h-0 flex-col gap-4 p-6 pb-5">
         <div class="flex items-start justify-between gap-3">
           <div class="flex flex-col gap-1">
             <span v-if="stepLabel" class="text-[10.5px] font-semibold uppercase tracking-wide text-subtle">{{ stepLabel }}</span>
@@ -110,7 +110,7 @@ function confirm() {
           </Select>
         </div>
 
-        <div class="flex max-h-[404px] flex-col gap-2 overflow-y-auto pr-1">
+        <div class="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pr-1">
           <p v-if="!filtered.length" class="py-8 text-center text-sm text-subtle">No projects found.</p>
           <button
             v-for="project in filtered"

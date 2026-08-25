@@ -103,7 +103,7 @@ function back() {
   <Dialog v-model:open="open">
     <DialogContent
       hide-close
-      class="flex h-[704px] max-h-[calc(100vh-2rem)] w-[calc(100%-2rem)] max-w-[720px] flex-col gap-0 overflow-hidden rounded-[24px] border-0 bg-white p-0 shadow-2xl"
+      class="flex h-[660px] max-h-[calc(100vh-2rem)] w-[calc(100%-2rem)] max-w-[680px] flex-col gap-0 overflow-hidden rounded-[24px] border-0 bg-white p-0 shadow-2xl"
     >
       <div class="flex shrink-0 flex-col gap-5 px-7 pb-5 pt-6">
         <div class="flex items-start justify-between gap-3">
