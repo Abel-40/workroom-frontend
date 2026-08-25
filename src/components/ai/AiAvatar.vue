@@ -11,8 +11,9 @@ const props = withDefaults(
     name: string;
     seed?: string;
     size?: "sm" | "md";
+    tone?: "default" | "soft";
   }>(),
-  { size: "sm" }
+  { size: "sm", tone: "default" }
 );
 
 const initials = computed(() => {
@@ -32,13 +33,18 @@ const hue = computed(() => {
 });
 
 const sizeClass = computed(() => (props.size === "md" ? "h-9 w-9 text-sm" : "h-6 w-6 text-[10px]"));
+const avatarStyle = computed(() =>
+  props.tone === "soft"
+    ? { backgroundColor: `hsl(${hue.value}, 72%, 90%)`, color: `hsl(${hue.value}, 48%, 39%)` }
+    : { backgroundColor: `hsl(${hue.value}, 62%, 52%)` }
+);
 </script>
 
 <template>
   <span
     class="inline-flex shrink-0 items-center justify-center rounded-full font-semibold text-white"
     :class="sizeClass"
-    :style="{ backgroundColor: `hsl(${hue}, 62%, 52%)` }"
+    :style="avatarStyle"
   >
     {{ initials }}
   </span>

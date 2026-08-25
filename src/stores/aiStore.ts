@@ -208,6 +208,8 @@ export const useAiStore = defineStore("aiStore", {
     assistantQueriesByProject: {} as Record<string, AiAssistantQuery[]>,
     healthSummariesByProject: {} as Record<string, AiHealthSummary[]>,
     eligibleAssigneesByProject: {} as Record<string, EligibleAssignee[]>,
+    eligibleAssigneesLoadingByProject: {} as Record<string, boolean>,
+    eligibleAssigneesErrorByProject: {} as Record<string, string | null>,
     taskRegenerationsByTask: {} as Record<string, AiTaskRegeneration>,
     requestingPlan: false,
     askingAssistant: false,
@@ -219,6 +221,8 @@ export const useAiStore = defineStore("aiStore", {
     assistantQueriesFor: (state) => (projectId: string) => state.assistantQueriesByProject[projectId] || [],
     healthSummariesFor: (state) => (projectId: string) => state.healthSummariesByProject[projectId] || [],
     eligibleAssigneesFor: (state) => (projectId: string) => state.eligibleAssigneesByProject[projectId] || [],
+    eligibleAssigneesLoadingFor: (state) => (projectId: string) => !!state.eligibleAssigneesLoadingByProject[projectId],
+    eligibleAssigneesErrorFor: (state) => (projectId: string) => state.eligibleAssigneesErrorByProject[projectId] || null,
     latestGenerationFor: (state) => (projectId: string) => state.generationsByProject[projectId]?.[0] ?? null,
     hasSavedPlan: (state) => (projectId: string) =>
       (state.generationsByProject[projectId] || []).some((g) => g.savedAt),
@@ -407,14 +411,21 @@ export const useAiStore = defineStore("aiStore", {
       }
     },
 
-    async fetchEligibleAssignees(projectId: string) {
+    async fetchEligibleAssignees(projectId: string): Promise<{ error?: string }> {
+      this.eligibleAssigneesLoadingByProject[projectId] = true;
+      this.eligibleAssigneesErrorByProject[projectId] = null;
       try {
         const { data } = await axiosInstance.get<ApiResponse<{ results: EligibleAssigneeApi[] }>>(
           `/projects/${projectId}/eligible-assignees/`
         );
-        this.eligibleAssigneesByProject[projectId] = data.data.results.map(mapEligibleAssignee);
-      } catch (error) {
-        console.error("Failed to fetch eligible assignees:", error);
+        this.eligibleAssigneesByProject[projectId] = (data.data?.results ?? []).map(mapEligibleAssignee);
+        return {};
+      } catch (error: any) {
+        const message = error.response?.data?.message || "Unable to load eligible members. Please try again.";
+        this.eligibleAssigneesErrorByProject[projectId] = message;
+        return { error: message };
+      } finally {
+        this.eligibleAssigneesLoadingByProject[projectId] = false;
       }
     },
 

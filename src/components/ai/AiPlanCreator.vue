@@ -170,9 +170,10 @@ async function confirmDiscard() {
   pendingAction.value = null;
 }
 
-function openAssigneeModal() {
+async function openAssigneeModal() {
   if (!props.projectId) return;
   assigneeModalOpen.value = true;
+  await aiStore.fetchEligibleAssignees(props.projectId);
 }
 function onAssigneesConfirmed(ids: string[]) {
   assigneeIds.value = ids;
@@ -453,17 +454,20 @@ watch(
       v-model:open="assigneeModalOpen"
       :project-name="selectedProject?.title || ''"
       :members="aiStore.eligibleAssigneesFor(projectId)"
+      :loading="aiStore.eligibleAssigneesLoadingFor(projectId)"
+      :load-error="aiStore.eligibleAssigneesErrorFor(projectId)"
       :initial-selected-ids="assigneeIds"
-      step-label="STEP 2 OF 2"
+      step-label="STEP 2 OF 3"
       @confirm="onAssigneesConfirmed"
       @back="backToProjectStep"
+      @retry="openAssigneeModal"
     />
 
     <ProjectSelectionModal
       v-model:open="projectModalOpen"
       :projects="projectStore.projects"
       :initial-project-id="projectId"
-      step-label="STEP 1 OF 2"
+      step-label="STEP 1 OF 3"
       continue-label="Continue to assignees"
       @confirm="(id) => requestContextChange(id, true)"
     />
