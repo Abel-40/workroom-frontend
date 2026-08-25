@@ -26,6 +26,10 @@ export const DUMMY_LOGGED_IN = {
   user: DUMMY_USER,
   is_authenticated: true,
   access: DUMMY_ACCESS_TOKEN,
+  role: 'Owner' as const,
+  company_id: 'company-mock-001',
+  company_name: 'Workroom Demo Corp',
+  company_created_at: '2025-01-15T00:00:00.000Z',
 }
 
 // ── Company ──────────────────────────────────────────────────

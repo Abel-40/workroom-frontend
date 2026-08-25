@@ -3,6 +3,7 @@ import { useAuthStore } from '@/stores/authStore'
 // Dynamic imports for better code splitting
 const Login = () => import('@/views/Auth/login.vue')
 const Signup = () => import('@/views/Auth/Signup.vue')
+const AcceptInvite = () => import('@/views/Auth/AcceptInvite.vue')
 const StepOne = () => import('@/views/Auth/StepOne.vue')
 const StepTwo = () => import('@/views/Auth/StepTwo.vue')
 const DashboardLayout = () => import('@/layouts/DashboardLayout.vue')
@@ -19,6 +20,11 @@ const router = createRouter({
       path: '/auth/login/',
       name: 'auth-login',
       component: Login
+    },
+    {
+      path: '/invite/accept',
+      name: 'accept-invite',
+      component: AcceptInvite,
     },
     {
       path: '/auth/',

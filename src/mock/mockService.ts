@@ -74,6 +74,11 @@ const GET_ROUTES: Record<string, Handler> = {
 }
 
 const POST_ROUTES: Record<string, Handler> = {
+  '/emp/accept_invite/': async () => {
+    await delay(500)
+    return ok({ user: DUMMY_USER }, 'Invitation accepted')
+  },
+
   // login
   '/auth/signin/': async (_, config) => {
     await delay(400)
