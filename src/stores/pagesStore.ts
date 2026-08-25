@@ -170,6 +170,17 @@ export const usePagesStore = defineStore("pagesStore", {
       }
     },
 
+    async deleteFolder(folderId: string): Promise<{ error?: string }> {
+      try {
+        await axiosInstance.delete(`/page-folders/${folderId}/`);
+        this.folders = this.folders.filter((f) => f.id !== folderId);
+        delete this.pagesByFolder[folderId];
+        return {};
+      } catch (error: any) {
+        return { error: error.response?.data?.message || "Failed to delete the folder" };
+      }
+    },
+
     // Cross-folder search for the "select page from folder" picker modal.
     async searchPages(search = "") {
       try {
