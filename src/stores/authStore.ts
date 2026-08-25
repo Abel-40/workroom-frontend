@@ -132,6 +132,18 @@ export const useAuthStore =  defineStore('AuthStore',{
         return {errors:errorMsg}
       }
     },
+    async updateTimezone(tz: string): Promise<{ error?: string }> {
+      try {
+        const { data } = await axiosInstance.patch<ApiResponse<{ timezone: string }>>(
+          '/company/members/me/timezone/',
+          { timezone: tz }
+        )
+        if (this.logedInUserInfo.user) this.logedInUserInfo.user.timezone = data.data.timezone
+        return {}
+      } catch (error: any) {
+        return { error: error.response?.data?.message || 'Failed to update timezone' }
+      }
+    },
     async acceptInvite(form: FormData): Promise<{ error?: string }> {
       try {
         await axiosInstance.post('/emp/accept_invite/', form)

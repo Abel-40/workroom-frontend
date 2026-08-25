@@ -11,12 +11,21 @@ import {
 } from "lucide-vue-next";
 import { RouterLink } from "vue-router";
 import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/components/ui/toast/use-toast";
 import Header from "@/components/layout/Header.vue";
 import { useAuthStore } from "@/stores/authStore";
 import { useUserProfileStore } from "@/stores/userProfileStore";
 import { useCompanyConfigStore } from "@/stores/companyConfigStore";
 import { useDirectoryStore } from "@/stores/directoryStore";
+import { currentTimeZone } from "@/lib/dates";
 
 const authStore = useAuthStore();
 const profileStore = useUserProfileStore();
@@ -43,6 +52,22 @@ watch(
 const onToggleEmailNotifications = async (checked: boolean) => {
   const { error } = await profileStore.setEmailNotificationsEnabled(checked);
   if (error) toast({ title: "Preference not saved", description: error, variant: "destructive" });
+};
+
+// Full IANA tz database via the native Intl API -- no extra dependency, and
+// it's the same source src/lib/dates.ts's currentTimeZone() falls back to
+// when a user hasn't picked one yet.
+const supportedValuesOf = (Intl as unknown as { supportedValuesOf?: (key: string) => string[] }).supportedValuesOf;
+const TIMEZONES: string[] = supportedValuesOf ? supportedValuesOf("timeZone") : [currentTimeZone()];
+
+const selectedTimezone = ref(authStore.logedInUserInfo?.user?.timezone || currentTimeZone());
+const savingTimezone = ref(false);
+const onTimezoneChange = async (tz: string) => {
+  selectedTimezone.value = tz;
+  savingTimezone.value = true;
+  const { error } = await authStore.updateTimezone(tz);
+  savingTimezone.value = false;
+  if (error) toast({ title: "Timezone not saved", description: error, variant: "destructive" });
 };
 
 const enablingId = ref<string | null>(null);
@@ -178,6 +203,24 @@ const TABS = [
                 </div>
               </div>
             </div>
+          </div>
+        </template>
+
+        <template v-else-if="activeTab === 'account'">
+          <h3 class="mb-4 text-sm font-semibold text-ink">Account</h3>
+          <div class="space-y-1.5">
+            <p class="text-sm font-medium text-ink">Timezone</p>
+            <p class="mb-2 text-xs text-subtle">
+              Dates and times across Workroom (projects, tasks, activity, notifications) are shown in this timezone.
+            </p>
+            <Select :model-value="selectedTimezone" :disabled="savingTimezone" @update:model-value="onTimezoneChange">
+              <SelectTrigger class="w-full max-w-sm rounded-xl"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectItem v-for="tz in TIMEZONES" :key="tz" :value="tz">{{ tz }}</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
           </div>
         </template>
 

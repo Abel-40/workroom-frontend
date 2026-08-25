@@ -29,6 +29,7 @@ export type User = {
   email: string;
   username: string;
   role?: UserRole;
+  timezone?: string;
 };
 
 export type UserProfile = {
