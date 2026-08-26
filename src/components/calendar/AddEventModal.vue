@@ -39,13 +39,15 @@ onMounted(() => {
 const NONE = "__none__";
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const CADENCES = ["daily", "weekly", "monthly"] as const;
+// String-compares fine against form.date -- both are "YYYY-MM-DD".
+const todayStr = new Date().toISOString().slice(0, 10);
 
 const emptyForm = () => ({
   title: "",
   eventTypeId: NONE as string,
   departmentId: NONE as string,
   teamId: NONE as string,
-  date: props.defaultDate || new Date().toISOString().slice(0, 10),
+  date: props.defaultDate || todayStr,
   time: "17:00",
   location: "",
   description: "",
@@ -63,7 +65,10 @@ const toggleDay = (day: string) => {
   else form.days.push(day);
 };
 
-const canSave = computed(() => form.title.trim().length > 0);
+// Events can't be backdated -- the calendar's day cells already block
+// opening this modal on a past date, but the date field is still freely
+// editable once open, so the same rule has to hold here too.
+const canSave = computed(() => form.title.trim().length > 0 && form.date >= todayStr);
 
 const save = async () => {
   if (!canSave.value) return;
@@ -148,7 +153,8 @@ const save = async () => {
         <div class="grid grid-cols-2 gap-3">
           <div class="space-y-1.5">
             <Label class="text-xs text-subtle">Date</Label>
-            <Input v-model="form.date" type="date" class="rounded-xl" />
+            <Input v-model="form.date" type="date" :min="todayStr" class="rounded-xl" />
+            <p v-if="form.date < todayStr" class="text-xs text-destructive">Events can't be scheduled in the past.</p>
           </div>
           <div class="space-y-1.5">
             <Label class="text-xs text-subtle">Time</Label>
