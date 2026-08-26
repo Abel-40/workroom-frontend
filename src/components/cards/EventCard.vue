@@ -3,6 +3,7 @@ import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 import { ChevronRight, Clock10, MapPin, MoreVertical } from "lucide-vue-next";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Checkbox } from "@/components/ui/checkbox";
 import { formatDayNumber, formatMonthShort, formatTime } from "@/lib/dates";
 import { EVENT_BADGE_CLASS, EVENT_CARD_BG_CLASS, eventColorFor } from "@/lib/eventColor";
 import { canManageEvent } from "@/lib/eventPermissions";
@@ -17,7 +18,11 @@ import {
 import ConfirmDeleteDialog from "@/components/common/ConfirmDeleteDialog.vue";
 import { useToast } from "@/components/ui/toast/use-toast";
 
-const props = defineProps<{ event: EventEntry }>();
+const props = withDefaults(
+  defineProps<{ event: EventEntry; selectable?: boolean; selected?: boolean }>(),
+  { selectable: false, selected: false }
+);
+const emit = defineEmits<{ (e: "toggle-select", id: string): void }>();
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -27,6 +32,13 @@ const { toast } = useToast();
 const goToDetail = () =>
   router.push({ name: "admin-dashboard", query: { section: "event-detail", eventId: props.event.id } });
 
+// In bulk-select mode, clicking the card toggles its checkbox instead of
+// navigating away -- the whole card acts as the checkbox's hit target.
+const onCardClick = () => {
+  if (props.selectable) emit("toggle-select", props.event.id);
+  else goToDetail();
+};
+
 const color = computed(() => eventColorFor(props.event.eventTypeName || props.event.title));
 const badgeClass = computed(() => EVENT_BADGE_CLASS[color.value]);
 const cardBgClass = computed(() => EVENT_CARD_BG_CLASS[color.value]);
@@ -35,6 +47,15 @@ const canManage = computed(() =>
 );
 
 const initials = (name: string) => (name || "?").split(" ").map((p) => p[0]).join("").slice(0, 2).toUpperCase();
+
+// Not every event has named attendees -- one can just as validly be scoped
+// to a whole department, a team, or the whole company. "No attendees" read
+// as broken/incomplete on those; show what the event is actually for instead.
+const audienceLabel = computed(() => {
+  if (props.event.departmentName) return `${props.event.departmentName} dept.`;
+  if (props.event.teamName) return `${props.event.teamName} team`;
+  return "Company-wide";
+});
 
 const isDeleteDialogOpen = ref(false);
 const deleting = ref(false);
@@ -50,11 +71,11 @@ const confirmDelete = async () => {
 <template>
   <div
     class="group relative flex h-full min-h-[210px] flex-col gap-3 rounded-2xl border p-4 shadow-sm transition-all duration-300 ease-out cursor-pointer hover:-translate-y-1 hover:shadow-lg"
-    :class="cardBgClass"
+    :class="[cardBgClass, selected ? 'ring-2 ring-primary' : '']"
     role="button"
     tabindex="0"
-    @click="goToDetail"
-    @keydown.enter="goToDetail"
+    @click="onCardClick"
+    @keydown.enter="onCardClick"
   >
     <div class="flex items-start justify-between gap-2">
       <div class="flex min-w-0 items-center gap-3">
@@ -69,7 +90,14 @@ const confirmDelete = async () => {
           </span>
         </div>
       </div>
-      <DropdownMenu>
+      <Checkbox
+        v-if="selectable"
+        class="shrink-0 bg-white"
+        :model-value="selected"
+        @click.stop
+        @update:model-value="() => emit('toggle-select', event.id)"
+      />
+      <DropdownMenu v-else>
         <DropdownMenuTrigger as-child>
           <button
             type="button"
@@ -118,7 +146,7 @@ const confirmDelete = async () => {
           +{{ event.attendees.length - 3 }}
         </span>
       </div>
-      <span v-else class="text-xs italic text-subtle">No attendees</span>
+      <span v-else class="text-xs text-subtle">{{ audienceLabel }}</span>
       <ChevronRight class="h-4 w-4 shrink-0 text-[#3F8CFF] opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
     </div>
 
