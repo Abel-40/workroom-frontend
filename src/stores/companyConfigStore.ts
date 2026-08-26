@@ -22,6 +22,7 @@ export const useCompanyConfigStore = defineStore("companyConfigStore", {
   state: () => ({
     departments: [] as DefaultConfigEntry[],
     taskTypes: [] as DefaultConfigEntry[],
+    eventTypes: [] as DefaultConfigEntry[],
     loading: false,
   }),
   actions: {
@@ -29,10 +30,11 @@ export const useCompanyConfigStore = defineStore("companyConfigStore", {
       this.loading = true;
       try {
         const { data } = await axiosInstance.get<
-          ApiResponse<{ departments: DefaultConfigApi[]; task_types: DefaultConfigApi[] }>
+          ApiResponse<{ departments: DefaultConfigApi[]; task_types: DefaultConfigApi[]; event_types: DefaultConfigApi[] }>
         >("/company/default-config/");
         this.departments = data.data.departments.map(mapEntry);
         this.taskTypes = data.data.task_types.map(mapEntry);
+        this.eventTypes = data.data.event_types.map(mapEntry);
       } catch (error) {
         console.error("Failed to fetch company default configuration:", error);
       } finally {
@@ -59,6 +61,17 @@ export const useCompanyConfigStore = defineStore("companyConfigStore", {
         return {};
       } catch (error: any) {
         return { error: error.response?.data?.message || "Failed to enable task type default" };
+      }
+    },
+
+    async enableEventType(id: string): Promise<{ error?: string }> {
+      try {
+        await axiosInstance.post("/company/default-config/event-types/", { selected_ids: [id] });
+        const entry = this.eventTypes.find((e) => e.id === id);
+        if (entry) entry.enabled = true;
+        return {};
+      } catch (error: any) {
+        return { error: error.response?.data?.message || "Failed to enable event type default" };
       }
     },
   },

@@ -42,7 +42,12 @@ onMounted(() => {
 watch(
   activeTab,
   (tab) => {
-    if (tab === "company" && !companyConfigStore.departments.length && !companyConfigStore.taskTypes.length) {
+    if (
+      tab === "company" &&
+      !companyConfigStore.departments.length &&
+      !companyConfigStore.taskTypes.length &&
+      !companyConfigStore.eventTypes.length
+    ) {
       companyConfigStore.fetchDefaults();
     }
   },
@@ -81,6 +86,13 @@ const enableDepartment = async (id: string) => {
 const enableTaskType = async (id: string) => {
   enablingId.value = id;
   const { error } = await companyConfigStore.enableTaskType(id);
+  enablingId.value = null;
+  if (error) toast({ title: "Not enabled", description: error, variant: "destructive" });
+  else directoryStore.fetchAll();
+};
+const enableEventType = async (id: string) => {
+  enablingId.value = id;
+  const { error } = await companyConfigStore.enableEventType(id);
   enablingId.value = null;
   if (error) toast({ title: "Not enabled", description: error, variant: "destructive" });
   else directoryStore.fetchAll();
@@ -145,8 +157,9 @@ const TABS = [
         <template v-else-if="activeTab === 'company'">
           <h3 class="mb-1 text-sm font-semibold text-ink">My Company</h3>
           <p class="mb-4 text-xs text-subtle">
-            Manage the default departments and task types available to your company. Enabling a default adds it
-            once -- it won't create a duplicate if you've already added it manually or enabled it before.
+            Manage the default departments, task types, and event types available to your company. Enabling a
+            default adds it once -- it won't create a duplicate if you've already added it manually or enabled it
+            before.
           </p>
 
           <div class="space-y-6">
@@ -197,6 +210,33 @@ const TABS = [
                     class="rounded-lg bg-primary px-3 py-1 text-xs font-medium text-white disabled:opacity-50"
                     :disabled="enablingId === t.id"
                     @click="enableTaskType(t.id)"
+                  >
+                    Add
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h4 class="mb-2 text-xs font-semibold uppercase tracking-wide text-subtle">Event Type Defaults</h4>
+              <div v-if="!companyConfigStore.eventTypes.length" class="text-sm text-subtle">
+                No default event types available.
+              </div>
+              <div v-else class="divide-y divide-gray-50">
+                <div v-for="e in companyConfigStore.eventTypes" :key="e.id" class="flex items-center justify-between py-2">
+                  <div>
+                    <p class="text-sm text-ink">{{ e.name }}</p>
+                    <p v-if="e.description" class="text-xs text-subtle">{{ e.description }}</p>
+                  </div>
+                  <span v-if="e.enabled" class="rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-600">
+                    Enabled
+                  </span>
+                  <button
+                    v-else
+                    type="button"
+                    class="rounded-lg bg-primary px-3 py-1 text-xs font-medium text-white disabled:opacity-50"
+                    :disabled="enablingId === e.id"
+                    @click="enableEventType(e.id)"
                   >
                     Add
                   </button>
