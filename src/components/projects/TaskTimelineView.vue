@@ -14,7 +14,6 @@ import {
   isValid,
   isWeekend,
   parseISO,
-  startOfDay,
   startOfMonth,
 } from "date-fns";
 import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, Clock3, UserRound } from "lucide-vue-next";
@@ -22,6 +21,7 @@ import type { TaskStatus, TaskType } from "@/types/types";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatHoursToDuration } from "@/lib/duration";
+import { toZonedCalendarDate } from "@/lib/dates";
 
 const props = defineProps<{
   tasks: TaskType[];
@@ -51,9 +51,9 @@ const monthOptions = Array.from({ length: 12 }, (_, month) => ({
 const parseDate = (value: string | Date | null | undefined) => {
   if (!value) return null;
   const date = value instanceof Date ? value : parseISO(value);
-  return isValid(date) ? startOfDay(date) : null;
+  return isValid(date) ? toZonedCalendarDate(date) : null;
 };
-const today = startOfDay(new Date());
+const today = toZonedCalendarDate(new Date()) ?? new Date();
 const currentMonth = startOfMonth(today);
 
 const displayedTasks = computed(() => [...props.tasks].sort((a, b) => {

@@ -25,6 +25,28 @@ function toDate(iso: string | null | undefined): Date | null {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
+// Converts a UTC instant into a plain Date pinned to local midnight of
+// whichever calendar day that instant falls on in the user's *selected*
+// timezone -- not the browser's. Rebuilding the Date from the zoned Y/M/D
+// means date-fns's own local-time day-math (isSameDay/isBefore/etc.) keeps
+// working unmodified downstream; only this ingestion point needs to know
+// about timezones. Not for display -- use formatShortDate/formatTime/etc.
+// for that. Use this before bucketing a backend timestamp onto a
+// day-indexed grid (calendar cells, Gantt columns) so the bucketing follows
+// the chosen timezone rather than whatever zone the browser happens to be in.
+export function toZonedCalendarDate(value: string | Date | null | undefined): Date | null {
+  const date = value instanceof Date ? (Number.isNaN(value.getTime()) ? null : value) : toDate(value);
+  if (!date) return null;
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: currentTimeZone(),
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  const get = (type: string) => Number(parts.find((p) => p.type === type)?.value);
+  return new Date(get("year"), get("month") - 1, get("day"));
+}
+
 // "3 hours ago" -- duration math, not a point-in-time rendering, so it's
 // timezone-agnostic by nature.
 export function formatRelativeTime(iso: string | null | undefined): string {

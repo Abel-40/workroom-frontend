@@ -17,6 +17,7 @@ import Header from "@/components/layout/Header.vue";
 import { useAuthStore } from "@/stores/authStore";
 import { useDirectoryStore } from "@/stores/directoryStore";
 import { useEmployeeStore, ROLE_LABELS, type EmployeeRole } from "@/stores/employeeStore";
+import { hasPermission } from "@/lib/permissions";
 
 const route = useRoute();
 const router = useRouter();
@@ -46,6 +47,10 @@ watch(employeeId, async (id) => {
 // grants: Owner and Company Manager can manage members; a Company Manager
 // still cannot escalate anyone to Company Manager (enforced server-side).
 const canManage = computed(() => ["Owner", "CM"].includes(authStore.logedInUserInfo?.role ?? ""));
+// Department/team leadership assignment is departments:manage/teams:manage,
+// which DL also holds -- broader than canManage above (used for role/status/
+// department changes, which really are Owner/CM-only).
+const canManageLeadership = computed(() => hasPermission(authStore.logedInUserInfo?.role, "departments:manage"));
 const isSelf = computed(() => employeeId.value === authStore.logedInUserInfo?.user?.id);
 
 const initials = (name: string) =>
@@ -250,7 +255,7 @@ const goBack = () => router.push({ name: "admin-dashboard", query: { section: "e
           </div>
         </div>
 
-        <div v-if="canManage && !isSelf" class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+        <div v-if="canManageLeadership && !isSelf" class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
           <h3 class="mb-3 flex items-center gap-1.5 text-sm font-semibold text-ink">
             <Crown class="h-4 w-4" /> Department Leadership
           </h3>
@@ -295,7 +300,7 @@ const goBack = () => router.push({ name: "admin-dashboard", query: { section: "e
           </div>
         </div>
 
-        <div v-if="canManage && !isSelf" class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+        <div v-if="canManageLeadership && !isSelf" class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
           <h3 class="mb-3 flex items-center gap-1.5 text-sm font-semibold text-ink">
             <Users class="h-4 w-4" /> Team Leadership
           </h3>

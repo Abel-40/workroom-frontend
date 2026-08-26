@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import type { User,ApiResponse,UserProfile,Departments,Sectors,Company, TaskType,DefaultTaskType } from "@/types/types";
+import type { Role } from "@/lib/permissions";
 import axiosInstance from "@/plugins/axios";
 import axios from "axios";
 import { DUMMY_LOGGED_IN, DUMMY_COMPANY } from "@/mock/mockData";
@@ -48,10 +49,11 @@ export const useAuthStore =  defineStore('AuthStore',{
       user: User
       is_authenticated: boolean
       access: string
-      role?: "Owner" | "CM" | "DL" | "DM" | null
+      role?: Role | null
       company_id?: string | null
       company_name?: string | null
       company_created_at?: string | null
+      departmentId?: string | null
     },
     company:{} as Company,
     sectors:{} as Sectors,
@@ -161,15 +163,17 @@ export const useAuthStore =  defineStore('AuthStore',{
           user: User
           is_authenticated: boolean
           access: string
-          role: "Owner" | "DL" | "DM" | null
+          role: Role | null
           company_id: string | null
           company_name: string | null
           company_created_at: string | null
+          department_id: string | null
         }>>(
           '/auth/signin/',
           { ...form }
         )
-        this.logedInUserInfo = data.data
+        const { department_id, ...sessionData } = data.data
+        this.logedInUserInfo = { ...sessionData, departmentId: department_id }
         sessionStorage.setItem("currentUserContent", JSON.stringify(this.logedInUserInfo))
         sessionStorage.setItem("currentAuthTokens", JSON.stringify({accessToken:this.logedInUserInfo.access}))
         
@@ -186,6 +190,7 @@ export const useAuthStore =  defineStore('AuthStore',{
       this.logedInUserInfo.company_id = null
       this.logedInUserInfo.company_name = null
       this.logedInUserInfo.company_created_at = null
+      this.logedInUserInfo.departmentId = null
       this.logedInUserInfo.user = {
         id:'',
         username:'',

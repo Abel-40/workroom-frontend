@@ -8,8 +8,6 @@ import {
   getDay,
   isBefore,
   isSameDay,
-  isToday,
-  startOfDay,
   startOfMonth,
 } from "date-fns";
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-vue-next";
@@ -19,7 +17,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import AddEventModal from "@/components/calendar/AddEventModal.vue";
 import { useEventStore, type EventEntry } from "@/stores/eventStore";
-import { formatTime } from "@/lib/dates";
+import { formatTime, toZonedCalendarDate } from "@/lib/dates";
 import { EVENT_BORDER_CLASS, eventColorFor } from "@/lib/eventColor";
 
 const router = useRouter();
@@ -27,7 +25,7 @@ const eventStore = useEventStore();
 const viewMonth = ref(startOfMonth(new Date()));
 const isAddEventOpen = ref(false);
 const addEventDate = ref<string | undefined>(undefined);
-const today = startOfDay(new Date());
+const today = toZonedCalendarDate(new Date()) ?? new Date();
 
 // Fetch exactly the visible month, and refetch on every month change.
 // The previous version fetched one capped page (bounded by the backend's
@@ -59,7 +57,10 @@ const daysInMonth = () =>
   eachDayOfInterval({ start: startOfMonth(viewMonth.value), end: endOfMonth(viewMonth.value) });
 
 const eventsFor = (day: Date) =>
-  eventStore.events.filter((e) => isSameDay(new Date(e.startAt), day));
+  eventStore.events.filter((e) => {
+    const eventDay = toZonedCalendarDate(e.startAt);
+    return eventDay ? isSameDay(eventDay, day) : false;
+  });
 
 const isPastDay = (day: Date) => isBefore(day, today);
 
@@ -177,7 +178,7 @@ const jumpToToday = () => {
       >
         <span
           class="flex h-6 w-6 items-center justify-center rounded-full text-xs"
-          :class="isToday(day) ? 'bg-primary text-white font-semibold' : isPastDay(day) ? 'text-gray-300' : 'text-ink'"
+          :class="isSameDay(day, today) ? 'bg-primary text-white font-semibold' : isPastDay(day) ? 'text-gray-300' : 'text-ink'"
         >
           {{ format(day, "d") }}
         </span>

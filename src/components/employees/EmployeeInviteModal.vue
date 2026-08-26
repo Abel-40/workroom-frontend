@@ -13,12 +13,16 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useDirectoryStore } from "@/stores/directoryStore";
 import { useEmployeeStore, type EmployeeRole } from "@/stores/employeeStore";
+import { useAuthStore } from "@/stores/authStore";
+import { hasPermission } from "@/lib/permissions";
 import { useToast } from "@/components/ui/toast/use-toast";
 
 const open = defineModel<boolean>("open", { required: true });
 const employeeStore = useEmployeeStore();
 const directoryStore = useDirectoryStore();
+const authStore = useAuthStore();
 const { toast } = useToast();
+const canInviteCm = computed(() => hasPermission(authStore.logedInUserInfo?.role, "members:invite_cm"));
 
 const NO_DEPARTMENT = "__no_department__";
 const emails = ref<string[]>([""]);
@@ -123,7 +127,7 @@ const approve = async () => {
                 <SelectGroup>
                   <SelectItem value="DM">Department Member</SelectItem>
                   <SelectItem value="DL">Department Leader</SelectItem>
-                  <SelectItem value="CM">Company Manager</SelectItem>
+                  <SelectItem v-if="canInviteCm" value="CM">Company Manager</SelectItem>
                 </SelectGroup>
               </SelectContent>
             </Select>

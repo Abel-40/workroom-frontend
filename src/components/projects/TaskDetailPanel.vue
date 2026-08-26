@@ -21,10 +21,12 @@ import { useToast } from "@/components/ui/toast/use-toast";
 import { formatHoursToDuration, parseDurationToMinutes } from "@/lib/duration";
 import { formatDateTime } from "@/lib/dates";
 import { createPollSignal, type PollSignal } from "@/lib/pollUntilTerminal";
-import type { TaskType } from "@/types/types";
+import { canManageTask } from "@/lib/projectPermissions";
+import type { Project, TaskType } from "@/types/types";
 
 const props = defineProps<{
   task: TaskType;
+  project: Project | null | undefined;
 }>();
 
 const emit = defineEmits<{
@@ -38,12 +40,18 @@ const aiStore = useAiStore();
 const { toast } = useToast();
 const archiving = ref(false);
 
-// Only the task's creator may edit its fields -- everyone who can view the
-// task can still change its status/assignee via the controls that already
-// exist elsewhere (TaskStatusPill, TaskInfoSidebar), which follow the
-// backend's broader manage-task rule; this is specifically about editing
-// title/description/priority/etc.
-const canEdit = computed(() => props.task.createdById === authStore.logedInUserInfo.user?.id);
+// Editing/archiving a task follows the backend's manage-task rule: the
+// task's creator, or whoever can manage its parent project (current owner,
+// company admin, or the department leader of the project's own department).
+const canEdit = computed(() =>
+  canManageTask(
+    props.task,
+    props.project,
+    authStore.logedInUserInfo.user?.id,
+    authStore.logedInUserInfo.role,
+    authStore.logedInUserInfo.departmentId
+  )
+);
 
 const NONE = "__none__";
 const isEditing = ref(false);
@@ -153,6 +161,7 @@ const regenerateAiContent = async () => {
           <Pencil v-else class="h-3.5 w-3.5" />
         </button>
         <button
+          v-if="canEdit"
           type="button"
           class="text-subtle hover:text-red-500 disabled:opacity-50"
           title="Archive task"

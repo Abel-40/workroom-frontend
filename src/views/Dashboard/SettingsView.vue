@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import {
   Blocks,
   Building2,
@@ -26,6 +26,7 @@ import { useUserProfileStore } from "@/stores/userProfileStore";
 import { useCompanyConfigStore } from "@/stores/companyConfigStore";
 import { useDirectoryStore } from "@/stores/directoryStore";
 import { currentTimeZone } from "@/lib/dates";
+import { hasPermission } from "@/lib/permissions";
 
 const authStore = useAuthStore();
 const profileStore = useUserProfileStore();
@@ -107,6 +108,18 @@ const TABS = [
   { key: "confidentiality", label: "Confidentiality", icon: Lock },
   { key: "safety", label: "Safety", icon: ShieldCheck },
 ] as const;
+
+// "My Company" only makes sense for a role that can actually enable
+// defaults there (departments/task-types/event-types:manage all require the
+// same tier -- Owner/CM/DL); "Payments" is subscription:manage, Owner-only.
+const visibleTabs = computed(() => {
+  const role = authStore.logedInUserInfo?.role;
+  return TABS.filter((tab) => {
+    if (tab.key === "company") return hasPermission(role, "departments:manage");
+    if (tab.key === "payments") return hasPermission(role, "subscription:manage");
+    return true;
+  });
+});
 </script>
 
 <template>
@@ -121,7 +134,7 @@ const TABS = [
     <div class="flex flex-col gap-4 lg:flex-row">
       <nav class="w-full rounded-2xl border border-gray-100 bg-white p-2 lg:w-56">
         <button
-          v-for="tabItem in TABS"
+          v-for="tabItem in visibleTabs"
           :key="tabItem.key"
           type="button"
           class="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm"

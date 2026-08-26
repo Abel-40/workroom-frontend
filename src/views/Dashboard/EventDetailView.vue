@@ -33,7 +33,12 @@ watch(eventId, (id) => {
 });
 
 const canManage = computed(() =>
-  canManageEvent(event.value, authStore.logedInUserInfo?.user?.id, authStore.logedInUserInfo?.role)
+  canManageEvent(
+    event.value,
+    authStore.logedInUserInfo?.user?.id,
+    authStore.logedInUserInfo?.role,
+    authStore.logedInUserInfo?.departmentId
+  )
 );
 
 const initials = (name: string) =>

@@ -43,7 +43,12 @@ const color = computed(() => eventColorFor(props.event.eventTypeName || props.ev
 const badgeClass = computed(() => EVENT_BADGE_CLASS[color.value]);
 const cardBgClass = computed(() => EVENT_CARD_BG_CLASS[color.value]);
 const canManage = computed(() =>
-  canManageEvent(props.event, authStore.logedInUserInfo?.user?.id, authStore.logedInUserInfo?.role)
+  canManageEvent(
+    props.event,
+    authStore.logedInUserInfo?.user?.id,
+    authStore.logedInUserInfo?.role,
+    authStore.logedInUserInfo?.departmentId
+  )
 );
 
 const initials = (name: string) => (name || "?").split(" ").map((p) => p[0]).join("").slice(0, 2).toUpperCase();
@@ -94,6 +99,8 @@ const confirmDelete = async () => {
         v-if="selectable"
         class="shrink-0 bg-white"
         :model-value="selected"
+        :disabled="!canManage"
+        :title="canManage ? undefined : 'You do not have permission to delete this event'"
         @click.stop
         @update:model-value="() => emit('toggle-select', event.id)"
       />

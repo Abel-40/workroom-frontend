@@ -33,6 +33,7 @@ import { useProjectStore } from "@/stores/projectStore";
 import { useAuthStore } from "@/stores/authStore";
 import { useEmployeeStore } from "@/stores/employeeStore";
 import { useDirectoryStore } from "@/stores/directoryStore";
+import { canManageProject } from "@/lib/projectPermissions";
 import type { Project, TaskType } from "@/types/types";
 import { addDays, format } from "date-fns";
 import { ref, onMounted, computed, watch } from "vue";
@@ -61,6 +62,14 @@ const employeeStore = useEmployeeStore();
 const directoryStore = useDirectoryStore();
 const { selectedProject, selectedTask } = storeToRefs(projectsStore);
 // const selectedProject = ref(projectsStore.getSelectedState)
+const canManageSelectedProject = computed(() =>
+  canManageProject(
+    selectedProject.value,
+    authStore.logedInUserInfo.user?.id,
+    authStore.logedInUserInfo.role,
+    authStore.logedInUserInfo.departmentId
+  )
+);
 const onClick = (project: Project) => {
   selectedProject.value = project;
   projectsStore.selectTask(null);
@@ -639,6 +648,7 @@ watch(()=>paginatedProjects.value,()=>{
                       <Button as="a" variant="link" class="text-xs"> Back </Button>
                     </span>
                     <button
+                      v-if="canManageSelectedProject"
                       type="button"
                       class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border hover:border-primary/40"
                       :class="isEditingProject ? 'border-primary bg-primary/10 text-primary' : 'border-gray-200 text-gray-400'"
@@ -774,7 +784,10 @@ watch(()=>paginatedProjects.value,()=>{
                   <!-- Owner (current, transferable -- distinct from the immutable Created By above) -->
                   <div class="mt-4">
                     <div class="text-sm text-gray-400">Owner</div>
-                    <Select v-model="ownerValue" :disabled="transferringOwner">
+                    <p v-if="!canManageSelectedProject" class="text-sm font-medium text-gray-700 mt-1">
+                      {{ selectedProject?.currentOwnerName ?? "Unowned" }}
+                    </p>
+                    <Select v-else v-model="ownerValue" :disabled="transferringOwner">
                       <SelectTrigger class="mt-1 rounded-xl">
                         <SelectValue placeholder="Unowned" />
                       </SelectTrigger>
@@ -878,7 +891,7 @@ watch(()=>paginatedProjects.value,()=>{
                   </div>
 
                   <!-- Action Icons -->
-                  <div class="mt-6 flex gap-2">
+                  <div v-if="canManageSelectedProject" class="mt-6 flex gap-2">
                     <button
                       type="button"
                       class="w-9 h-9 bg-red-100 rounded-full flex items-center justify-center cursor-pointer disabled:opacity-50"
@@ -915,7 +928,6 @@ watch(()=>paginatedProjects.value,()=>{
                       class="w-[95%] h-full px-3 py-3  rounded-l-xl"
                       :class="setActive(project.id)"
                     >
-                      <!-- <SmallProjectCard :fields="{id:project.id,title:project.title}"  @view-detail="onViewDetail"/> -->
                       <div class="flex h-full w-full items-center gap-2 overflow-hidden rounded-xl px-4 py-2">
                         <div class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-page">
                           <ProjectImage v-if="project.image" :image="project.image" :alt="project.title">
@@ -969,6 +981,7 @@ watch(()=>paginatedProjects.value,()=>{
             <TaskDetailPanel
               class="flex-1"
               :task="selectedTask"
+              :project="selectedProject"
               @close="closeTaskDetail"
             />
             <TaskInfoSidebar :project="selectedProject" :task="selectedTask" />

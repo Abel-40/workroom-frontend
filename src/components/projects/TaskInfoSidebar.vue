@@ -12,10 +12,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/components/ui/toast/use-toast";
+import { useAuthStore } from "@/stores/authStore";
 import { useEmployeeStore } from "@/stores/employeeStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { formatHoursToDuration } from "@/lib/duration";
 import { formatShortDate } from "@/lib/dates";
+import { canManageTask } from "@/lib/projectPermissions";
 import type { Project, TaskType } from "@/types/types";
 import TimeTrackingModal from "./TimeTrackingModal.vue";
 
@@ -24,11 +26,25 @@ const props = defineProps<{
   task: TaskType;
 }>();
 
+const authStore = useAuthStore();
 const employeeStore = useEmployeeStore();
 const projectsStore = useProjectStore();
 const { toast } = useToast();
 const timeTrackingOpen = ref(false);
 const assigning = ref(false);
+
+// Reassignment follows the same manage-task rule as editing/archiving a
+// task elsewhere (TaskDetailPanel) -- creator, or whoever can manage the
+// parent project.
+const canReassign = computed(() =>
+  canManageTask(
+    props.task,
+    props.project,
+    authStore.logedInUserInfo.user?.id,
+    authStore.logedInUserInfo.role,
+    authStore.logedInUserInfo.departmentId
+  )
+);
 
 const initials = (name: string) =>
   (name || "?")
@@ -87,7 +103,8 @@ const assigneeValue = computed({
 
       <div>
         <p class="text-xs text-subtle">Assignee</p>
-        <Select v-model="assigneeValue" :disabled="assigning">
+        <p v-if="!canReassign" class="mt-1 text-ink">{{ task.assigneeName ?? "Unassigned" }}</p>
+        <Select v-else v-model="assigneeValue" :disabled="assigning">
           <SelectTrigger class="mt-1 rounded-xl">
             <SelectValue placeholder="Unassigned" />
           </SelectTrigger>

@@ -26,11 +26,16 @@ import EmployeeInviteModal from "@/components/employees/EmployeeInviteModal.vue"
 import ConfirmDeleteDialog from "@/components/common/ConfirmDeleteDialog.vue";
 import { useEmployeeStore, type Employee, type EmployeeRole, type RemovalBlockers } from "@/stores/employeeStore";
 import { useDirectoryStore } from "@/stores/directoryStore";
+import { useAuthStore } from "@/stores/authStore";
+import { hasPermission } from "@/lib/permissions";
 import { useRouter } from "vue-router";
 
 const employeeStore = useEmployeeStore();
 const directoryStore = useDirectoryStore();
+const authStore = useAuthStore();
 const router = useRouter();
+const canInvite = computed(() => hasPermission(authStore.logedInUserInfo?.role, "members:invite"));
+const canRemove = computed(() => hasPermission(authStore.logedInUserInfo?.role, "members:remove"));
 const { toast } = useToast();
 const layout = ref<"list" | "activity">("list");
 const isInviteOpen = ref(false);
@@ -238,7 +243,7 @@ const roleBadgeClass: Record<string, string> = {
               </div>
             </PopoverContent>
           </Popover>
-          <Button class="rounded-xl" @click="isInviteOpen = true">
+          <Button v-if="canInvite" class="rounded-xl" @click="isInviteOpen = true">
             <Plus class="w-4 h-4" /> Add Employee
           </Button>
         </div>
@@ -249,7 +254,7 @@ const roleBadgeClass: Record<string, string> = {
     <div v-if="employeeStore.total === 0" class="rounded-2xl border border-dashed border-gray-200 bg-white p-12 text-center">
       <p class="font-medium text-ink">No employees yet</p>
       <p class="mt-1 text-sm text-subtle">Invite your first teammate to get started.</p>
-      <Button class="mt-4 rounded-xl" @click="isInviteOpen = true">
+      <Button v-if="canInvite" class="mt-4 rounded-xl" @click="isInviteOpen = true">
         <Plus class="w-4 h-4" /> Add Employee
       </Button>
     </div>
@@ -301,6 +306,7 @@ const roleBadgeClass: Record<string, string> = {
             <DropdownMenuContent align="end">
               <DropdownMenuItem @click="openProfile(employee)">View Profile</DropdownMenuItem>
               <DropdownMenuItem
+                v-if="canRemove"
                 class="text-red-500"
                 :disabled="removingId === employee.id"
                 @click="confirmRemove(employee)"
