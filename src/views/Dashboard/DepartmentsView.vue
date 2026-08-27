@@ -6,15 +6,15 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import Header from "@/components/layout/Header.vue";
 import CreateDepartmentModal from "@/components/departments/CreateDepartmentModal.vue";
 import CreateTeamModal from "@/components/departments/CreateTeamModal.vue";
-import { useAuthStore } from "@/stores/authStore";
 import { useDirectoryStore } from "@/stores/directoryStore";
 import { useEmployeeStore } from "@/stores/employeeStore";
+import { usePermissions } from "@/composables/usePermissions";
 import { useRouter } from "vue-router";
 
-const authStore = useAuthStore();
 const directoryStore = useDirectoryStore();
 const employeeStore = useEmployeeStore();
 const router = useRouter();
+const { can } = usePermissions();
 
 const openDepartment = (departmentId: string) =>
   router.push({ name: "admin-dashboard", query: { section: "department-detail", departmentId } });
@@ -34,13 +34,7 @@ onMounted(() => {
   if (!employeeStore.employees.length) employeeStore.fetchEmployees();
 });
 
-// Mirrors the backend's departments:manage/teams:manage permission grants
-// (permissions and roles/roles_permission.yaml): Owner, Company Manager, and
-// Department Leader may create/edit departments and teams -- Department
-// Member may not.
-const canManage = computed(() =>
-  ["Owner", "CM", "DL"].includes(authStore.logedInUserInfo?.role ?? "")
-);
+const canManage = computed(() => can("departments:manage"));
 
 const initials = (name: string) =>
   (name || "?").split(" ").map((p) => p[0]).join("").slice(0, 2).toUpperCase();

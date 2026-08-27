@@ -30,6 +30,17 @@ export const DUMMY_LOGGED_IN = {
   company_id: 'company-mock-001',
   company_name: 'Workroom Demo Corp',
   company_created_at: '2025-01-15T00:00:00.000Z',
+  departmentId: null as string | null,
+}
+
+// Dev-only role switcher (see login.vue's DEV-gated "Preview as" block) --
+// same mock user/company as DUMMY_LOGGED_IN, role and department swapped so
+// every role-scoped screen can be previewed without a live backend.
+export const DUMMY_LOGGED_IN_BY_ROLE = {
+  Owner: DUMMY_LOGGED_IN,
+  CM: { ...DUMMY_LOGGED_IN, role: 'CM' as const, departmentId: null },
+  DL: { ...DUMMY_LOGGED_IN, role: 'DL' as const, departmentId: 'dept-mock-001' },
+  DM: { ...DUMMY_LOGGED_IN, role: 'DM' as const, departmentId: 'dept-mock-001' },
 }
 
 // ── Company ──────────────────────────────────────────────────

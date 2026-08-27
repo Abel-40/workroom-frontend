@@ -49,6 +49,13 @@ export default {
   			ink: '#0A1629',
   			subtle: '#91929E',
   			page: '#E6EDF5',
+  			// Glass-layer tokens (see src/assets/glass.css) -- the role-scoped
+  			// dashboard refresh's only new solid-color additions. `ink`/`subtle`
+  			// above already cover --wr-text/--wr-text-faint; text-muted stays the
+  			// existing text-[#7D8592] arbitrary-value convention used elsewhere.
+  			'primary-strong': '#2C6FD1',
+  			'primary-soft': '#D6E7FF',
+  			'accent-2': '#6A5CFF',
   			// AI Workspace design tokens -- additive only, scoped to the new AI
   			// Workspace screens. `page` above stays untouched since it's already
   			// used across unrelated existing screens.

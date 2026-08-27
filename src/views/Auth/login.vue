@@ -14,6 +14,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import { useToast } from '@/components/ui/toast/use-toast'
+import type { Role } from '@/lib/permissions'
 
 interface userForm {
   email: string
@@ -54,6 +55,17 @@ const onSubmit = async (e: Event) => {
     }
 }
 
+}
+
+// Dev-only: preview any role without a running backend. Never present in a
+// production build (import.meta.env.DEV is compiled away by Vite), so this
+// isn't a real auth bypass shipped to users. Read into a plain const here --
+// Vue's template compiler rejects `import.meta` written directly inside a
+// template expression ("import.meta may appear only with sourceType: module").
+const isDevPreview = import.meta.env.DEV
+const previewAsRole = (role: Role) => {
+  authStore.loginAsDummy(role)
+  router.push({ path: '/admin/dashboard/', query: { section: 'dashboard' } })
 }
 </script>
 
@@ -141,11 +153,31 @@ const onSubmit = async (e: Event) => {
                 </Button>
               </div>
 
-              <CardFooter class="justify-center text-sm">
-                Don't have an account?
-                <Button as="a" variant="link" href="/auth/" class="text-[#3F8CFF] p-0 ml-1 h-auto">
-                  Register
-                </Button>
+              <CardFooter class="flex-col gap-3">
+                <div class="text-sm">
+                  Don't have an account?
+                  <Button as="a" variant="link" href="/auth/" class="text-[#3F8CFF] p-0 ml-1 h-auto">
+                    Register
+                  </Button>
+                </div>
+
+                <div v-if="isDevPreview" class="w-full rounded-xl border border-dashed border-slate-300 p-3">
+                  <p class="mb-2 text-center text-xs font-semibold uppercase tracking-wide text-slate-400">
+                    Dev preview -- skip auth as
+                  </p>
+                  <div class="flex flex-wrap justify-center gap-2">
+                    <Button
+                      v-for="role in (['Owner', 'CM', 'DL', 'DM'] as const)"
+                      :key="role"
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      @click="previewAsRole(role)"
+                    >
+                      {{ role }}
+                    </Button>
+                  </div>
+                </div>
               </CardFooter>
             </Card>
           </form>

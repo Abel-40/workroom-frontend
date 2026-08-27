@@ -26,7 +26,9 @@ import EmptyTasksState from "@/components/projects/EmptyTasksState.vue";
 import AddTaskModal from "@/components/projects/AddTaskModal.vue";
 import CreateProjectModal from "@/components/projects/CreateProjectModal.vue";
 import ProjectImage from "@/components/projects/ProjectImage.vue";
+import ProjectListRow from "@/components/projects/ProjectListRow.vue";
 import ConfirmDeleteDialog from "@/components/common/ConfirmDeleteDialog.vue";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/components/ui/toast/use-toast";
 import { formatShortDate } from "@/lib/dates";
 import { useProjectStore } from "@/stores/projectStore";
@@ -34,6 +36,7 @@ import { useAuthStore } from "@/stores/authStore";
 import { useEmployeeStore } from "@/stores/employeeStore";
 import { useDirectoryStore } from "@/stores/directoryStore";
 import { canManageProject } from "@/lib/projectPermissions";
+import { usePermissions } from "@/composables/usePermissions";
 import type { Project, TaskType } from "@/types/types";
 import { addDays, format } from "date-fns";
 import { ref, onMounted, computed, watch } from "vue";
@@ -60,7 +63,18 @@ const projectsStore = useProjectStore();
 const authStore = useAuthStore();
 const employeeStore = useEmployeeStore();
 const directoryStore = useDirectoryStore();
+const { isDL, isDM, userId: myUserId, departmentId: myDepartmentId } = usePermissions();
 const { selectedProject, selectedTask } = storeToRefs(projectsStore);
+
+// DL: department-scoped by default, per the spec's visible toggle. DM:
+// the list splits into two groups below instead of filtering at all --
+// "Created by me" (full manage) vs "I'm a member of" (view/comment/work
+// tasks only, gated by the existing canManageProject checks already used
+// throughout the detail panel below).
+const showCompanyWide = ref(false);
+const myDepartmentName = computed(
+  () => directoryStore.departments.find((d) => d.id === myDepartmentId.value)?.name ?? null
+);
 // const selectedProject = ref(projectsStore.getSelectedState)
 const canManageSelectedProject = computed(() =>
   canManageProject(
@@ -325,13 +339,6 @@ const goBack = () => {
   showDetial.value = false;
 };
 const setFocus = ref(selectedProject.value?.id);
-const setActive = (id: string) => {
-  if (selectedProject.value?.id === id) return ["bg-blue-50"];
-};
-const activeBorder = (id: string) => {
-  if (selectedProject.value?.id === id)
-    return ["border-r-blue-400 border-r-[4px]"];
-};
 
 const getPriorityColor = (level: "high" | "medium" | "low" | undefined) => {
   switch (level) {
@@ -402,7 +409,11 @@ const ApplyFilter = (filters: FilterOption) => {
   selectedProject.value = paginatedProjects.value[0]
 };
 const projects = computed(()=>{
-  return projectsStore.projects.filter((project)=> project.status === projectType.value)
+  let base = projectsStore.projects.filter((project)=> project.status === projectType.value)
+  if (isDL.value && !showCompanyWide.value) {
+    base = base.filter((project) => project.departmentId === myDepartmentId.value)
+  }
+  return base
 })
 const BacklogTasks = computed(()=>{
   return selectedProject.value?.task.tasks?.filter((task)=>{
@@ -527,6 +538,12 @@ const searchedProjects = computed(() => {
   )
 })
 
+// DM's two groups, derived from the same search/filter/status pipeline
+// everyone else uses -- just split by ownership instead of paginated flat.
+const dmCreatedProjects = computed(() => searchedProjects.value.filter((p) => p.createdById === myUserId.value))
+const dmMemberProjects = computed(() => searchedProjects.value.filter((p) => p.createdById !== myUserId.value))
+const dmVisibleProjects = computed(() => [...dmCreatedProjects.value, ...dmMemberProjects.value])
+
 // 📄 Pagination
 const currentPage = ref(1)
 const itemPerPage = ref(5)
@@ -540,6 +557,10 @@ const totalPage = computed(() =>
 )
 
 const paginatedProjects = computed(() => {
+  // DM's sidebar renders two grouped, unpaginated lists instead (see
+  // template) -- this still needs to resolve to something sensible for the
+  // auto-select/fallback logic below that isn't template-aware.
+  if (isDM.value) return dmVisibleProjects.value
   const start = (currentPage.value - 1) * itemPerPage.value
   const end = start + itemPerPage.value
   return searchedProjects.value.slice(start, end)
@@ -615,24 +636,29 @@ watch(()=>paginatedProjects.value,()=>{
         class="w-full lg:w-1/4 rounded-2xl bg-white border border-gray-200 shadow-lg flex flex-col justify-between"
       >
       <div>
-        <div class="h-[80px] border-b border-gray-200 px-4 py-3 flex justify-between items-center">
-          <Select v-model="projectType">
-            <SelectTrigger
-              class="!border-none !ring-0 !focus:ring-0 !focus:border-none !outline-none !shadow-none font-semibold"
-            >
-            <SelectValue placeholder="Select a Priority" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                <SelectLabel class="!border-none">project type</SelectLabel>
-                <SelectItem value="Active"> Active Projects </SelectItem>
-                <SelectItem value="In Active"> In Active Projects</SelectItem>
-                <SelectItem value="Done"> Completed Projects </SelectItem>
-              </SelectGroup>
-            </SelectContent>
-          </Select>
+        <div class="border-b border-gray-200 px-4 py-3 flex flex-col gap-2">
+          <div class="flex justify-between items-center">
+            <Select v-model="projectType">
+              <SelectTrigger
+                class="!border-none !ring-0 !focus:ring-0 !focus:border-none !outline-none !shadow-none font-semibold"
+              >
+              <SelectValue placeholder="Select a Priority" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectLabel class="!border-none">project type</SelectLabel>
+                  <SelectItem value="Active"> Active Projects </SelectItem>
+                  <SelectItem value="In Active"> In Active Projects</SelectItem>
+                  <SelectItem value="Done"> Completed Projects </SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
 
-          
+          <label v-if="isDL" class="flex items-center justify-between gap-2 text-xs text-subtle">
+            <span>{{ showCompanyWide ? "Company-visible projects" : `${myDepartmentName ?? "My department"} only` }}</span>
+            <Switch v-model="showCompanyWide" />
+          </label>
         </div>
 
             <!-- projects list -->
@@ -905,6 +931,36 @@ watch(()=>paginatedProjects.value,()=>{
                 </div>
               </template>
 
+              <template v-else-if="isDM">
+                <!-- Two groups per spec: full manage on what I created,
+                     view/comment/work-tasks only on what I'm just a member
+                     of (already enforced by canManageProject in the detail
+                     panel below -- this is purely how the list is grouped). -->
+                <div class="max-h-[500px] overflow-y-auto">
+                  <p class="px-4 pt-2 pb-1 text-xs font-semibold uppercase tracking-wide text-subtle">Created by me</p>
+                  <p v-if="!dmCreatedProjects.length" class="px-4 py-3 text-sm text-subtle">None yet.</p>
+                  <ProjectListRow
+                    v-for="project in dmCreatedProjects"
+                    :key="project.id"
+                    :project="project"
+                    :active="selectedProject?.id === project.id"
+                    @select="onClick(project)"
+                    @view-detail="onViewDetail(project)"
+                  />
+
+                  <p class="px-4 pt-3 pb-1 text-xs font-semibold uppercase tracking-wide text-subtle">I'm a member of</p>
+                  <p v-if="!dmMemberProjects.length" class="px-4 py-3 text-sm text-subtle">Not a member of any projects yet.</p>
+                  <ProjectListRow
+                    v-for="project in dmMemberProjects"
+                    :key="project.id"
+                    :project="project"
+                    :active="selectedProject?.id === project.id"
+                    @select="onClick(project)"
+                    @view-detail="onViewDetail(project)"
+                  />
+                </div>
+              </template>
+
               <template v-else>
                 <p v-if="!paginatedProjects.length && searchQuery" class="px-4 py-6 text-center text-sm text-subtle">
                   No projects match "{{ searchQuery }}"
@@ -913,55 +969,20 @@ watch(()=>paginatedProjects.value,()=>{
                   No projects to show.
                 </p>
                 <div v-else class="max-h-[500px]">
-                  <div
-                    class="h-[90px] text-sm flex justify-between lg:text-md cursor-pointer gap-1"
-                    v-for="(project, index) in paginatedProjects"
+                  <ProjectListRow
+                    v-for="project in paginatedProjects"
                     :key="project.id"
-                    @click="
-                      () => {
-                        onClick(project);
-                      }
-                    "
-                  >
-                    <!--smaller project card -->
-                    <div
-                      class="w-[95%] h-full px-3 py-3  rounded-l-xl"
-                      :class="setActive(project.id)"
-                    >
-                      <div class="flex h-full w-full items-center gap-2 overflow-hidden rounded-xl px-4 py-2">
-                        <div class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-page">
-                          <ProjectImage v-if="project.image" :image="project.image" :alt="project.title">
-                            <template #fallback>
-                              <span class="text-base">{{ project.icon }}</span>
-                            </template>
-                          </ProjectImage>
-                          <span v-else class="text-base">{{ project.icon }}</span>
-                        </div>
-                        <div class="min-w-0">
-                          <p class="text-xs text-gray-500" :title="project.id">{{ shortProjectId(project.id) }}</p>
-                          <p class="font-medium truncate" :title="project.title">{{ project.title }}</p>
-                          <div class="cursor-pointer flex items-center">
-                            <Button
-                              variant="link"
-                              as="a"
-                              class="text-primary px-0 py-0 h-auto"
-                              @click="onViewDetail(project)"
-                            >
-                              View details
-                            </Button>
-                            <ChevronRight class="w-4 h-4 text-primary" />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="rounded-xl" :class="activeBorder(project.id)"></div>
-                  </div>
+                    :project="project"
+                    :active="selectedProject?.id === project.id"
+                    @select="onClick(project)"
+                    @view-detail="onViewDetail(project)"
+                  />
                 </div>
               </template>
             </div>
        </div>
 
-            <div v-if="!showDetial" class="w-full flex justify-center items-center gap-2">
+            <div v-if="!showDetial && !isDM" class="w-full flex justify-center items-center gap-2">
               <Button variant="link" @click="goToPrevious" :disabled="currentPage === 1">
                 <ArrowLeft />
               </Button>

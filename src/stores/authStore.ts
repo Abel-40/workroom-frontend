@@ -3,7 +3,7 @@ import type { User,ApiResponse,UserProfile,Departments,Sectors,Company, TaskType
 import type { Role } from "@/lib/permissions";
 import axiosInstance from "@/plugins/axios";
 import axios from "axios";
-import { DUMMY_LOGGED_IN, DUMMY_COMPANY } from "@/mock/mockData";
+import { DUMMY_LOGGED_IN, DUMMY_LOGGED_IN_BY_ROLE, DUMMY_COMPANY } from "@/mock/mockData";
 interface Step3Form {
   selected_types?: string[]
   use_all_default_task_types?: boolean
@@ -377,8 +377,8 @@ export const useAuthStore =  defineStore('AuthStore',{
      *   Email    : demo@workroom.dev
      *   Password : Demo@1234
      */
-    loginAsDummy() {
-      this.logedInUserInfo = { ...DUMMY_LOGGED_IN }
+    loginAsDummy(role: Role = 'Owner') {
+      this.logedInUserInfo = { ...DUMMY_LOGGED_IN_BY_ROLE[role] }
       this.company          = { ...DUMMY_COMPANY }
       sessionStorage.setItem('currentUserContent', JSON.stringify(this.logedInUserInfo))
       sessionStorage.setItem('currentAuthTokens', JSON.stringify({ accessToken: DUMMY_LOGGED_IN.access }))

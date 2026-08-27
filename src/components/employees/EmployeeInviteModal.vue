@@ -17,6 +17,10 @@ import { useAuthStore } from "@/stores/authStore";
 import { hasPermission } from "@/lib/permissions";
 import { useToast } from "@/components/ui/toast/use-toast";
 
+// lockedDepartmentId: DL's "People" view invites straight into their own
+// department (spec: primary "Invite to <Department>") -- the picker below
+// still renders so the department is visible, just not editable.
+const props = defineProps<{ lockedDepartmentId?: string | null }>();
 const open = defineModel<boolean>("open", { required: true });
 const employeeStore = useEmployeeStore();
 const directoryStore = useDirectoryStore();
@@ -35,7 +39,7 @@ const departmentRequired = computed(() => role.value === "DL");
 watch(open, (isOpen) => {
   if (isOpen) {
     emails.value = [""];
-    departmentId.value = NO_DEPARTMENT;
+    departmentId.value = props.lockedDepartmentId ?? NO_DEPARTMENT;
     role.value = "DM";
     sent.value = false;
     sending.value = false;
@@ -103,7 +107,7 @@ const approve = async () => {
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div class="space-y-2">
             <Label for="invite-department">Department <span v-if="departmentRequired" class="text-destructive">*</span></Label>
-            <Select v-model="departmentId">
+            <Select v-model="departmentId" :disabled="!!props.lockedDepartmentId">
               <SelectTrigger id="invite-department" class="rounded-xl">
                 <SelectValue placeholder="No department" />
               </SelectTrigger>

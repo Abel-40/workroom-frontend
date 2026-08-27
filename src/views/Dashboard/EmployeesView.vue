@@ -28,15 +28,38 @@ import { useEmployeeStore, type Employee, type EmployeeRole, type RemovalBlocker
 import { useDirectoryStore } from "@/stores/directoryStore";
 import { useAuthStore } from "@/stores/authStore";
 import { hasPermission } from "@/lib/permissions";
+import { usePermissions } from "@/composables/usePermissions";
 import { useRouter } from "vue-router";
 
 const employeeStore = useEmployeeStore();
 const directoryStore = useDirectoryStore();
 const authStore = useAuthStore();
 const router = useRouter();
+const { role: myRole, isMemberRowLocked } = usePermissions();
 const canInvite = computed(() => hasPermission(authStore.logedInUserInfo?.role, "members:invite"));
 const canRemove = computed(() => hasPermission(authStore.logedInUserInfo?.role, "members:remove"));
+const canChangeRole = computed(() => hasPermission(authStore.logedInUserInfo?.role, "members:manage_role"));
+const canPromoteToCm = computed(() => hasPermission(authStore.logedInUserInfo?.role, "members:manage_cm_role"));
 const { toast } = useToast();
+
+// Member/DL rows only, per the spec -- Owner/CM rows stay locked (plain
+// text, no row menu; see isMemberRowLocked) regardless of who's viewing.
+const roleCellOptions = computed((): { value: EmployeeRole; label: string }[] => {
+  const options: { value: EmployeeRole; label: string }[] = [
+    { value: "DM", label: "Department Member" },
+    { value: "DL", label: "Department Leader" },
+  ];
+  if (canPromoteToCm.value) options.push({ value: "CM", label: "Company Manager" });
+  return options;
+});
+const changingRoleId = ref<string | null>(null);
+const changeEmployeeRole = async (employee: Employee, role: EmployeeRole) => {
+  if (role === employee.role) return;
+  changingRoleId.value = employee.id;
+  const { error } = await employeeStore.changeRole(employee.id, role);
+  changingRoleId.value = null;
+  if (error) toast({ title: "Role not changed", description: error, variant: "destructive" });
+};
 const layout = ref<"list" | "activity">("list");
 const isInviteOpen = ref(false);
 
@@ -269,35 +292,61 @@ const roleBadgeClass: Record<string, string> = {
     <div v-else-if="layout === 'list'" class="overflow-x-auto rounded-2xl border border-gray-100 bg-white">
       <div class="min-w-[860px]">
         <div
-          class="grid grid-cols-[2fr_1fr_1.3fr_40px] items-center gap-4 border-b border-gray-100 px-4 py-3 text-xs font-medium uppercase tracking-wide text-subtle"
+          class="grid grid-cols-[2fr_1fr_1fr_0.8fr_40px] items-center gap-4 border-b border-gray-100 px-4 py-3 text-xs font-medium uppercase tracking-wide text-subtle"
         >
           <span>Employee</span>
           <span>Department</span>
           <span>Role</span>
+          <span>Status</span>
           <span></span>
         </div>
 
         <div
           v-for="employee in paginated"
           :key="employee.id"
-          class="grid grid-cols-[2fr_1fr_1.3fr_40px] items-center gap-4 border-b border-gray-50 px-4 py-3 last:border-b-0 hover:bg-page/40"
+          class="grid grid-cols-[2fr_1fr_1fr_0.8fr_40px] items-center gap-4 border-b border-gray-50 px-4 py-3 last:border-b-0 hover:bg-page/40"
         >
-          <div class="flex min-w-0 items-center gap-3">
+          <div class="flex min-w-0 cursor-pointer items-center gap-3" @click="openProfile(employee)">
             <Avatar size="sm" class="h-10 w-10 shrink-0 text-xs">
               <AvatarFallback>{{ initials(employee.name) }}</AvatarFallback>
             </Avatar>
             <div class="min-w-0">
-              <p class="truncate font-medium text-ink">{{ employee.name }}</p>
+              <p class="truncate font-medium text-ink hover:underline">{{ employee.name }}</p>
               <p class="truncate text-xs text-subtle">{{ employee.email }}</p>
             </div>
           </div>
           <p class="text-sm text-ink">{{ employee.department ?? "—" }}</p>
-          <div class="flex items-center gap-2">
-            <span class="shrink-0 rounded-full px-2 py-0.5 text-xs font-medium" :class="roleBadgeClass[employee.role]">
-              {{ employee.roleLabel }}
-            </span>
-          </div>
-          <DropdownMenu>
+
+          <!-- Role: editable Select for Member/DL rows when I can manage roles;
+               Owner/CM rows (or when I lack the permission) stay plain text --
+               see isMemberRowLocked. -->
+          <Select
+            v-if="canChangeRole && !isMemberRowLocked(employee.role)"
+            :model-value="employee.role"
+            :disabled="changingRoleId === employee.id"
+            @update:model-value="(value) => changeEmployeeRole(employee, value as EmployeeRole)"
+          >
+            <SelectTrigger class="h-8 rounded-lg text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                <SelectItem v-for="opt in roleCellOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</SelectItem>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+          <span v-else class="shrink-0 justify-self-start rounded-full px-2 py-0.5 text-xs font-medium" :class="roleBadgeClass[employee.role]">
+            {{ employee.roleLabel }}
+          </span>
+
+          <span
+            class="shrink-0 justify-self-start rounded-full px-2 py-0.5 text-xs font-medium"
+            :class="employee.isActive ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'"
+          >
+            {{ employee.isActive ? "Active" : "Inactive" }}
+          </span>
+
+          <DropdownMenu v-if="!isMemberRowLocked(employee.role)">
             <DropdownMenuTrigger as-child>
               <button type="button" class="justify-self-end rounded-lg p-1.5 text-subtle hover:bg-page hover:text-ink">
                 <MoreVertical class="h-4 w-4" />
@@ -315,6 +364,7 @@ const roleBadgeClass: Record<string, string> = {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          <span v-else></span>
         </div>
       </div>
     </div>

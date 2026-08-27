@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { CalendarDays, CheckSquare, Funnel, LayoutGrid, MoveLeft, Plus, Trash2, X } from "lucide-vue-next";
 import { Button } from "@/components/ui/button";
 import EventCard from "@/components/cards/EventCard.vue";
@@ -12,11 +12,13 @@ import { useToast } from "@/components/ui/toast/use-toast";
 import { useRouter } from "vue-router";
 import filterComposables from "@/composables/filterComposables";
 import { useEventStore, type EventFilters } from "@/stores/eventStore";
+import { usePermissions } from "@/composables/usePermissions";
 
 const router = useRouter();
 const eventStore = useEventStore();
 const { toast } = useToast();
 const { onOpen, isOpen } = filterComposables();
+const { isDL, isDM, userId: myUserId, departmentId: myDepartmentId } = usePermissions();
 const isAddEventOpen = ref(false);
 const layout = ref<"cards" | "calendar">("cards");
 
@@ -24,8 +26,29 @@ const activeFilters = ref<EventFilters>({});
 const page = ref(1);
 
 const load = () => {
-  eventStore.fetchEvents({ ...activeFilters.value, page: page.value });
+  // DM's "My Events" is scoped server-side to events they're actually
+  // involved in; DL/CM/Owner get the broader company set (no visibility
+  // enum on events like projects have, so grouping into department/
+  // company-wide happens client-side below, not via a restrictive fetch).
+  const roleFilter: EventFilters = isDM.value ? { mine: true } : {};
+  eventStore.fetchEvents({ ...roleFilter, ...activeFilters.value, page: page.value });
 };
+
+// DL: department events first, everything else the backend returned shown
+// muted below.
+const departmentEvents = computed(() => eventStore.events.filter((e) => e.departmentId === myDepartmentId.value));
+const otherEvents = computed(() => eventStore.events.filter((e) => e.departmentId !== myDepartmentId.value));
+
+// DM: organizing (manage) / attending a department-or-team event (RSVP
+// only) / attending a company-wide event (RSVP only, muted) -- all three
+// derived from the same `mine: true` fetch above.
+const organizingEvents = computed(() => eventStore.events.filter((e) => e.organizerId === myUserId.value));
+const attendingScopedEvents = computed(() =>
+  eventStore.events.filter((e) => e.organizerId !== myUserId.value && (e.departmentId || e.teamId))
+);
+const attendingCompanyEvents = computed(() =>
+  eventStore.events.filter((e) => e.organizerId !== myUserId.value && !e.departmentId && !e.teamId)
+);
 
 const onFiltersChange = (filters: EventFilters) => {
   activeFilters.value = filters;
@@ -85,7 +108,7 @@ const confirmBulkDelete = async () => {
           <span class="flex gap-2 items-center cursor-pointer">
             <Button as="a" variant="link" @click="router.back()"><MoveLeft class="text-primary" /> Back to Dashboard</Button>
           </span>
-          <h1 class="text-xl font-semibold pl-12">Events</h1>
+          <h1 class="text-xl font-semibold pl-12">{{ isDM ? "My Events" : "Events" }}</h1>
         </div>
 
         <div class="flex items-center gap-1 rounded-xl bg-[#F4F9FD] p-1 justify-self-center">
@@ -155,6 +178,46 @@ const confirmBulkDelete = async () => {
       <p v-else-if="!eventStore.events.length" class="rounded-2xl border border-dashed border-gray-200 bg-white p-10 text-center text-sm text-subtle">
         No events match these filters.
       </p>
+
+      <!-- DM: organizing / attending (scoped) / attending (company-wide, muted) -->
+      <div v-else-if="isDM" class="space-y-6 px-2">
+        <div v-if="organizingEvents.length">
+          <p class="mb-3 text-xs font-semibold uppercase tracking-wide text-subtle">Organizing</p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+            <EventCard v-for="event in organizingEvents" :key="event.id" :event="event" :selectable="selectMode" :selected="selectedIds.includes(event.id)" @toggle-select="toggleSelect" />
+          </div>
+        </div>
+        <div v-if="attendingScopedEvents.length">
+          <p class="mb-3 text-xs font-semibold uppercase tracking-wide text-subtle">Attending</p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+            <EventCard v-for="event in attendingScopedEvents" :key="event.id" :event="event" :selectable="selectMode" :selected="selectedIds.includes(event.id)" @toggle-select="toggleSelect" />
+          </div>
+        </div>
+        <div v-if="attendingCompanyEvents.length">
+          <p class="mb-3 text-xs font-semibold uppercase tracking-wide text-subtle">Company-wide</p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 opacity-70">
+            <EventCard v-for="event in attendingCompanyEvents" :key="event.id" :event="event" :selectable="selectMode" :selected="selectedIds.includes(event.id)" @toggle-select="toggleSelect" />
+          </div>
+        </div>
+      </div>
+
+      <!-- DL: department events first, everything else muted below -->
+      <div v-else-if="isDL" class="space-y-6 px-2">
+        <div v-if="departmentEvents.length">
+          <p class="mb-3 text-xs font-semibold uppercase tracking-wide text-subtle">Department</p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+            <EventCard v-for="event in departmentEvents" :key="event.id" :event="event" :selectable="selectMode" :selected="selectedIds.includes(event.id)" @toggle-select="toggleSelect" />
+          </div>
+        </div>
+        <div v-if="otherEvents.length">
+          <p class="mb-3 text-xs font-semibold uppercase tracking-wide text-subtle">Company-wide</p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 opacity-70">
+            <EventCard v-for="event in otherEvents" :key="event.id" :event="event" :selectable="selectMode" :selected="selectedIds.includes(event.id)" @toggle-select="toggleSelect" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Owner/CM: flat company calendar, unchanged -->
       <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 px-2">
         <EventCard
           v-for="event in eventStore.events"

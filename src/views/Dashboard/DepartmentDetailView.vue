@@ -14,16 +14,16 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/components/ui/toast/use-toast";
 import Header from "@/components/layout/Header.vue";
-import { useAuthStore } from "@/stores/authStore";
 import { useDirectoryStore } from "@/stores/directoryStore";
 import { useEmployeeStore } from "@/stores/employeeStore";
+import { usePermissions } from "@/composables/usePermissions";
 
 const route = useRoute();
 const router = useRouter();
 const { toast } = useToast();
-const authStore = useAuthStore();
 const directoryStore = useDirectoryStore();
 const employeeStore = useEmployeeStore();
+const { can } = usePermissions();
 
 onMounted(() => {
   if (!directoryStore.loaded) directoryStore.fetchAll();
@@ -33,7 +33,7 @@ onMounted(() => {
 const departmentId = computed(() => String(route.query.departmentId ?? ""));
 const department = computed(() => directoryStore.departments.find((d) => d.id === departmentId.value) ?? null);
 
-const canManage = computed(() => ["Owner", "CM", "DL"].includes(authStore.logedInUserInfo?.role ?? ""));
+const canManage = computed(() => can("departments:manage"));
 
 const initials = (name: string) =>
   (name || "?").split(" ").map((p) => p[0]).join("").slice(0, 2).toUpperCase();

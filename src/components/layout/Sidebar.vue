@@ -1,172 +1,140 @@
 <script setup lang="ts">
 import {
-  LayoutDashboard,
   WorkflowIcon,
-  SquareDashedKanban,
-  CalendarDays,
-  Users,
-  Building2,
-  MessageSquare,
-  FolderKanban,
   Headset,
   LogOut,
-  BarChart3,
-  Sparkles,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-vue-next";
 
-import { ref, watch } from "vue";
+import { ref, computed, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import SupportModal from "./SupportModal.vue";
 import { useAuthStore } from "@/stores/authStore";
+import { usePermissions } from "@/composables/usePermissions";
+import { useSidebarCollapsed } from "@/composables/useSidebarCollapsed";
+import { getNavItems, getScopeNote } from "@/lib/navConfig";
 
 const isSupportOpen = ref(false);
 const authStore = useAuthStore();
+const { role } = usePermissions();
+const { collapsed, toggle } = useSidebarCollapsed();
+
+const route = useRoute();
+const router = useRouter();
+
 const onLogout = () => {
   authStore.logout();
   router.push("/auth/login/");
 };
 
-const route = useRoute();
-const router = useRouter();
-
-// ✅ Make activeItem track the section query param reactively
-const activeItem = ref(route.query.section ?? "dashboard"); // default to dashboard if missing
-
-// ✅ Watch for route changes and keep activeItem updated
+// Make activeItem track the section query param reactively
+const activeItem = ref(route.query.section ?? "dashboard");
 watch(
   () => route.query.section,
   (newSection) => {
-    if (typeof newSection === "string") {
-      activeItem.value = newSection;
-    }
+    if (typeof newSection === "string") activeItem.value = newSection;
   },
   { immediate: true }
 );
 
-const navItems = [
-  { title: "Dashboard", sectionName: "dashboard" },
-  { title: "Projects", sectionName: "projects" },
-  { title: "AI Workspace", sectionName: "ai-workspace" },
-  { title: "Events", sectionName: "events" },
-  { title: "Employees", sectionName: "employees" },
-  { title: "Departments", sectionName: "departments" },
-  { title: "Analytics", sectionName: "analytics" },
-  { title: "Messenger", sectionName: "messenger" },
-  { title: "Info Portal", sectionName: "info-portal" },
-];
+const navItems = computed(() => getNavItems(role.value));
+const scopeNote = computed(() => getScopeNote(role.value));
 
-const setNavIcon = (title: string) => {
-  switch (title) {
-    case "Dashboard":
-      return LayoutDashboard;
-    case "Projects":
-      return SquareDashedKanban;
-    case "AI Workspace":
-      return Sparkles;
-    case "Events":
-      return CalendarDays;
-    case "Employees":
-      return Users;
-    case "Departments":
-      return Building2;
-    case "Analytics":
-      return BarChart3;
-    case "Messenger":
-      return MessageSquare;
-    case "Info Portal":
-      return FolderKanban;
-    default:
-      return WorkflowIcon;
-  }
-};
-
-const setItemClass = (index: string) => {
-  return activeItem.value === index
-    ? "font-semibold bg-blue-50 text-[#3F8CFF]"
-    : "text-[#7D8592]";
-};
-
-const setIconColor = (index: string) => {
-  return activeItem.value === index
-    ? "text-[#3F8CFF] stroke-[#3F8CFF]"
-    : "text-[#7D8592] stroke-[#7D8592]";
-};
-
+const setItemClass = (section: string) =>
+  activeItem.value === section ? "font-semibold bg-primary-soft text-primary" : "text-[#7D8592]";
+const setIconColor = (section: string) =>
+  activeItem.value === section ? "text-primary stroke-primary" : "text-[#7D8592] stroke-[#7D8592]";
 </script>
 
-
 <template>
-  <!-- Sidebar -->
-  <div class="w-full md:w-64 bg-white py-4 px-6 rounded-lg md:min-h-screen shadow-lg">
-    <div class="flex flex-col justify-between h-full">
-      <!-- Logo and Navigation -->
-      <div class="space-y-6">
-        <!-- Logo -->
-        <div class="flex items-center gap-2 mb-6">
-          <div class="w-10 h-10 bg-background rounded-lg flex items-center justify-center">
-            <WorkflowIcon class="w-6 h-6 text-[#3F8CFF]" />
-          </div>
-          <span class="text-xl font-bold text-[#3F8CFF]">Workroom</span>
+  <!-- Desktop / tablet rail -->
+  <nav
+    aria-label="Primary"
+    class="wr-rail sticky top-4 hidden h-[calc(100vh-2rem)] shrink-0 flex-col justify-between overflow-y-auto rounded-2xl py-4 md:flex"
+    :class="collapsed ? 'w-[72px] px-2' : 'w-64 px-4 xl:w-64'"
+  >
+    <div class="space-y-6">
+      <div class="flex items-center gap-2 px-1" :class="collapsed ? 'justify-center' : ''">
+        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/70">
+          <WorkflowIcon class="h-6 w-6 text-primary" />
         </div>
+        <span v-if="!collapsed" class="truncate text-xl font-bold text-primary">Workroom</span>
+      </div>
 
-        <!-- Navigation -->
-        <nav class="space-y-2">
+      <ul class="space-y-1">
+        <li v-for="navItem in navItems" :key="navItem.key">
           <RouterLink
-            v-for="(navItem, index) in navItems"
-            :key="index"
             :to="{ name: 'admin-dashboard', query: { section: navItem.sectionName } }"
+            :aria-current="activeItem === navItem.sectionName ? 'page' : undefined"
+            :title="collapsed ? navItem.title : undefined"
+            class="flex h-11 items-center gap-3 rounded-xl px-2.5 outline-none transition focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            :class="[setItemClass(navItem.sectionName), collapsed ? 'justify-center' : '']"
+            @click="activeItem = navItem.sectionName"
           >
-            <div
-              class="min-w-[90px] h-[50px] flex justify-between items-center cursor-pointer"
-              @click="activeItem = navItem.sectionName"
-            >
-              <a
-                class="flex-1 flex items-center gap-2 p-2 h-full rounded-xl"
-                :class="setItemClass(navItem.sectionName)"
-              >
-                <component
-                  :is="setNavIcon(navItem.title)"
-                  class="w-5 h-5"
-                  :class="setIconColor(navItem.sectionName)"
-                />
-                {{ navItem.title }}
-              </a>
-              <div
-                class="w-0 h-full rounded-xl ml-4"
-                :class="activeItem === navItem.sectionName ? 'border-l-[3px] border-blue-400' : ''"
-              ></div>
-            </div>
+            <component :is="navItem.icon" class="h-5 w-5 shrink-0" :class="setIconColor(navItem.sectionName)" />
+            <span v-if="!collapsed" class="truncate text-sm">{{ navItem.title }}</span>
           </RouterLink>
-        </nav>
-      </div>
-
-      <!-- Support -->
-      <div class="mt-8">
-        <div class="flex flex-col items-center gap-3 rounded-2xl bg-gradient-to-br from-[#3F8CFF] to-[#6A5CFF] p-4 text-center text-white shadow-md">
-          <div class="flex h-12 w-12 items-center justify-center rounded-full bg-white/20">
-            <Headset class="h-6 w-6" />
-          </div>
-          <button
-            type="button"
-            class="flex w-full items-center justify-center gap-2 rounded-xl bg-white/15 py-2 text-sm font-medium transition hover:bg-white/25"
-            @click="isSupportOpen = true"
-          >
-            <Headset class="h-4 w-4" />
-            Support
-          </button>
-        </div>
-
-        <button
-          type="button"
-          class="mt-4 flex w-full items-center justify-center gap-2 rounded-xl py-2 text-sm font-medium text-[#7D8592] transition hover:bg-blue-50 hover:text-[#3F8CFF]"
-          @click="onLogout"
-        >
-          <LogOut class="h-4 w-4" />
-          Logout
-        </button>
-      </div>
+        </li>
+      </ul>
     </div>
 
-    <SupportModal v-model:open="isSupportOpen" />
-  </div>
+    <div class="space-y-3">
+      <p
+        v-if="scopeNote && !collapsed"
+        class="wr-well rounded-xl px-3 py-2 text-[11px] leading-snug text-[#7D8592]"
+      >
+        {{ scopeNote }}
+      </p>
+
+      <button
+        type="button"
+        class="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-[#3F8CFF] to-accent-2 py-2.5 text-sm font-medium text-white shadow-[0_8px_22px_rgba(63,140,255,0.38)] transition hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+        :title="collapsed ? 'Support' : undefined"
+        @click="isSupportOpen = true"
+      >
+        <Headset class="h-4 w-4 shrink-0" />
+        <span v-if="!collapsed">Support</span>
+      </button>
+
+      <button
+        type="button"
+        class="flex w-full items-center justify-center gap-2 rounded-xl py-2 text-sm font-medium text-[#7D8592] transition hover:bg-white/50 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+        :title="collapsed ? 'Logout' : undefined"
+        @click="onLogout"
+      >
+        <LogOut class="h-4 w-4 shrink-0" />
+        <span v-if="!collapsed">Logout</span>
+      </button>
+
+      <button
+        type="button"
+        class="flex w-full items-center justify-center gap-2 rounded-xl py-2 text-xs font-medium text-[#7D8592] transition hover:bg-white/50 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+        @click="toggle"
+      >
+        <component :is="collapsed ? PanelLeftOpen : PanelLeftClose" class="h-4 w-4 shrink-0" />
+        <span v-if="!collapsed">Collapse</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Mobile bottom bar -->
+  <nav
+    aria-label="Primary"
+    class="wr-rail fixed inset-x-3 bottom-3 z-50 flex items-center justify-between gap-1 overflow-x-auto rounded-2xl px-2 py-2 md:hidden"
+  >
+    <RouterLink
+      v-for="navItem in navItems"
+      :key="navItem.key"
+      :to="{ name: 'admin-dashboard', query: { section: navItem.sectionName } }"
+      :aria-current="activeItem === navItem.sectionName ? 'page' : undefined"
+      class="flex min-h-[44px] min-w-[44px] flex-col items-center justify-center gap-0.5 rounded-xl px-1.5 outline-none focus-visible:ring-2 focus-visible:ring-primary"
+      :class="setItemClass(navItem.sectionName)"
+      @click="activeItem = navItem.sectionName"
+    >
+      <component :is="navItem.icon" class="h-5 w-5 shrink-0" :class="setIconColor(navItem.sectionName)" />
+    </RouterLink>
+  </nav>
+
+  <SupportModal v-model:open="isSupportOpen" />
 </template>
