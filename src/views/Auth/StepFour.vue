@@ -4,32 +4,19 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/componen
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import Button from '@/components/ui/button/Button.vue'
-import { ref,computed,watch } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/authStore';
-import { useRoute, useRouter } from 'vue-router';
-import { onMounted } from 'vue';
 import { useToast } from '@/components/ui/toast/use-toast';
 import router from '@/router';
 import SelectionCard from '@/components/cards/SelectionCard.vue';
-const route = useRoute
 const authStore = useAuthStore()
 onMounted(()=>{
   authStore.getDefaultDepartmentTypes(authStore.company.sector)
 })
 const {toast}  = useToast()
 
-interface DefaultDepartmentType {
-  selected_types?:string[];
-  use_all_default_departments?:boolean;
-}
-
-const selcectedDepartmentType = ref<DefaultDepartmentType>({
-  selected_types:[],
-  use_all_default_departments:false
-})
-
-
 const selected = ref<string[]>([])
+const useAllDefaults = ref(false)
 
 function toggleSelection(id: string) {
   if (selected.value.includes(id)) {
@@ -38,21 +25,17 @@ function toggleSelection(id: string) {
     selected.value.push(id)
   }
 }
-selcectedDepartmentType.value.selected_types = selected.value
 
-watch(selcectedDepartmentType.value.selected_types,(newValue,oldValue)=>{
-  console.log(newValue)
-  console.log(authStore.company.id)
-})
-console.log(authStore.company.id)
 const handleSubmit = async ()=>{
-    authStore.updateStep4Form({
-    selected_types:selcectedDepartmentType.value.selected_types,
-    use_all_default_departments:selcectedDepartmentType.value.use_all_default_departments,
+  // isStep4Complete stays false until createDepartmentType actually
+  // succeeds -- setting it true beforehand let a failed request still
+  // satisfy the step5 router guard (same bug as the earlier steps).
+  authStore.updateStep4Form({
+    selected_types:selected.value,
+    use_all_default_departments:useAllDefaults.value,
     company_id:authStore.company.id,
-    isStep3Complete:true
+    isStep4Complete:false
   })
-  console.log(authStore.step4Form)
   const result = await authStore.createDepartmentType(authStore.step4Form)
   if (result.errors) {
     for(const [field,message] of Object.entries(result.errors)){
@@ -63,6 +46,7 @@ const handleSubmit = async ()=>{
     })
     }
   } else {
+    authStore.updateStep4Form({ isStep4Complete: true })
     router.push({
       path:'/auth/',
       query:{section:'step5'}

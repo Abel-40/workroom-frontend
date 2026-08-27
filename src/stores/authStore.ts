@@ -14,7 +14,7 @@ interface Step4Form {
   selected_types?: string[]
   use_all_default_departments?: boolean
   company_id: string
-  isStep3Complete: boolean
+  isStep4Complete: boolean
 }
 
 
@@ -42,7 +42,7 @@ export const useAuthStore =  defineStore('AuthStore',{
       selected_types:[],
       use_all_default_departments:false,
       company_id:'',
-      isStep3Complete:false
+      isStep4Complete:false
     } as Step4Form ,
     departments:{} as DefaultTaskType[],
     logedInUserInfo:{} as {
@@ -96,12 +96,15 @@ export const useAuthStore =  defineStore('AuthStore',{
       selected_types:[],
       use_all_default_departments:false,
       company_id:'',
-      isStep3Complete:false
+      isStep4Complete:false
     }
     },
     async registerUser(form: Record<string, string|boolean>): Promise<{ user?: User; errors?: string }> {
       try {
-        const { data } = await axiosInstance.post<ApiResponse<{ user: User }>>('/auth/signup/', {...form });
+        // step1Form carries isStep1Complete for wizard-navigation purposes
+        // only -- never send it to the API.
+        const { isStep1Complete, ...payload } = form
+        const { data } = await axiosInstance.post<ApiResponse<{ user: User }>>('/auth/signup/', payload);
         return { user: data.data.user }
       } catch (error: any) {
         console.log("Full error response:", error.response)
@@ -206,7 +209,10 @@ export const useAuthStore =  defineStore('AuthStore',{
       message?: string;
     }> {
       try {
-        const { data } = await axiosInstance.post<ApiResponse<Company>>('/company/register/', form);
+        // step2Form carries isStep2Complete for wizard-navigation purposes
+        // only -- never send it to the API.
+        const { isStep2Complete, ...payload } = form
+        const { data } = await axiosInstance.post<ApiResponse<Company>>('/company/register/', payload);
 
         if (data.success) {
           this.company = data.data
@@ -257,7 +263,10 @@ export const useAuthStore =  defineStore('AuthStore',{
             message?: string;
     }>{
       try{
-        const {data} = await axiosInstance.post<ApiResponse<{company_name:string;sector:string;owner_email:String;created_task_types:[]}>>('/default_task_type/default_task_type/',form)
+        // step3Form carries isStep3Complete for wizard-navigation purposes
+        // only -- never send it to the API.
+        const { isStep3Complete, ...payload } = form
+        const {data} = await axiosInstance.post<ApiResponse<{company_name:string;sector:string;owner_email:String;created_task_types:[]}>>('/default_task_type/default_task_type/',payload)
         if(data.success){
           console.log(data.data)
           return {created_task_types:data.data.created_task_types}
@@ -337,7 +346,10 @@ export const useAuthStore =  defineStore('AuthStore',{
             message?: string;
     }>{
       try{
-        const {data} = await axiosInstance.post<ApiResponse<{company_name:string;sector:string;owner_email:String;created_departments:[]}>>('/department/create_departments_from_defaults/',form)
+        // step4Form carries isStep4Complete for wizard-navigation purposes
+        // only -- never send it to the API.
+        const { isStep4Complete, ...payload } = form
+        const {data} = await axiosInstance.post<ApiResponse<{company_name:string;sector:string;owner_email:String;created_departments:[]}>>('/department/create_departments_from_defaults/',payload)
         if(data.success){
           console.log(data.data)
           return {created_departments:data.data.created_departments}

@@ -4,32 +4,19 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/componen
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import Button from '@/components/ui/button/Button.vue'
-import { ref,computed,watch } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/authStore';
-import { useRoute, useRouter } from 'vue-router';
-import { onMounted } from 'vue';
 import { useToast } from '@/components/ui/toast/use-toast';
 import router from '@/router';
 import SelectionCard from '@/components/cards/SelectionCard.vue';
-const route = useRoute
 const authStore = useAuthStore()
 onMounted(()=>{
   authStore.getDefaultTaskTypes(authStore.company.sector)
 })
 const {toast}  = useToast()
 
-interface DefaultTaskType {
-  selected_types?:string[];
-  use_all_default_task_types?:boolean;
-}
-
-const taskTypeSelcected = ref<DefaultTaskType>({
-  selected_types:[],
-  use_all_default_task_types:false
-})
-
-
 const selected = ref<string[]>([])
+const useAllDefaults = ref(false)
 
 function toggleSelection(id: string) {
   if (selected.value.includes(id)) {
@@ -38,21 +25,17 @@ function toggleSelection(id: string) {
     selected.value.push(id)
   }
 }
-taskTypeSelcected.value.selected_types = selected.value
 
-watch(taskTypeSelcected.value.selected_types,(newValue,oldValue)=>{
-  console.log(newValue)
-  console.log(authStore.company.id)
-})
-console.log(authStore.company.id)
 const handleSubmit = async ()=>{
-    authStore.updateStep3Form({
-    selected_types:taskTypeSelcected.value.selected_types,
-    use_all_default_task_types:taskTypeSelcected.value.use_all_default_task_types,
+  // isStep3Complete stays false until createTaskType actually succeeds --
+  // setting it true beforehand let a failed request still satisfy the
+  // step4 router guard (same bug as step1 -> step2 and step2 -> step3).
+  authStore.updateStep3Form({
+    selected_types:selected.value,
+    use_all_default_task_types:useAllDefaults.value,
     company_id:authStore.company.id,
-    isStep3Complete:true
+    isStep3Complete:false
   })
-  console.log(authStore.step3Form)
   const result = await authStore.createTaskType(authStore.step3Form)
   if (result.errors) {
     for(const [field,message] of Object.entries(result.errors)){
@@ -63,12 +46,13 @@ const handleSubmit = async ()=>{
     })
     }
   } else {
+    authStore.updateStep3Form({ isStep3Complete: true })
     router.push({
       path:'/auth/',
       query:{section:'step4'}
     })
   }
-  
+
 }
 
 const skip = ()=>{

@@ -88,6 +88,13 @@ router.beforeEach((to, from, next) => {
     if (step === 'step4' && !authStore.step3Form.isStep3Complete) {
       return next({ path: '/auth/', query: { section: 'step3' } })
     }
+
+    // step5 (event types) and success both require step4 -- step5 has no
+    // completion flag of its own since picking event types is itself
+    // optional (its own "Skip" button just proceeds to success).
+    if ((step === 'step5' || step === 'success') && !authStore.step4Form.isStep4Complete) {
+      return next({ path: '/auth/', query: { section: 'step4' } })
+    }
   }
 
   next()

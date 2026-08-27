@@ -52,11 +52,14 @@ const handleSubmit = async () => {
     return;
   }
 
+  // isStep2Complete stays false until register_company actually succeeds --
+  // setting it true beforehand let a failed company registration still
+  // satisfy the step3 router guard (same bug as step1 -> step2).
   authStore.updateStep2Form({
     name: companyForm.value.name,
     owner: companyForm.value.owner,
     sector: companyForm.value.sector,
-    isStep2Complete: true,
+    isStep2Complete: false,
   });
 
   try {
@@ -77,6 +80,7 @@ const handleSubmit = async () => {
         variant: 'destructive',
       });
     } else {
+      authStore.updateStep2Form({ isStep2Complete: true });
       toast({
         title: 'Success!',
         description: 'Company registered successfully.',
