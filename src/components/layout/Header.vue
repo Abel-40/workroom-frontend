@@ -62,7 +62,7 @@ const onLogout = () => {
                 v-model="searchQuery"
                 type="text"
                 placeholder="Search..."
-                class="pl-10 bg-white h-12 shadow-sm"
+                class="pl-10 bg-card h-12 shadow-sm"
                 @keyup.enter="emitSearch"
               />
             </div>
@@ -71,7 +71,7 @@ const onLogout = () => {
             <div class="flex items-center gap-3">
               <Popover v-model:open="isNotificationsOpen">
                 <PopoverTrigger as-child>
-                  <Button variant="ghost" size="icon" class="relative bg-white shadow-sm">
+                  <Button variant="ghost" size="icon" class="relative bg-card shadow-sm">
                     <Bell class="w-6 h-6" />
                     <span
                       v-if="notificationStore.unreadCount"
@@ -88,7 +88,7 @@ const onLogout = () => {
               <DropdownMenu>
                 <DropdownMenuTrigger as-child >
                   <button type="button" class="rounded-lg ">
-                    <span class="flex items-center gap-2 bg-white p-2 rounded-lg shadow-sm">
+                    <span class="flex items-center gap-2 bg-card p-2 rounded-lg shadow-sm">
                       <Avatar size="sm" class="h-6 w-6 text-xs">
                         <AvatarFallback>{{ initials(displayName) }}</AvatarFallback>
                       </Avatar>
@@ -104,7 +104,7 @@ const onLogout = () => {
                   <DropdownMenuItem @click="goToSettings">
                     <Settings class="mr-2 h-4 w-4" /> Settings
                   </DropdownMenuItem>
-                  <DropdownMenuItem class="text-red-500" @click="onLogout">
+                  <DropdownMenuItem class="text-destructive" @click="onLogout">
                     <LogOut class="mr-2 h-4 w-4" /> Logout
                   </DropdownMenuItem>
                 </DropdownMenuContent>

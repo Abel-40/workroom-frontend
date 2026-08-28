@@ -52,7 +52,7 @@ const viewAll = () => router.push({ name: "admin-dashboard", query: { section: "
         You're all caught up.
       </p>
     </div>
-    <div class="border-t border-gray-100 px-3 py-2">
+    <div class="border-t border-border px-3 py-2">
       <Button variant="link" class="w-full text-sm text-primary" @click="viewAll">View all notifications</Button>
     </div>
   </div>

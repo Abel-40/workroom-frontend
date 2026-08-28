@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Check, Clock3, ImagePlus, LoaderCircle, LockKeyhole, UserRound, Workflow } from 'lucide-vue-next'
+import { Check, Clock3, ImagePlus, LoaderCircle, LockKeyhole, UserRound } from 'lucide-vue-next'
+import logoUrl from '@/assets/logo.png'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -80,7 +81,7 @@ onBeforeUnmount(() => { if (pictureUrl.value) URL.revokeObjectURL(pictureUrl.val
   <main class="min-h-screen bg-surface px-4 py-8 sm:flex sm:items-center sm:justify-center">
     <section class="grid w-full max-w-5xl overflow-hidden rounded-2xl bg-white shadow-xl lg:grid-cols-[0.9fr_1.1fr]">
       <aside class="bg-primary p-7 text-white sm:p-10">
-        <div class="flex items-center gap-2 font-bold"><span class="grid h-10 w-10 place-items-center rounded-xl bg-white text-primary"><Workflow class="h-6 w-6" /></span>Workroom</div>
+        <div class="flex items-center gap-2 font-bold"><span class="grid h-10 w-10 place-items-center rounded-xl bg-white text-primary"><img :src="logoUrl" alt="" class="h-6 w-6 object-contain" /></span>Workroom</div>
         <div class="mt-16 max-w-sm">
           <p class="text-sm font-medium text-white/75">TEAM INVITATION</p>
           <h1 class="mt-3 text-3xl font-bold leading-tight">Finish setting up your workspace profile.</h1>

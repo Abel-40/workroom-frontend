@@ -1,5 +1,6 @@
 <script lang="ts" setup>
-import { WorkflowIcon, ArrowRight } from 'lucide-vue-next'
+import { ArrowRight } from 'lucide-vue-next'
+import logoUrl from '@/assets/logo.png'
 import {
   Card,
   CardContent,
@@ -79,7 +80,7 @@ const previewAsRole = (role: Role) => {
           <!-- Logo - Always visible -->
           <div class="flex items-center space-x-2 mb-4">
             <div class="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-lg flex items-center justify-center">
-              <WorkflowIcon class="w-6 h-6 sm:w-8 sm:h-8 text-[#3F8CFF]" />
+              <img :src="logoUrl" alt="" class="w-6 h-6 sm:w-8 sm:h-8 object-contain" />
             </div>
             <span class="text-xl sm:text-2xl text-white font-bold">Workroom</span>
           </div>

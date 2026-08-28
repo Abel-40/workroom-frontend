@@ -7,7 +7,8 @@ import StepThree from '@/views/Auth/StepThree.vue'
 import StepFour from '@/views/Auth/StepFour.vue'
 import StepFive from '@/views/Auth/StepFive.vue'
 import RegistrationSuccess from '@/views/Auth/RegistrationSuccess.vue'
-import { WorkflowIcon, ArrowRight } from 'lucide-vue-next'
+import { ArrowRight } from 'lucide-vue-next'
+import logoUrl from '@/assets/logo.png'
 import { useAuthStore } from '@/stores/authStore'
 
 const authStore = useAuthStore()
@@ -45,7 +46,7 @@ const showSection = computed(() => {
       <div class="w-full lg:w-1/3 xl:w-1/4 bg-primary text-white p-6 sm:p-8 flex flex-col mr-8 rounded-2xl">
         <div class="flex items-center space-x-3 mb-8">
           <div class="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-lg flex items-center justify-center">
-            <WorkflowIcon class="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
+            <img :src="logoUrl" alt="" class="w-6 h-6 sm:w-8 sm:h-8 object-contain" />
           </div>
           <span class="text-xl sm:text-2xl font-bold">Workroom</span>
         </div>

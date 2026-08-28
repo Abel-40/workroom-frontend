@@ -6,7 +6,10 @@ import {
   ChevronLeft,
   CreditCard,
   Lock,
+  Monitor,
   ShieldCheck,
+  Sun,
+  Moon,
   User,
 } from "lucide-vue-next";
 import { RouterLink } from "vue-router";
@@ -27,6 +30,8 @@ import { useCompanyConfigStore } from "@/stores/companyConfigStore";
 import { useDirectoryStore } from "@/stores/directoryStore";
 import { currentTimeZone } from "@/lib/dates";
 import { hasPermission } from "@/lib/permissions";
+import { useTheme, type ThemePreference } from "@/composables/useTheme";
+import type { AcceptableValue } from "reka-ui";
 
 const authStore = useAuthStore();
 const profileStore = useUserProfileStore();
@@ -68,12 +73,26 @@ const TIMEZONES: string[] = supportedValuesOf ? supportedValuesOf("timeZone") : 
 
 const selectedTimezone = ref(authStore.logedInUserInfo?.user?.timezone || currentTimeZone());
 const savingTimezone = ref(false);
-const onTimezoneChange = async (tz: string) => {
+const onTimezoneChange = async (tz: AcceptableValue) => {
+  if (typeof tz !== "string") return;
   selectedTimezone.value = tz;
   savingTimezone.value = true;
   const { error } = await authStore.updateTimezone(tz);
   savingTimezone.value = false;
   if (error) toast({ title: "Timezone not saved", description: error, variant: "destructive" });
+};
+
+const { theme, setTheme } = useTheme();
+const savingTheme = ref(false);
+const isThemePreference = (value: unknown): value is ThemePreference =>
+  value === "light" || value === "dark" || value === "system";
+const onThemeChange = async (value: AcceptableValue) => {
+  if (!isThemePreference(value)) return;
+  setTheme(value); // Applied instantly, regardless of the backend save outcome below.
+  savingTheme.value = true;
+  const { error } = await authStore.updateTheme(value);
+  savingTheme.value = false;
+  if (error) toast({ title: "Theme not saved to your account", description: error, variant: "destructive" });
 };
 
 const enablingId = ref<string | null>(null);
@@ -132,13 +151,13 @@ const visibleTabs = computed(() => {
     </div>
 
     <div class="flex flex-col gap-4 lg:flex-row">
-      <nav class="w-full rounded-2xl border border-gray-100 bg-white p-2 lg:w-56">
+      <nav class="w-full rounded-2xl border border-border bg-card p-2 lg:w-56">
         <button
           v-for="tabItem in visibleTabs"
           :key="tabItem.key"
           type="button"
           class="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm"
-          :class="activeTab === tabItem.key ? 'bg-blue-50 font-medium text-primary' : 'text-ink hover:bg-page/60'"
+          :class="activeTab === tabItem.key ? 'bg-primary/10 font-medium text-primary' : 'text-ink hover:bg-page/60'"
           @click="activeTab = tabItem.key"
         >
           <component :is="tabItem.icon" class="h-4 w-4" />
@@ -146,7 +165,7 @@ const visibleTabs = computed(() => {
         </button>
       </nav>
 
-      <div class="flex-1 rounded-2xl border border-gray-100 bg-white p-5">
+      <div class="flex-1 rounded-2xl border border-border bg-card p-5">
         <template v-if="activeTab === 'notifications'">
           <h3 class="mb-4 text-sm font-semibold text-ink">Notifications</h3>
           <div class="space-y-4">
@@ -261,19 +280,36 @@ const visibleTabs = computed(() => {
 
         <template v-else-if="activeTab === 'account'">
           <h3 class="mb-4 text-sm font-semibold text-ink">Account</h3>
-          <div class="space-y-1.5">
-            <p class="text-sm font-medium text-ink">Timezone</p>
-            <p class="mb-2 text-xs text-subtle">
-              Dates and times across Workroom (projects, tasks, activity, notifications) are shown in this timezone.
-            </p>
-            <Select :model-value="selectedTimezone" :disabled="savingTimezone" @update:model-value="onTimezoneChange">
-              <SelectTrigger class="w-full max-w-sm rounded-xl"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  <SelectItem v-for="tz in TIMEZONES" :key="tz" :value="tz">{{ tz }}</SelectItem>
-                </SelectGroup>
-              </SelectContent>
-            </Select>
+          <div class="space-y-6">
+            <div class="space-y-1.5">
+              <p class="text-sm font-medium text-ink">Timezone</p>
+              <p class="mb-2 text-xs text-subtle">
+                Dates and times across Workroom (projects, tasks, activity, notifications) are shown in this timezone.
+              </p>
+              <Select :model-value="selectedTimezone" :disabled="savingTimezone" @update:model-value="onTimezoneChange">
+                <SelectTrigger class="w-full max-w-sm rounded-xl"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectItem v-for="tz in TIMEZONES" :key="tz" :value="tz">{{ tz }}</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div class="space-y-1.5">
+              <p class="text-sm font-medium text-ink">Appearance</p>
+              <p class="mb-2 text-xs text-subtle">
+                Choose how Workroom looks on this device. "System" follows your OS setting automatically.
+              </p>
+              <Select :model-value="theme" :disabled="savingTheme" @update:model-value="onThemeChange">
+                <SelectTrigger class="w-full max-w-sm rounded-xl"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="light"><Sun class="mr-2 inline h-4 w-4" />Light</SelectItem>
+                  <SelectItem value="dark"><Moon class="mr-2 inline h-4 w-4" />Dark</SelectItem>
+                  <SelectItem value="system"><Monitor class="mr-2 inline h-4 w-4" />System</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </template>
 

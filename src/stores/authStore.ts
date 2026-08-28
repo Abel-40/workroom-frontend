@@ -4,6 +4,7 @@ import type { Role } from "@/lib/permissions";
 import axiosInstance from "@/plugins/axios";
 import axios from "axios";
 import { DUMMY_LOGGED_IN, DUMMY_LOGGED_IN_BY_ROLE, DUMMY_COMPANY } from "@/mock/mockData";
+import { useTheme } from "@/composables/useTheme";
 interface Step3Form {
   selected_types?: string[]
   use_all_default_task_types?: boolean
@@ -150,6 +151,18 @@ export const useAuthStore =  defineStore('AuthStore',{
         return { error: error.response?.data?.message || 'Failed to update timezone' }
       }
     },
+    async updateTheme(theme: 'light' | 'dark' | 'system'): Promise<{ error?: string }> {
+      try {
+        const { data } = await axiosInstance.patch<ApiResponse<{ theme: string }>>(
+          '/company/members/me/theme/',
+          { theme }
+        )
+        if (this.logedInUserInfo.user) this.logedInUserInfo.user.theme = data.data.theme as 'light' | 'dark' | 'system'
+        return {}
+      } catch (error: any) {
+        return { error: error.response?.data?.message || 'Failed to update theme' }
+      }
+    },
     async acceptInvite(form: FormData): Promise<{ error?: string }> {
       try {
         await axiosInstance.post('/emp/accept_invite/', form)
@@ -179,7 +192,16 @@ export const useAuthStore =  defineStore('AuthStore',{
         this.logedInUserInfo = { ...sessionData, departmentId: department_id }
         sessionStorage.setItem("currentUserContent", JSON.stringify(this.logedInUserInfo))
         sessionStorage.setItem("currentAuthTokens", JSON.stringify({accessToken:this.logedInUserInfo.access}))
-        
+
+        // Follow the account's saved theme across devices/browsers -- but
+        // never override a preference the user already set locally on this
+        // device (e.g. right on the login screen before authenticating).
+        const serverTheme = data.data.user.theme
+        if (serverTheme && !localStorage.getItem('wr-theme')) {
+          const { setTheme } = useTheme()
+          setTheme(serverTheme)
+        }
+
         return { user: data.data.user }
       } catch (error: any) {
         const errorMsg = error.response?.data?.message || "Login failed"

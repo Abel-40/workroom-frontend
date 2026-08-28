@@ -11,6 +11,7 @@ export interface Employee {
   role: EmployeeRole;
   roleLabel: string;
   department: string | null;
+  profession: string | null;
   profilePictureUrl: string | null;
   isActive: boolean;
   activeTaskCount: number;
@@ -32,6 +33,7 @@ type MemberApi = {
   email: string;
   role: EmployeeRole;
   department: string | null;
+  profession: string | null;
   profile_picture_url: string | null;
   is_active: boolean;
   active_task_count: number;
@@ -48,6 +50,7 @@ type MemberDetailApi = {
   last_name: string;
   role: EmployeeRole;
   department_name: string | null;
+  profession: string | null;
   profile_picture_url: string | null;
   is_active: boolean;
   workload: { active_task_count: number; todo_count: number; in_progress_count: number; in_review_count: number };
@@ -87,6 +90,7 @@ export const useEmployeeStore = defineStore("employeeStore", {
           role: m.role,
           roleLabel: ROLE_LABELS[m.role] ?? m.role,
           department: m.department,
+          profession: m.profession,
           profilePictureUrl: m.profile_picture_url,
           isActive: m.is_active,
           activeTaskCount: m.active_task_count,
@@ -139,6 +143,7 @@ export const useEmployeeStore = defineStore("employeeStore", {
           role: m.role,
           roleLabel: ROLE_LABELS[m.role] ?? m.role,
           department: m.department_name,
+          profession: m.profession,
           profilePictureUrl: m.profile_picture_url,
           isActive: m.is_active,
           activeTaskCount: m.workload.active_task_count,

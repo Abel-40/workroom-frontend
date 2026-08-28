@@ -30,6 +30,7 @@ export type User = {
   username: string;
   role?: UserRole;
   timezone?: string;
+  theme?: "light" | "dark" | "system";
 };
 
 export type UserProfile = {

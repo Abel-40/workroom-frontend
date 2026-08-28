@@ -46,24 +46,33 @@ export default {
   			border: 'hsl(var(--border))',
   			input: 'hsl(var(--input))',
   			ring: 'hsl(var(--ring))',
-  			ink: '#0A1629',
-  			subtle: '#91929E',
-  			page: '#E6EDF5',
-  			// Glass-layer tokens (see src/assets/glass.css) -- the role-scoped
-  			// dashboard refresh's only new solid-color additions. `ink`/`subtle`
-  			// above already cover --wr-text/--wr-text-faint; text-muted stays the
-  			// existing text-[#7D8592] arbitrary-value convention used elsewhere.
-  			'primary-strong': '#2C6FD1',
-  			'primary-soft': '#D6E7FF',
-  			'accent-2': '#6A5CFF',
-  			// AI Workspace design tokens -- additive only, scoped to the new AI
-  			// Workspace screens. `page` above stays untouched since it's already
-  			// used across unrelated existing screens.
-  			surface: '#F4F9FD',
-  			success: { DEFAULT: '#D8F5E3', foreground: '#0A7C4A' },
-  			warning: { DEFAULT: '#FFF3D6', foreground: '#8A6A2F' },
-  			danger: { DEFAULT: '#FDE1E4', foreground: '#C0384A' },
-  			info: { DEFAULT: '#E8F3FF', foreground: '#2155A0' },
+  			// Additive tokens (see src/assets/main.css :root/.dark for the HSL
+  			// pairs) -- CSS-variable-backed so dark mode adapts them
+  			// automatically. `<alpha-value>` keeps opacity-modifier usages like
+  			// bg-page/60 working, same as the shadcn tokens above.
+  			ink: 'hsl(var(--ink) / <alpha-value>)',
+  			subtle: 'hsl(var(--subtle) / <alpha-value>)',
+  			page: 'hsl(var(--page) / <alpha-value>)',
+  			'primary-strong': 'hsl(var(--primary-strong) / <alpha-value>)',
+  			'primary-soft': 'hsl(var(--primary-soft) / <alpha-value>)',
+  			'accent-2': 'hsl(var(--accent-2) / <alpha-value>)',
+  			surface: 'hsl(var(--surface) / <alpha-value>)',
+  			success: {
+  				DEFAULT: 'hsl(var(--success) / <alpha-value>)',
+  				foreground: 'hsl(var(--success-foreground) / <alpha-value>)',
+  			},
+  			warning: {
+  				DEFAULT: 'hsl(var(--warning) / <alpha-value>)',
+  				foreground: 'hsl(var(--warning-foreground) / <alpha-value>)',
+  			},
+  			danger: {
+  				DEFAULT: 'hsl(var(--danger) / <alpha-value>)',
+  				foreground: 'hsl(var(--danger-foreground) / <alpha-value>)',
+  			},
+  			info: {
+  				DEFAULT: 'hsl(var(--info) / <alpha-value>)',
+  				foreground: 'hsl(var(--info-foreground) / <alpha-value>)',
+  			},
   			chart: {
   				'1': 'hsl(var(--chart-1))',
   				'2': 'hsl(var(--chart-2))',

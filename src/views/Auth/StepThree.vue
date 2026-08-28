@@ -1,8 +1,4 @@
 <script setup lang="ts">
-import { WorkflowIcon, ArrowRight } from 'lucide-vue-next';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import Button from '@/components/ui/button/Button.vue'
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/authStore';

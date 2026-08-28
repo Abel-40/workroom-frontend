@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import {
-  WorkflowIcon,
   Headset,
   LogOut,
   PanelLeftClose,
@@ -10,6 +9,7 @@ import {
 import { ref, computed, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import SupportModal from "./SupportModal.vue";
+import logoUrl from "@/assets/logo.png";
 import { useAuthStore } from "@/stores/authStore";
 import { usePermissions } from "@/composables/usePermissions";
 import { useSidebarCollapsed } from "@/composables/useSidebarCollapsed";
@@ -42,9 +42,9 @@ const navItems = computed(() => getNavItems(role.value));
 const scopeNote = computed(() => getScopeNote(role.value));
 
 const setItemClass = (section: string) =>
-  activeItem.value === section ? "font-semibold bg-primary-soft text-primary" : "text-[#7D8592]";
+  activeItem.value === section ? "font-semibold bg-primary-soft text-primary" : "text-muted-foreground";
 const setIconColor = (section: string) =>
-  activeItem.value === section ? "text-primary stroke-primary" : "text-[#7D8592] stroke-[#7D8592]";
+  activeItem.value === section ? "text-primary stroke-primary" : "text-muted-foreground stroke-muted-foreground";
 </script>
 
 <template>
@@ -56,8 +56,8 @@ const setIconColor = (section: string) =>
   >
     <div class="space-y-6">
       <div class="flex items-center gap-2 px-1" :class="collapsed ? 'justify-center' : ''">
-        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/70">
-          <WorkflowIcon class="h-6 w-6 text-primary" />
+        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-card">
+          <img :src="logoUrl" alt="" class="h-6 w-6 object-contain" />
         </div>
         <span v-if="!collapsed" class="truncate text-xl font-bold text-primary">Workroom</span>
       </div>
@@ -82,7 +82,7 @@ const setIconColor = (section: string) =>
     <div class="space-y-3">
       <p
         v-if="scopeNote && !collapsed"
-        class="wr-well rounded-xl px-3 py-2 text-[11px] leading-snug text-[#7D8592]"
+        class="wr-well rounded-xl px-3 py-2 text-[11px] leading-snug text-muted-foreground"
       >
         {{ scopeNote }}
       </p>
@@ -99,7 +99,7 @@ const setIconColor = (section: string) =>
 
       <button
         type="button"
-        class="flex w-full items-center justify-center gap-2 rounded-xl py-2 text-sm font-medium text-[#7D8592] transition hover:bg-white/50 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+        class="flex w-full items-center justify-center gap-2 rounded-xl py-2 text-sm font-medium text-muted-foreground transition hover:bg-accent hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
         :title="collapsed ? 'Logout' : undefined"
         @click="onLogout"
       >
@@ -109,7 +109,7 @@ const setIconColor = (section: string) =>
 
       <button
         type="button"
-        class="flex w-full items-center justify-center gap-2 rounded-xl py-2 text-xs font-medium text-[#7D8592] transition hover:bg-white/50 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+        class="flex w-full items-center justify-center gap-2 rounded-xl py-2 text-xs font-medium text-muted-foreground transition hover:bg-accent hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
         @click="toggle"
       >
         <component :is="collapsed ? PanelLeftOpen : PanelLeftClose" class="h-4 w-4 shrink-0" />

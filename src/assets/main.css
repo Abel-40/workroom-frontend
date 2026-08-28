@@ -40,7 +40,29 @@
     --sidebar-accent: 240 4.8% 95.9%;
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%}
+    --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Additive design tokens (see tailwind.config.js) -- previously static
+       hex values that ignored .dark entirely. Light values reproduce the
+       original hex colors; dark values follow the same
+       desaturated-bg/bright-foreground convention already used above for
+       success/warning/destructive. */
+    --ink: 222 56% 8%;
+    --subtle: 220 6% 60%;
+    --page: 210 47% 94%;
+    --primary-strong: 217 64% 51%;
+    --primary-soft: 214 100% 92%;
+    --accent-2: 247 100% 68%;
+    --surface: 204 60% 97%;
+    --success: 149 55% 89%;
+    --success-foreground: 152 87% 27%;
+    --warning: 45 100% 90%;
+    --warning-foreground: 38 48% 37%;
+    --danger: 353 88% 94%;
+    --danger-foreground: 348 54% 47%;
+    --info: 211 100% 95%;
+    --info-foreground: 213 65% 38%;
+  }
   .dark {
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
@@ -74,7 +96,24 @@
     --sidebar-accent: 240 3.7% 15.9%;
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%}
+    --sidebar-ring: 217.2 91.2% 59.8%;
+
+    --ink: 210 40% 96%;
+    --subtle: 220 9% 70%;
+    --page: 222 47% 9%;
+    --primary-strong: 217 80% 65%;
+    --primary-soft: 217 50% 20%;
+    --accent-2: 247 100% 75%;
+    --surface: 222 47% 10%;
+    --success: 150 60% 14%;
+    --success-foreground: 142 71% 58%;
+    --warning: 43 70% 13%;
+    --warning-foreground: 43 96% 56%;
+    --danger: 353 65% 15%;
+    --danger-foreground: 0 91% 71%;
+    --info: 212 60% 16%;
+    --info-foreground: 213 94% 68%;
+  }
 }
 
 @layer base {

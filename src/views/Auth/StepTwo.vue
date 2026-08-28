@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { WorkflowIcon, ArrowRight, Section } from 'lucide-vue-next';
+import { ArrowRight } from 'lucide-vue-next';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'

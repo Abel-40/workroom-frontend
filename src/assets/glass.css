@@ -24,6 +24,36 @@
   --wr-well: rgb(255 255 255 / 0.42);
 }
 
+/* Dark equivalent of the liquid-glass layer above -- same structure (fill,
+   rail, edge, blur, shell gradient), just re-tinted for a dark surface
+   instead of white. Nothing here overrides shadcn tokens either. */
+.dark {
+  --wr-primary: #5b9dff;
+  --wr-primary-strong: #4c89e8;
+  --wr-primary-soft: #1e3a5f;
+  --wr-accent-2: #8b7fff;
+  --wr-page: #0b1220;
+  --wr-text: #e7ecf5;
+  --wr-text-muted: #9aa3b5;
+  --wr-text-faint: #7d8592;
+
+  --wr-glass-fill: linear-gradient(155deg, rgb(30 41 59 / 0.72), rgb(15 23 42 / 0.55));
+  --wr-glass-rail: linear-gradient(180deg, rgb(30 41 59 / 0.62), rgb(15 23 42 / 0.48));
+  --wr-glass-edge: rgb(148 163 184 / 0.16);
+  --wr-glass-shadow: 0 10px 30px rgb(0 0 0 / 0.35), inset 0 1px 0 rgb(255 255 255 / 0.06);
+  --wr-frame-shadow: 0 40px 90px -20px rgb(0 0 0 / 0.55), 0 6px 20px rgb(0 0 0 / 0.25);
+  --wr-well: rgb(15 23 42 / 0.55);
+}
+
+.dark .wr-shell {
+  background:
+    radial-gradient(960px 600px at 2% -12%, rgb(63 140 255 / 0.16), transparent 64%),
+    radial-gradient(880px 580px at 100% 2%, rgb(106 92 255 / 0.14), transparent 64%),
+    radial-gradient(820px 600px at 50% 114%, rgb(63 140 255 / 0.10), transparent 60%),
+    linear-gradient(160deg, #0b1220, #0d1526 52%, #0f1220);
+  background-attachment: fixed;
+}
+
 @layer components {
   .wr-glass {
     background: var(--wr-glass-fill);
@@ -55,11 +85,13 @@
   }
 }
 
-/* Browsers without backdrop-filter support: fall back to a solid, still-legible surface. */
+/* Browsers without backdrop-filter support: fall back to a solid, still-legible
+   surface -- hsl(var(--card)) rather than a hardcoded white so this adapts
+   automatically in dark mode too. */
 @supports not (backdrop-filter: blur(1px)) {
   .wr-glass,
   .wr-rail {
-    background: rgb(255 255 255 / 0.92);
+    background: hsl(var(--card) / 0.92);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
@@ -67,20 +99,21 @@
 
 /* Menus/dialogs/toasts are excluded from this rule by construction (they stay
    plain white per component, never given .wr-glass) -- this block only needs
-   to collapse the chrome that IS glass. */
+   to collapse the chrome that IS glass. hsl(var(--card))/hsl(var(--border))
+   instead of hardcoded white/slate so this adapts in dark mode too. */
 @media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
   .wr-glass,
   .wr-rail {
-    background: #fff;
-    border-color: rgb(148 163 184 / 0.4); /* slate-200 */
+    background: hsl(var(--card));
+    border-color: hsl(var(--border));
     box-shadow: none;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
 
   .wr-well {
-    background: #fff;
-    border-color: rgb(148 163 184 / 0.4);
+    background: hsl(var(--card));
+    border-color: hsl(var(--border));
   }
 
   .wr-shell {
