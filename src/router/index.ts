@@ -8,13 +8,15 @@ const StepOne = () => import('@/views/Auth/StepOne.vue')
 const StepTwo = () => import('@/views/Auth/StepTwo.vue')
 const DashboardLayout = () => import('@/layouts/DashboardLayout.vue')
 const Dashboard = () => import('@/views/Dashboard/DashboardHome.vue')
+const LandingPage = () => import('@/views/Landing/LandingPage.vue')
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: '/',
-      redirect: '/auth/login/'
+      name: 'landing',
+      component: LandingPage
     },
     {
       path: '/auth/login/',
