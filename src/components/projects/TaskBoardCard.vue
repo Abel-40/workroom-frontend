@@ -25,7 +25,7 @@ const priorityColor = (level: string) => {
     case "low":
       return "text-green-500";
     default:
-      return "text-gray-500";
+      return "text-subtle";
   }
 };
 
@@ -42,7 +42,7 @@ const initials = (name: string) =>
 
 <template>
   <div
-    class="cursor-pointer rounded-2xl border border-gray-100 bg-white p-3 shadow-sm transition hover:shadow-md hover:border-primary/30"
+    class="cursor-pointer rounded-2xl border border-border bg-card p-3 shadow-sm transition hover:shadow-md hover:border-primary/30"
     :class="{ 'opacity-40': dragging }"
     draggable="true"
     @click="emit('select', task)"

@@ -149,13 +149,13 @@ const apply = () => {
   <CustomModal v-model:open="isOpen" :title="'Filter'">
     <div class="h-full">
       <div>
-        <div class="w-full border-t-gray-200 border-t-[1px] px-3 py-4">
+        <div class="w-full border-t-border border-t-[1px] px-3 py-4">
           <Label for="date" class="text-xs font-normal">Period</Label>
           <DateRangePicker v-model="dateRange" class="w-full rounded-xl" />
         </div>
 
         <!-- Task Group Checkboxes -->
-        <div class="border-t-gray-200 border-t-[1px] px-3 py-3 space-y-1">
+        <div class="border-t-border border-t-[1px] px-3 py-3 space-y-1">
           <p class="text-xs font-normal mb-2">Task Group</p>
           <div class="flex gap-1 items-center">
             <input
@@ -214,7 +214,7 @@ const apply = () => {
         </div>
 
         <!-- Assigned By Checkboxes -->
-        <div class="border-b-gray-200 border-y-[1px] px-3 py-2 space-y-1">
+        <div class="border-b-border border-y-[1px] px-3 py-2 space-y-1">
           <p class="text-xs font-normal mb-2">Assigned By</p>
 
           <div
@@ -238,7 +238,7 @@ const apply = () => {
             </div>
             <Label :for="person.id" class="text-xs font-normal">{{ person.name }}</Label>
           </div>
-          <p v-if="!employeeStore.employees.length" class="text-xs text-gray-400">No company members yet.</p>
+          <p v-if="!employeeStore.employees.length" class="text-xs text-subtle">No company members yet.</p>
 
           <span v-if="employeeStore.employees.length > 5">
             <Button variant="link" class="text-xs p-0" @click="showAllAssignedBy = !showAllAssignedBy">
@@ -247,7 +247,7 @@ const apply = () => {
           </span>
         </div>
 
-        <div class="border-b-gray-200 border-t-[1px] px-3 py-2">
+        <div class="border-b-border border-t-[1px] px-3 py-2">
           <p class="text-xs font-normal mb-3">Assignees</p>
           <div class="relative">
             <TagsInput v-model="assignees" class="flex h-auto rounded-xl" @add-tag="onAssigneesAddTag">
@@ -271,7 +271,7 @@ const apply = () => {
             </TagsInput>
             <div
               v-if="showAssigneeSuggestions && assigneeSuggestions.length"
-              class="absolute z-10 mt-1 w-full rounded-xl border border-gray-100 bg-white p-1 shadow-lg"
+              class="absolute z-10 mt-1 w-full rounded-xl border border-border bg-card p-1 shadow-lg"
             >
               <button
                 v-for="person in assigneeSuggestions"
@@ -281,13 +281,13 @@ const apply = () => {
                 @click="pickAssigneeSuggestion(person.name)"
               >
                 <span>{{ person.name }}</span>
-                <span class="text-gray-400">{{ person.roleLabel }}</span>
+                <span class="text-subtle">{{ person.roleLabel }}</span>
               </button>
             </div>
           </div>
         </div>
 
-        <div class="border-b-gray-200 border-t-[1px] px-3 py-2">
+        <div class="border-b-border border-t-[1px] px-3 py-2">
           <p class="text-xs mb-3">Estimate</p>
           <Input
             type="search"
@@ -297,7 +297,7 @@ const apply = () => {
           />
         </div>
 
-        <div class="border-t-gray-200 border-t-[1px] px-2 py-2">
+        <div class="border-t-border border-t-[1px] px-2 py-2">
           <p class="text-xs mb-3">Priority</p>
           <Select v-model="priority">
             <SelectTrigger class="rounded-xl">

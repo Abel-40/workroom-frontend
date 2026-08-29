@@ -63,7 +63,7 @@ const onDropColumn = async (status: TaskType["status"]) => {
         </div>
         <div
           class="flex min-h-[120px] flex-col gap-3 rounded-2xl p-2 transition"
-          :class="dragOverColumn === status ? 'bg-blue-50 ring-2 ring-primary/40' : ''"
+          :class="dragOverColumn === status ? 'bg-primary/10 ring-2 ring-primary/40' : ''"
           @dragover.prevent="onDragOverColumn(status)"
           @dragleave="dragOverColumn = dragOverColumn === status ? null : dragOverColumn"
           @drop="onDropColumn(status)"

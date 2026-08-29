@@ -134,14 +134,14 @@ const regenerateAiContent = async () => {
 </script>
 
 <template>
-  <div class="w-full rounded-2xl border border-gray-100 bg-white p-4">
+  <div class="w-full rounded-2xl border border-border bg-card p-4">
     <div class="mb-4 flex items-center justify-between">
       <h3 class="text-sm font-semibold text-ink">Task Details</h3>
       <div class="flex items-center gap-2">
         <button
           v-if="canEdit && task.source === 'ai_generated'"
           type="button"
-          class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:border-primary/40 disabled:opacity-50"
+          class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-border text-subtle hover:border-primary/40 disabled:opacity-50"
           title="Regenerate AI content"
           :disabled="regenerating"
           @click="regenerateAiContent"
@@ -152,7 +152,7 @@ const regenerateAiContent = async () => {
           v-if="canEdit"
           type="button"
           class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border disabled:opacity-50"
-          :class="isEditing ? 'border-primary bg-primary/10 text-primary' : 'border-gray-200 text-gray-400 hover:border-primary/40'"
+          :class="isEditing ? 'border-primary bg-primary/10 text-primary' : 'border-border text-subtle hover:border-primary/40'"
           :title="isEditing ? 'Save changes' : 'Edit task'"
           :disabled="saving"
           @click="toggleEdit"
@@ -182,7 +182,7 @@ const regenerateAiContent = async () => {
         <input
           v-if="isEditing"
           v-model="form.title"
-          class="mt-1 w-full rounded-lg border border-gray-200 px-2 py-1 text-lg font-semibold text-ink focus:border-primary focus:outline-none"
+          class="mt-1 w-full rounded-lg border border-border px-2 py-1 text-lg font-semibold text-ink focus:border-primary focus:outline-none"
         />
         <h4 v-else class="text-lg font-semibold text-ink">{{ task.title }}</h4>
       </div>
@@ -248,7 +248,7 @@ const regenerateAiContent = async () => {
       </div>
     </div>
 
-    <div class="border-t border-gray-100 pt-4 text-sm text-subtle">
+    <div class="border-t border-border pt-4 text-sm text-subtle">
       Last updated {{ formatTimestamp(task.updatedAt) }}
     </div>
 

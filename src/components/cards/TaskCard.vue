@@ -12,7 +12,7 @@ const getPriorityColor = (level: string) => {
     case 'high': return 'text-red-500';
     case 'medium': return ' text-yellow-500';
     case 'low': return 'text-green-500';
-    default: return 'text-gray-500';
+    default: return 'text-subtle';
   }
 }
 const getIcon = (level:String)=>{
@@ -24,9 +24,9 @@ const getIcon = (level:String)=>{
 }
 const getProgresStatus = (percent:string)=>{
   const value = parseInt(percent, 10) || 0
-  if (value <= 0) return 'border-[2px] border-gray-300'
-  if (value < 40) return 'border-l-[2px] border-r-[2px] border-l-blue-500 border-y-gray-300 border-y-[2px] border-r-gray-300'
-  if (value < 90) return 'border-l-[2px] border-l-blue-500 border-b-[2px] border-b-blue-500 border-r-[2px] border-r-gray-300 border-t-[2px] border-t-gray-300'
+  if (value <= 0) return 'border-[2px] border-border'
+  if (value < 40) return 'border-l-[2px] border-r-[2px] border-l-blue-500 border-y-border border-y-[2px] border-r-border'
+  if (value < 90) return 'border-l-[2px] border-l-blue-500 border-b-[2px] border-b-blue-500 border-r-[2px] border-r-border border-t-[2px] border-t-border'
   return 'border-[2px] border-blue-500'
 }
 const initials = (name: string) =>
@@ -38,7 +38,7 @@ const onClick = ()=>{
 }
 </script>
 <template>
-  <div class="w-full flex justify-between items-center p-4 gap-5 bg-white rounded-3xl border border-gray-200 shadow-sm cursor-pointer" @click="onClick">
+  <div class="w-full flex justify-between items-center p-4 gap-5 bg-card rounded-3xl border border-border shadow-sm cursor-pointer" @click="onClick">
     <div class="min-w-[20%] max-w-[28%]">
       <div class="flex min-w-0 flex-col gap-3 justify-center ">
         <p class="text-sm text-left whitespace-nowrap text-[#91929E]">Task Name</P>

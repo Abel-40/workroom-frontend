@@ -63,7 +63,7 @@ const priorityColor = (level: string) => {
     case "low":
       return "text-green-500";
     default:
-      return "text-gray-500";
+      return "text-subtle";
   }
 };
 const priorityIcon = (level: string) => (level === "low" ? ArrowDown : ArrowUp);
@@ -87,7 +87,7 @@ const assigneeValue = computed({
 </script>
 
 <template>
-  <aside class="w-full rounded-2xl border border-gray-100 bg-white p-4 lg:w-64">
+  <aside class="w-full rounded-2xl border border-border bg-card p-4 lg:w-64">
     <h3 class="mb-4 text-sm font-semibold text-ink">Task Info</h3>
 
     <div class="space-y-4 text-sm">
@@ -131,13 +131,13 @@ const assigneeValue = computed({
         <p class="mb-2 text-xs text-subtle">Time tracking</p>
         <div class="flex items-center gap-3">
           <svg width="44" height="44" viewBox="0 0 44 44" class="shrink-0 -rotate-90">
-            <circle cx="22" cy="22" r="18" fill="none" stroke="#D9E3EE" stroke-width="5" />
+            <circle cx="22" cy="22" r="18" fill="none" class="stroke-border" stroke-width="5" />
             <circle
               cx="22"
               cy="22"
               r="18"
               fill="none"
-              stroke="#3F8CFF"
+              class="stroke-primary"
               stroke-width="5"
               stroke-linecap="round"
               :stroke-dasharray="ringCircumference"

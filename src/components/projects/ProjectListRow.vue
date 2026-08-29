@@ -30,7 +30,7 @@ const shortProjectId = (id: string) => id.slice(0, 8).toUpperCase();
           <span v-else class="text-base">{{ project.icon }}</span>
         </div>
         <div class="min-w-0">
-          <p class="text-xs text-gray-500" :title="project.id">{{ shortProjectId(project.id) }}</p>
+          <p class="text-xs text-subtle" :title="project.id">{{ shortProjectId(project.id) }}</p>
           <p class="font-medium truncate" :title="project.title">{{ project.title }}</p>
           <div class="cursor-pointer flex items-center">
             <Button variant="link" as="a" class="text-primary px-0 py-0 h-auto" @click.stop="emit('view-detail')">

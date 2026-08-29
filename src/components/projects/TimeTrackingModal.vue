@@ -64,14 +64,14 @@ const save = async () => {
 
       <div class="space-y-4">
         <div class="flex items-center justify-center gap-4 rounded-2xl bg-page px-4 py-4">
-          <div class="flex h-9 w-9 items-center justify-center rounded-full bg-white text-primary shadow-sm">
+          <div class="flex h-9 w-9 items-center justify-center rounded-full bg-card text-primary shadow-sm">
             <Timer class="h-4 w-4" />
           </div>
           <div class="text-center">
             <p class="text-sm font-semibold text-ink">{{ formatHoursToDuration(task.spentTimeHours) }} logged</p>
             <p class="text-xs text-subtle">Original Estimate {{ task.estimatedTimeHours ? formatHoursToDuration(task.estimatedTimeHours) : "—" }}</p>
           </div>
-          <div class="flex h-9 w-9 items-center justify-center rounded-full bg-white text-primary shadow-sm">
+          <div class="flex h-9 w-9 items-center justify-center rounded-full bg-card text-primary shadow-sm">
             <CalendarClock class="h-4 w-4" />
           </div>
         </div>

@@ -189,7 +189,7 @@ const save = async () => {
             />
             <div
               v-if="showMentions && mentionMatches.length"
-              class="absolute z-10 mt-1 w-full rounded-xl border border-gray-100 bg-white p-1 shadow-lg"
+              class="absolute z-10 mt-1 w-full rounded-xl border border-border bg-card p-1 shadow-lg"
             >
               <button
                 v-for="person in mentionMatches"
@@ -211,7 +211,7 @@ const save = async () => {
             <button
               type="button"
               class="flex-1 rounded-lg py-1.5 font-medium transition"
-              :class="coverMode === 'none' ? 'bg-white shadow-sm text-ink' : 'text-subtle'"
+              :class="coverMode === 'none' ? 'bg-card shadow-sm text-ink' : 'text-subtle'"
               @click="resetCover"
             >
               None
@@ -219,7 +219,7 @@ const save = async () => {
             <button
               type="button"
               class="flex-1 rounded-lg py-1.5 font-medium transition"
-              :class="coverMode === 'link' ? 'bg-white shadow-sm text-ink' : 'text-subtle'"
+              :class="coverMode === 'link' ? 'bg-card shadow-sm text-ink' : 'text-subtle'"
               @click="coverMode = 'link'; coverFile = null"
             >
               Image Link
@@ -227,7 +227,7 @@ const save = async () => {
             <button
               type="button"
               class="flex-1 rounded-lg py-1.5 font-medium transition"
-              :class="coverMode === 'upload' ? 'bg-white shadow-sm text-ink' : 'text-subtle'"
+              :class="coverMode === 'upload' ? 'bg-card shadow-sm text-ink' : 'text-subtle'"
               @click="coverMode = 'upload'; coverUrl = ''"
             >
               Upload File
@@ -245,7 +245,7 @@ const save = async () => {
             ref="coverFileInput"
             type="file"
             accept="image/png,image/jpeg,image/gif,image/webp"
-            class="block w-full rounded-xl border border-gray-200 px-2 py-1.5 text-sm text-subtle file:mr-2 file:rounded-lg file:border-0 file:bg-primary/10 file:px-2 file:py-1 file:text-xs file:font-medium file:text-primary"
+            class="block w-full rounded-xl border border-border px-2 py-1.5 text-sm text-subtle file:mr-2 file:rounded-lg file:border-0 file:bg-primary/10 file:px-2 file:py-1 file:text-xs file:font-medium file:text-primary"
             @change="onCoverFileChange"
           />
         </div>

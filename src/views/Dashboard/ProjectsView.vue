@@ -349,7 +349,7 @@ const getPriorityColor = (level: "high" | "medium" | "low" | undefined) => {
     case "low":
       return "text-green-500";
     default:
-      return "text-gray-500";
+      return "text-subtle";
   }
 };
 
@@ -633,10 +633,10 @@ watch(()=>paginatedProjects.value,()=>{
     <div class="w-full flex flex-col lg:flex-row gap-6">
       <!-- aside -->
       <div
-        class="w-full lg:w-1/4 rounded-2xl bg-white border border-gray-200 shadow-lg flex flex-col justify-between"
+        class="w-full lg:w-1/4 rounded-2xl bg-card border border-border shadow-lg flex flex-col justify-between"
       >
       <div>
-        <div class="border-b border-gray-200 px-4 py-3 flex flex-col gap-2">
+        <div class="border-b border-border px-4 py-3 flex flex-col gap-2">
           <div class="flex justify-between items-center">
             <Select v-model="projectType">
               <SelectTrigger
@@ -664,7 +664,7 @@ watch(()=>paginatedProjects.value,()=>{
             <!-- projects list -->
             <div class="space-y-2 pl-3 py-2">
               <template v-if="showDetial">
-                <div class="w-64 px-4 py-6 bg-white">
+                <div class="w-64 px-4 py-6 bg-card">
                   <div class="flex items-center justify-between">
                     <span
                       class="flex justify-start cursor-pointer items-center"
@@ -677,7 +677,7 @@ watch(()=>paginatedProjects.value,()=>{
                       v-if="canManageSelectedProject"
                       type="button"
                       class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border hover:border-primary/40"
-                      :class="isEditingProject ? 'border-primary bg-primary/10 text-primary' : 'border-gray-200 text-gray-400'"
+                      :class="isEditingProject ? 'border-primary bg-primary/10 text-primary' : 'border-border text-subtle'"
                       :title="isEditingProject ? 'Done editing' : 'Edit title & description'"
                       @click="toggleEditProject"
                     >
@@ -705,7 +705,7 @@ watch(()=>paginatedProjects.value,()=>{
                         <button
                           type="button"
                           class="flex-1 rounded-md py-1 font-medium transition"
-                          :class="coverMode === 'link' ? 'bg-white shadow-sm text-ink' : 'text-subtle'"
+                          :class="coverMode === 'link' ? 'bg-card shadow-sm text-ink' : 'text-subtle'"
                           @click="coverMode = 'link'"
                         >
                           Link
@@ -713,7 +713,7 @@ watch(()=>paginatedProjects.value,()=>{
                         <button
                           type="button"
                           class="flex-1 rounded-md py-1 font-medium transition"
-                          :class="coverMode === 'upload' ? 'bg-white shadow-sm text-ink' : 'text-subtle'"
+                          :class="coverMode === 'upload' ? 'bg-card shadow-sm text-ink' : 'text-subtle'"
                           @click="coverMode = 'upload'"
                         >
                           Upload
@@ -724,7 +724,7 @@ watch(()=>paginatedProjects.value,()=>{
                           v-model="coverUrl"
                           type="url"
                           placeholder="https://example.com/cover.jpg"
-                          class="w-full min-w-0 rounded-lg border border-gray-200 px-2 py-1 text-xs focus:border-primary focus:outline-none"
+                          class="w-full min-w-0 rounded-lg border border-border px-2 py-1 text-xs focus:border-primary focus:outline-none"
                         />
                         <button
                           type="button"
@@ -758,33 +758,33 @@ watch(()=>paginatedProjects.value,()=>{
 
                   <!-- Title -->
                   <div class="mt-3">
-                    <div class="text-sm text-gray-400">Title</div>
+                    <div class="text-sm text-subtle">Title</div>
                     <input
                       v-if="isEditingProject && selectedProject"
                       v-model="selectedProject.title"
-                      class="mt-1 w-full rounded-lg border border-gray-200 px-2 py-1 text-sm font-semibold text-gray-800 focus:border-primary focus:outline-none"
+                      class="mt-1 w-full rounded-lg border border-border px-2 py-1 text-sm font-semibold text-ink focus:border-primary focus:outline-none"
                     />
-                    <p v-else class="font-semibold text-gray-800 line-clamp-2 break-words" :title="selectedProject?.title">{{ selectedProject?.title }}</p>
+                    <p v-else class="font-semibold text-ink line-clamp-2 break-words" :title="selectedProject?.title">{{ selectedProject?.title }}</p>
                   </div>
 
                   <!-- Project Number -->
-                  <div class="mt-4 text-sm text-gray-400">Project Number</div>
+                  <div class="mt-4 text-sm text-subtle">Project Number</div>
                   <div class="flex items-center justify-between">
-                    <span class="font-semibold text-gray-800" :title="selectedProject?.id">{{
+                    <span class="font-semibold text-ink" :title="selectedProject?.id">{{
                       shortProjectId(selectedProject?.id)
                     }}</span>
                   </div>
 
                   <!-- Description -->
                   <div class="mt-4">
-                    <div class="font-semibold text-gray-700 mb-1">Description</div>
+                    <div class="font-semibold text-ink mb-1">Description</div>
                     <textarea
                       v-if="isEditingProject && selectedProject"
                       v-model="selectedProject.description"
                       rows="4"
-                      class="w-full resize-y rounded-lg border border-gray-200 px-2 py-1 text-sm text-gray-700 focus:border-primary focus:outline-none"
+                      class="w-full resize-y rounded-lg border border-border px-2 py-1 text-sm text-ink focus:border-primary focus:outline-none"
                     />
-                    <p v-else class="text-sm text-gray-500 break-words">
+                    <p v-else class="text-sm text-subtle break-words">
                       {{ descriptionPreview }}
                       <button
                         v-if="descriptionIsLong"
@@ -799,9 +799,9 @@ watch(()=>paginatedProjects.value,()=>{
 
                   <!-- Reporter -->
                   <div class="mt-4">
-                    <div class="text-sm text-gray-400">Created By</div>
+                    <div class="text-sm text-subtle">Created By</div>
                     <div class="flex items-center gap-2 mt-1">
-                      <span class="text-sm text-gray-700">{{
+                      <span class="text-sm text-ink">{{
                         selectedProject?.assignedBy
                       }}</span>
                     </div>
@@ -809,8 +809,8 @@ watch(()=>paginatedProjects.value,()=>{
 
                   <!-- Owner (current, transferable -- distinct from the immutable Created By above) -->
                   <div class="mt-4">
-                    <div class="text-sm text-gray-400">Owner</div>
-                    <p v-if="!canManageSelectedProject" class="text-sm font-medium text-gray-700 mt-1">
+                    <div class="text-sm text-subtle">Owner</div>
+                    <p v-if="!canManageSelectedProject" class="text-sm font-medium text-ink mt-1">
                       {{ selectedProject?.currentOwnerName ?? "Unowned" }}
                     </p>
                     <Select v-else v-model="ownerValue" :disabled="transferringOwner">
@@ -829,7 +829,7 @@ watch(()=>paginatedProjects.value,()=>{
 
                   <!-- Assignees -->
                   <div class="mt-4">
-                    <div class="text-sm text-gray-400">Assignees</div>
+                    <div class="text-sm text-subtle">Assignees</div>
                     <template v-if="isEditingProject">
                       <div v-if="editAssignees.length" class="mt-1 flex flex-wrap gap-1.5">
                         <span
@@ -845,13 +845,13 @@ watch(()=>paginatedProjects.value,()=>{
                         <input
                           v-model="assigneeInput"
                           placeholder="Type @ to mention a teammate"
-                          class="w-full rounded-lg border border-gray-200 px-2 py-1 text-xs focus:border-primary focus:outline-none"
+                          class="w-full rounded-lg border border-border px-2 py-1 text-xs focus:border-primary focus:outline-none"
                           @input="onAssigneeInput"
                           @blur="onAssigneeInputBlur"
                         />
                         <div
                           v-if="showMentions && mentionMatches.length"
-                          class="absolute z-10 mt-1 w-full rounded-lg border border-gray-100 bg-white p-1 shadow-lg"
+                          class="absolute z-10 mt-1 w-full rounded-lg border border-border bg-card p-1 shadow-lg"
                         >
                           <button
                             v-for="person in mentionMatches"
@@ -870,25 +870,25 @@ watch(()=>paginatedProjects.value,()=>{
                       <span
                         v-for="name in selectedProject.assignee"
                         :key="name"
-                        class="rounded-full bg-page px-2 py-0.5 text-xs font-medium text-gray-700"
+                        class="rounded-full bg-page px-2 py-0.5 text-xs font-medium text-ink"
                       >
                         {{ name }}
                       </span>
                     </div>
-                    <p v-else class="mt-1 text-sm text-gray-400 italic">No one assigned yet</p>
+                    <p v-else class="mt-1 text-sm text-subtle italic">No one assigned yet</p>
                   </div>
 
                   <!-- Visibility -->
                   <div class="mt-4">
-                    <div class="text-sm text-gray-400">Visibility</div>
-                    <div class="text-sm font-medium text-gray-700 mt-1 capitalize">
+                    <div class="text-sm text-subtle">Visibility</div>
+                    <div class="text-sm font-medium text-ink mt-1 capitalize">
                       {{ selectedProject?.visibility ?? "company" }}
                     </div>
                   </div>
 
                   <!-- Priority -->
                   <div class="mt-4">
-                    <div class="text-sm text-gray-400">Priority</div>
+                    <div class="text-sm text-subtle">Priority</div>
                     <div class="flex items-center gap-1 text-yellow-500 mt-1">
                       <Component
                         :is="getIcon(selectedProject?.priority.level)"
@@ -904,14 +904,14 @@ watch(()=>paginatedProjects.value,()=>{
 
                   <!-- Deadline -->
                   <div class="mt-4">
-                    <div class="text-sm text-gray-400">Dead Line</div>
-                    <div class="text-sm font-semibold text-gray-700 mt-1">
+                    <div class="text-sm text-subtle">Dead Line</div>
+                    <div class="text-sm font-semibold text-ink mt-1">
                       {{ projectDeadline(selectedProject) }}
                     </div>
                   </div>
 
                   <!-- Created -->
-                  <div class="mt-4 flex items-center gap-2 text-sm text-gray-400">
+                  <div class="mt-4 flex items-center gap-2 text-sm text-subtle">
                     <Calendar class="w-4 h-4" />
                     <span>{{ formatShortDate(selectedProject?.createdAt) }}</span>
                   </div>
@@ -1019,7 +1019,7 @@ watch(()=>paginatedProjects.value,()=>{
               <div class="flex gap-4 justify-between items-center">
                 <div class="flex gap-2" v-for="(style, index) in TaskListStyle">
                   <div
-                    class="flex justify-center items-center bg-white rounded-lg w-8 h-8 hover:border-primary border"
+                    class="flex justify-center items-center bg-card rounded-lg w-8 h-8 hover:border-primary border"
                     @click="active(index)"
                     :class="setActiveForIcons(style.style)"
                   >
@@ -1033,7 +1033,7 @@ watch(()=>paginatedProjects.value,()=>{
                 </div>
               </div>
               <div
-                class="flex justify-center items-center bg-white rounded-lg w-7 h-7"
+                class="flex justify-center items-center bg-card rounded-lg w-7 h-7"
                 @click="onOpen"
               >
                 <Button variant="ghost" size="icon" class="w-8 h-8">

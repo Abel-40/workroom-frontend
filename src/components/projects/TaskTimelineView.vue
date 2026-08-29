@@ -157,33 +157,33 @@ const durationLabel = (task: TaskType) => task.estimatedTimeHours ? formatHoursT
 </script>
 
 <template>
-  <section class="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-    <div class="flex flex-col gap-4 border-b border-gray-100 px-4 py-4 sm:px-5 lg:flex-row lg:items-center lg:justify-between">
+  <section class="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+    <div class="flex flex-col gap-4 border-b border-border px-4 py-4 sm:px-5 lg:flex-row lg:items-center lg:justify-between">
       <div class="flex items-center gap-2">
         <span class="grid h-8 w-8 place-items-center rounded-xl bg-primary/10 text-primary"><CalendarDays class="h-4 w-4" /></span>
         <div><h3 class="text-sm font-semibold text-ink">Project timeline</h3><p class="text-xs text-subtle">Every task stays aligned with its schedule.</p></div>
       </div>
 
       <div class="flex items-center justify-between gap-2 sm:justify-end">
-        <button type="button" class="grid h-9 w-9 place-items-center rounded-lg border border-gray-200 bg-white text-ink transition hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" :disabled="!canGoPrev" aria-label="Previous month" @click="goPrevMonth"><ChevronLeft class="h-4 w-4" /></button>
+        <button type="button" class="grid h-9 w-9 place-items-center rounded-lg border border-border bg-card text-ink transition hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" :disabled="!canGoPrev" aria-label="Previous month" @click="goPrevMonth"><ChevronLeft class="h-4 w-4" /></button>
         <Popover>
           <PopoverTrigger as-child>
-            <button type="button" class="flex h-9 min-w-40 items-center justify-between gap-2 rounded-lg border border-gray-200 bg-white px-3 text-sm font-semibold text-ink shadow-sm transition hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label="Choose timeline month and year"><span>{{ monthLabel }}</span><ChevronDown class="h-4 w-4 text-subtle" /></button>
+            <button type="button" class="flex h-9 min-w-40 items-center justify-between gap-2 rounded-lg border border-border bg-card px-3 text-sm font-semibold text-ink shadow-sm transition hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label="Choose timeline month and year"><span>{{ monthLabel }}</span><ChevronDown class="h-4 w-4 text-subtle" /></button>
           </PopoverTrigger>
           <PopoverContent align="end" class="w-72 rounded-xl p-3">
             <div class="mb-3 flex items-start justify-between gap-3"><div><p class="text-sm font-semibold text-ink">Choose a period</p><p class="mt-0.5 text-[11px] text-subtle">From company creation through today</p></div><CalendarDays class="h-4 w-4 text-primary" /></div>
             <div class="grid grid-cols-2 gap-2">
-              <label class="space-y-1"><span class="text-[11px] font-medium text-subtle">Month</span><Select v-model="selectedMonth"><SelectTrigger class="h-9 bg-white text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectGroup><SelectItem v-for="month in availableMonths" :key="month.value" :value="month.value">{{ month.label }}</SelectItem></SelectGroup></SelectContent></Select></label>
-              <label class="space-y-1"><span class="text-[11px] font-medium text-subtle">Year</span><Select v-model="selectedYear"><SelectTrigger class="h-9 bg-white text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectGroup><SelectItem v-for="year in years" :key="year" :value="year">{{ year }}</SelectItem></SelectGroup></SelectContent></Select></label>
+              <label class="space-y-1"><span class="text-[11px] font-medium text-subtle">Month</span><Select v-model="selectedMonth"><SelectTrigger class="h-9 bg-card text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectGroup><SelectItem v-for="month in availableMonths" :key="month.value" :value="month.value">{{ month.label }}</SelectItem></SelectGroup></SelectContent></Select></label>
+              <label class="space-y-1"><span class="text-[11px] font-medium text-subtle">Year</span><Select v-model="selectedYear"><SelectTrigger class="h-9 bg-card text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectGroup><SelectItem v-for="year in years" :key="year" :value="year">{{ year }}</SelectItem></SelectGroup></SelectContent></Select></label>
             </div>
             <button type="button" class="mt-3 w-full rounded-lg bg-page px-3 py-2 text-xs font-semibold text-ink transition hover:bg-primary/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" @click="jumpToToday">Go to current month</button>
           </PopoverContent>
         </Popover>
-        <button type="button" class="grid h-9 w-9 place-items-center rounded-lg border border-gray-200 bg-white text-ink transition hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" :disabled="!canGoNext" aria-label="Next month" @click="goNextMonth"><ChevronRight class="h-4 w-4" /></button>
+        <button type="button" class="grid h-9 w-9 place-items-center rounded-lg border border-border bg-card text-ink transition hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" :disabled="!canGoNext" aria-label="Next month" @click="goNextMonth"><ChevronRight class="h-4 w-4" /></button>
       </div>
     </div>
 
-    <div class="flex flex-wrap items-center gap-x-4 gap-y-1.5 border-b border-gray-100 bg-surface/60 px-4 py-2.5 text-[11px] font-medium text-subtle sm:px-5" aria-label="Task status colour legend">
+    <div class="flex flex-wrap items-center gap-x-4 gap-y-1.5 border-b border-border bg-surface/60 px-4 py-2.5 text-[11px] font-medium text-subtle sm:px-5" aria-label="Task status colour legend">
       <span class="mr-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-ink">Status</span>
       <span v-for="(meta, status) in statusMeta" :key="status" class="flex items-center gap-1.5"><span class="h-2 w-2 rounded-full" :class="meta.dot" />{{ status }}</span>
       <span class="ml-auto hidden items-center gap-1 text-[10px] sm:flex"><span class="h-px w-4 bg-rose-400" /> Today</span>
@@ -191,18 +191,18 @@ const durationLabel = (task: TaskType) => task.estimatedTimeHours ? formatHoursT
 
     <div class="overflow-hidden">
       <div class="min-w-0">
-        <div class="grid grid-cols-[minmax(8.75rem,0.48fr)_minmax(0,2.52fr)] border-b border-gray-100 bg-white">
-          <div class="sticky left-0 z-20 flex min-h-14 min-w-0 items-center border-r border-gray-100 bg-white px-3 shadow-[5px_0_12px_-12px_rgba(15,23,42,0.45)]"><div class="min-w-0"><p class="text-[10px] font-semibold uppercase tracking-[0.1em] text-subtle">Task</p><p class="mt-0.5 truncate text-[11px] font-semibold text-ink">Name &amp; schedule</p></div></div>
-          <div class="relative"><div class="grid" :style="{ gridTemplateColumns: gridColumns }"><div v-for="day in dayNumbers" :key="`header-${day}`" class="flex min-h-14 flex-col items-center justify-center border-l border-gray-100" :class="isWeekendDay(day) ? 'bg-page/45' : ''"><span class="text-[9px] font-medium uppercase tracking-wide text-subtle">{{ format(dateForDay(day), 'EEEEE') }}</span><span class="mt-0.5 grid h-5 w-5 place-items-center rounded-full text-[11px]" :class="isToday(day) ? 'bg-primary font-semibold text-white shadow-sm' : 'font-medium text-ink'">{{ day }}</span></div></div></div>
+        <div class="grid grid-cols-[minmax(8.75rem,0.48fr)_minmax(0,2.52fr)] border-b border-border bg-card">
+          <div class="sticky left-0 z-20 flex min-h-14 min-w-0 items-center border-r border-border bg-card px-3 shadow-[5px_0_12px_-12px_rgba(15,23,42,0.45)]"><div class="min-w-0"><p class="text-[10px] font-semibold uppercase tracking-[0.1em] text-subtle">Task</p><p class="mt-0.5 truncate text-[11px] font-semibold text-ink">Name &amp; schedule</p></div></div>
+          <div class="relative"><div class="grid" :style="{ gridTemplateColumns: gridColumns }"><div v-for="day in dayNumbers" :key="`header-${day}`" class="flex min-h-14 flex-col items-center justify-center border-l border-border" :class="isWeekendDay(day) ? 'bg-page/45' : ''"><span class="text-[9px] font-medium uppercase tracking-wide text-subtle">{{ format(dateForDay(day), 'EEEEE') }}</span><span class="mt-0.5 grid h-5 w-5 place-items-center rounded-full text-[11px]" :class="isToday(day) ? 'bg-primary font-semibold text-white shadow-sm' : 'font-medium text-ink'">{{ day }}</span></div></div></div>
         </div>
 
-        <div v-for="row in taskRows" :key="row.task.id" class="grid grid-cols-[minmax(8.75rem,0.48fr)_minmax(0,2.52fr)] border-b border-gray-100 last:border-b-0">
-          <button type="button" class="sticky left-0 z-10 flex min-h-[72px] min-w-0 items-center gap-2 border-r border-gray-100 bg-white px-3 text-left shadow-[5px_0_12px_-12px_rgba(15,23,42,0.45)] transition hover:bg-primary/[0.035] focus-visible:z-20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring" @click="emit('select', row.task)">
+        <div v-for="row in taskRows" :key="row.task.id" class="grid grid-cols-[minmax(8.75rem,0.48fr)_minmax(0,2.52fr)] border-b border-border last:border-b-0">
+          <button type="button" class="sticky left-0 z-10 flex min-h-[72px] min-w-0 items-center gap-2 border-r border-border bg-card px-3 text-left shadow-[5px_0_12px_-12px_rgba(15,23,42,0.45)] transition hover:bg-primary/[0.035] focus-visible:z-20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring" @click="emit('select', row.task)">
             <span class="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-page text-[10px] font-semibold text-subtle">{{ row.index + 1 }}</span>
             <span class="min-w-0 flex-1"><span class="flex items-center gap-1.5"><span class="h-2 w-2 shrink-0 rounded-full" :class="priorityDot[row.task.priority]" :title="`${row.task.priority} priority`" /><span class="truncate text-[13px] font-semibold text-ink">{{ row.task.title }}</span></span><span class="mt-1 flex items-center gap-1.5 overflow-hidden text-[10px] text-subtle"><span class="flex shrink-0 items-center gap-1"><UserRound class="h-3 w-3" />{{ row.task.assigneeName || 'Unassigned' }}</span><span class="truncate">{{ scheduleLabel(row.schedule) }}</span></span></span>
           </button>
-          <div class="relative min-h-[72px] overflow-hidden" :class="row.bar ? 'bg-white' : 'bg-slate-50/35'">
-            <div class="pointer-events-none absolute inset-0 grid" :style="{ gridTemplateColumns: gridColumns }"><div v-for="day in dayNumbers" :key="`cell-${row.task.id}-${day}`" class="border-l border-gray-100" :class="isWeekendDay(day) ? 'bg-page/45' : ''" /></div>
+          <div class="relative min-h-[72px] overflow-hidden" :class="row.bar ? 'bg-card' : 'bg-page/45'">
+            <div class="pointer-events-none absolute inset-0 grid" :style="{ gridTemplateColumns: gridColumns }"><div v-for="day in dayNumbers" :key="`cell-${row.task.id}-${day}`" class="border-l border-border" :class="isWeekendDay(day) ? 'bg-page/45' : ''" /></div>
             <div v-if="isCurrentMonth" class="pointer-events-none absolute inset-y-0 z-[1] w-px bg-rose-400/70" :style="todayLineStyle" />
             <div class="relative z-[2] grid h-full items-center px-1.5" :style="{ gridTemplateColumns: gridColumns }">
               <button v-if="row.bar" type="button" class="group/bar relative flex h-8 min-w-0 items-center rounded-lg px-2.5 text-left text-white shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" :class="statusMeta[row.task.status].bar" :style="{ gridColumnStart: row.bar.startDay, gridColumnEnd: `span ${row.bar.span}` }" :aria-label="`Open ${row.task.title}`" @click="emit('select', row.task)"><span class="truncate text-[11px] font-semibold">{{ row.task.title }}</span><span class="ml-auto hidden shrink-0 items-center gap-1 pl-2 text-[10px] font-medium text-white/85 xl:flex"><Clock3 class="h-3 w-3" />{{ durationLabel(row.task) }}</span><span class="pointer-events-none absolute -bottom-5 left-1/2 z-20 hidden -translate-x-1/2 whitespace-nowrap rounded bg-ink px-2 py-1 text-[10px] text-white shadow-lg group-hover/bar:block">{{ row.task.status }} · {{ scheduleLabel(row.schedule) }}</span></button>
@@ -211,7 +211,7 @@ const durationLabel = (task: TaskType) => task.estimatedTimeHours ? formatHoursT
           </div>
         </div>
 
-        <div v-if="!taskRows.length" class="grid min-h-40 place-items-center bg-slate-50/50 px-6 text-center"><div><CalendarDays class="mx-auto h-6 w-6 text-primary/50" /><p class="mt-2 text-sm font-medium text-ink">No tasks to place on the timeline</p><p class="mt-1 text-xs text-subtle">Add a task to start building this project schedule.</p></div></div>
+        <div v-if="!taskRows.length" class="grid min-h-40 place-items-center bg-page/45 px-6 text-center"><div><CalendarDays class="mx-auto h-6 w-6 text-primary/50" /><p class="mt-2 text-sm font-medium text-ink">No tasks to place on the timeline</p><p class="mt-1 text-xs text-subtle">Add a task to start building this project schedule.</p></div></div>
       </div>
     </div>
   </section>
