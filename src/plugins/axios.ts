@@ -8,6 +8,7 @@
 import router from '@/router'
 import axios from 'axios'
 import { mockDispatch } from '@/mock/mockService'
+import { useDeviceClass } from '@/composables/useDeviceClass'
 
 // ── Is mock mode active? ───────────────────────────────────────
 export const MOCK_MODE = import.meta.env.VITE_MOCK_API === 'true'
@@ -32,6 +33,29 @@ axiosInstance.interceptors.request.use((config) => {
   if (accessToken) {
     config.headers = config.headers ?? {}
     config.headers['Authorization'] = `Bearer ${accessToken}`
+  }
+  return config
+}, (error) => Promise.reject(error))
+
+// ── Request interceptor: block mutations app-wide on mobile ───
+// Mobile is read-only (see useDeviceClass.ts) -- every store's HTTP call
+// already flows through this one shared instance, so gating it here covers
+// every current and future mutating call without touching each store
+// individually. The rejection is shaped like a normal axios error
+// (response.data.message) so it flows through the exact same
+// error.response?.data?.message convention every store's catch block
+// already uses to surface a toast -- no separate toast plumbing needed.
+const READ_ONLY_MESSAGE = 'Read-only on mobile'
+const MUTATING_METHODS = new Set(['post', 'put', 'patch', 'delete'])
+const { isReadOnly } = useDeviceClass()
+
+axiosInstance.interceptors.request.use((config) => {
+  const method = (config.method ?? 'get').toLowerCase()
+  if (isReadOnly.value && MUTATING_METHODS.has(method)) {
+    const blocked = new Error(READ_ONLY_MESSAGE) as Error & { response: unknown; isReadOnlyBlock: true }
+    blocked.response = { data: { message: READ_ONLY_MESSAGE } }
+    blocked.isReadOnlyBlock = true
+    return Promise.reject(blocked)
   }
   return config
 }, (error) => Promise.reject(error))
