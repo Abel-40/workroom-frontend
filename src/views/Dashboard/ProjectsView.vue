@@ -94,6 +94,25 @@ const isAddTaskOpen = ref(false);
 const isAddProjectOpen = ref(false);
 const isEditingProject = ref(false);
 
+// Reached from the global quick-create floating menu's "Create task" option
+// when it didn't already know a project (see AiFloatingButton.vue) --
+// ?openTask=true is a one-shot flag consumed as soon as a project is
+// selected, whether that's the list's own default selection below or one the
+// user picks manually. The flag is stripped from the URL once consumed so
+// navigating back to this view later doesn't reopen the modal.
+const openTaskRequested = computed(() => route.query.openTask === "true");
+watch(
+  [openTaskRequested, selectedProject],
+  ([requested, project]) => {
+    if (requested && project) {
+      isAddTaskOpen.value = true;
+      const { openTask, ...rest } = route.query;
+      router.replace({ query: rest });
+    }
+  },
+  { immediate: true }
+);
+
 // Set when the AI panel's "View generated tasks" action is used -- switches
 // the Kanban board to show only this project's AI-generated tasks until
 // cleared. Local UI state only, not persisted.

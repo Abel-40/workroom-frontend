@@ -9,7 +9,8 @@
 // single page -- derived from selection state (screen computed below)
 // rather than tracked as a separate field, so "back" is just clearing the
 // deepest selection and there's no separate state to keep in sync.
-import { computed, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import {
   ArrowLeft, Check, CheckSquare, FileText, FolderOpen, MoreVertical, Paperclip, Pencil,
   Plus, Share2, Sparkles, Trash2, X,
@@ -32,6 +33,8 @@ import { usePagesStore, type PageBlock, type PageFolder, type WorkroomPage } fro
 
 const pagesStore = usePagesStore();
 const { toast } = useToast();
+const route = useRoute();
+const router = useRouter();
 const selectedFolder = ref<PageFolder | null>(null);
 const selectedPageId = ref<string | null>(null);
 const isShareOpen = ref(false);
@@ -45,14 +48,15 @@ const onSearch = (value: string) => {
   searchQuery.value = value;
 };
 
-if (!pagesStore.loaded) pagesStore.fetchFolders();
-
 const screen = computed<"folders" | "pages" | "page">(() => {
   if (!selectedFolder.value) return "folders";
   if (!selectedPageId.value) return "pages";
   return "page";
 });
 
+// Route-synced so a folder/page can be deep-linked (e.g. the global
+// quick-create menu's "Create pages" option opening a new tab straight into
+// the right folder -- see AiFloatingButton.vue and initFromRoute() below).
 const openFolder = async (folder: PageFolder) => {
   selectedFolder.value = folder;
   selectedPageId.value = null;
@@ -60,24 +64,30 @@ const openFolder = async (folder: PageFolder) => {
   pageSelectMode.value = false;
   selectedPageIdsForDelete.value = new Set();
   await pagesStore.fetchPages(folder.id);
+  await router.replace({ query: { ...route.query, folderId: folder.id } });
 };
-const backToFolders = () => {
+const backToFolders = async () => {
   selectedFolder.value = null;
   selectedPageId.value = null;
   isEditingPage.value = false;
   folderSelectMode.value = false;
   selectedFolderIds.value = new Set();
+  const { folderId, pageId, ...rest } = route.query;
+  await router.replace({ query: rest });
 };
-const openPage = (pageId: string) => {
+const openPage = async (pageId: string) => {
   selectedPageId.value = pageId;
   isEditingPage.value = false;
   // The folder listing omits blocks -- hydrate this page's real content
   // before it's rendered/edited.
   if (selectedFolder.value) pagesStore.fetchPage(pageId, selectedFolder.value.id);
+  await router.replace({ query: { ...route.query, pageId } });
 };
-const backToPages = () => {
+const backToPages = async () => {
   selectedPageId.value = null;
   isEditingPage.value = false;
+  const { pageId, ...rest } = route.query;
+  await router.replace({ query: rest });
 };
 
 const folderPages = computed(() => (selectedFolder.value ? pagesStore.pagesFor(selectedFolder.value.id) : []));
@@ -138,7 +148,7 @@ const addPage = async () => {
     toast({ title: "Couldn't create the page", description: error, variant: "destructive" });
     return;
   }
-  if (page) openPage(page.id);
+  if (page) await openPage(page.id);
 };
 
 const addFolder = async () => {
@@ -146,6 +156,57 @@ const addFolder = async () => {
   const { error } = await pagesStore.createFolder(name);
   if (error) toast({ title: "Couldn't create the folder", description: error, variant: "destructive" });
 };
+
+// Resolves ?folderId=/?pageId=/?newPage=true on arrival -- mirrors
+// ProjectsView.vue's selectProjectFromRoute() pattern. This is what lets the
+// global quick-create menu's "Create pages" option (a genuinely new browser
+// tab) land straight in the right folder with a fresh page ready to edit,
+// instead of just dropping the user on the plain folder list.
+const initFromRoute = async () => {
+  const folderIdParam = typeof route.query.folderId === "string" ? route.query.folderId : undefined;
+  const pageIdParam = typeof route.query.pageId === "string" ? route.query.pageId : undefined;
+  const wantsNewPage = route.query.newPage === "true";
+
+  let folder = folderIdParam ? pagesStore.folders.find((f) => f.id === folderIdParam) : undefined;
+  // No folder was specified (e.g. the menu wasn't already viewing one) --
+  // fall back to the first existing folder so a new page still lands
+  // somewhere useful instead of silently doing nothing.
+  if (!folder && wantsNewPage) folder = pagesStore.folders[0];
+
+  if (folder) {
+    await openFolder(folder);
+    if (pageIdParam) await openPage(pageIdParam);
+    else if (wantsNewPage) await addPage();
+  }
+
+  if (wantsNewPage) {
+    const { newPage, ...rest } = route.query;
+    await router.replace({ query: rest });
+  }
+};
+
+onMounted(async () => {
+  if (!pagesStore.loaded) await pagesStore.fetchFolders();
+  await initFromRoute();
+});
+
+// Keeps local selection in sync when something outside this view's own
+// navigation changes the URL underneath it (e.g. the global quick-create
+// menu's "Create folder" action, which intentionally lands on the plain
+// folder list) -- mirrors ProjectsView.vue's watch(() => route.query.id, ...).
+watch(
+  () => [route.query.folderId, route.query.pageId] as const,
+  ([folderId, pageId]) => {
+    if (typeof folderId !== "string" && selectedFolder.value) {
+      selectedFolder.value = null;
+      selectedPageId.value = null;
+      isEditingPage.value = false;
+    } else if (typeof pageId !== "string" && selectedPageId.value) {
+      selectedPageId.value = null;
+      isEditingPage.value = false;
+    }
+  }
+);
 
 const folderColor: Record<string, string> = {
   amber: "text-amber-500 bg-amber-50",
