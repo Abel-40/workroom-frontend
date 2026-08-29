@@ -30,11 +30,13 @@ import ConfirmDeleteDialog from "@/components/common/ConfirmDeleteDialog.vue";
 import { renderInlineMarkdown } from "@/lib/markdown";
 import { formatShortDate } from "@/lib/dates";
 import { usePagesStore, type PageBlock, type PageFolder, type WorkroomPage } from "@/stores/pagesStore";
+import { useDeviceClass } from "@/composables/useDeviceClass";
 
 const pagesStore = usePagesStore();
 const { toast } = useToast();
 const route = useRoute();
 const router = useRouter();
+const { isReadOnly } = useDeviceClass();
 const selectedFolder = ref<PageFolder | null>(null);
 const selectedPageId = ref<string | null>(null);
 const isShareOpen = ref(false);
@@ -371,7 +373,7 @@ async function deleteSelectedPages() {
             <Button variant="outline" class="rounded-xl" @click="toggleFolderSelectMode">
               <CheckSquare class="h-4 w-4" /> Select
             </Button>
-            <Button class="rounded-xl" @click="addFolder">
+            <Button v-if="!isReadOnly" class="rounded-xl" @click="addFolder">
               <Plus class="h-4 w-4" /> Add Folder
             </Button>
           </template>
@@ -389,7 +391,7 @@ async function deleteSelectedPages() {
             <Button variant="outline" class="rounded-xl" @click="togglePageSelectMode">
               <CheckSquare class="h-4 w-4" /> Select
             </Button>
-            <Button class="rounded-xl" @click="addPage">
+            <Button v-if="!isReadOnly" class="rounded-xl" @click="addPage">
               <Plus class="h-4 w-4" /> Add Page
             </Button>
           </template>

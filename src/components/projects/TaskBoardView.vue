@@ -3,6 +3,7 @@ import { ref } from "vue";
 import type { TaskType } from "@/types/types";
 import { useProjectStore } from "@/stores/projectStore";
 import { useToast } from "@/components/ui/toast/use-toast";
+import { useDeviceClass } from "@/composables/useDeviceClass";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import TaskBoardCard from "./TaskBoardCard.vue";
 
@@ -16,6 +17,7 @@ const emit = defineEmits<{
 
 const projectsStore = useProjectStore();
 const { toast } = useToast();
+const { isReadOnly } = useDeviceClass();
 
 const COLUMNS: TaskType["status"][] = ["To Do", "In Progress", "In Review", "Done"];
 const columnDot: Record<TaskType["status"], string> = {
@@ -30,7 +32,15 @@ const tasksFor = (status: TaskType["status"]) => props.tasks.filter((task) => ta
 const draggingTask = ref<TaskType | null>(null);
 const dragOverColumn = ref<TaskType["status"] | null>(null);
 
-const onDragStart = (_event: DragEvent, task: TaskType) => {
+// Read-only mobile: cancel the drag gesture outright (preventDefault on
+// dragstart aborts native HTML5 drag-and-drop) rather than letting a ghost
+// drag start that can never actually drop anywhere -- the axios interceptor
+// is still the real correctness guarantee here, this just avoids the dead-end.
+const onDragStart = (event: DragEvent, task: TaskType) => {
+  if (isReadOnly.value) {
+    event.preventDefault();
+    return;
+  }
   draggingTask.value = task;
 };
 const onDragEnd = () => {

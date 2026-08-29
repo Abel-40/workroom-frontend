@@ -29,6 +29,7 @@ import { useDirectoryStore } from "@/stores/directoryStore";
 import { useAuthStore } from "@/stores/authStore";
 import { hasPermission } from "@/lib/permissions";
 import { usePermissions } from "@/composables/usePermissions";
+import { useDeviceClass } from "@/composables/useDeviceClass";
 import { useRouter } from "vue-router";
 
 const employeeStore = useEmployeeStore();
@@ -36,7 +37,8 @@ const directoryStore = useDirectoryStore();
 const authStore = useAuthStore();
 const router = useRouter();
 const { role: myRole, isMemberRowLocked } = usePermissions();
-const canInvite = computed(() => hasPermission(authStore.logedInUserInfo?.role, "members:invite"));
+const { isReadOnly } = useDeviceClass();
+const canInvite = computed(() => hasPermission(authStore.logedInUserInfo?.role, "members:invite") && !isReadOnly.value);
 const canRemove = computed(() => hasPermission(authStore.logedInUserInfo?.role, "members:remove"));
 const canChangeRole = computed(() => hasPermission(authStore.logedInUserInfo?.role, "members:manage_role"));
 const canPromoteToCm = computed(() => hasPermission(authStore.logedInUserInfo?.role, "members:manage_cm_role"));

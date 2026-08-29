@@ -37,6 +37,7 @@ import { useEmployeeStore } from "@/stores/employeeStore";
 import { useDirectoryStore } from "@/stores/directoryStore";
 import { canManageProject } from "@/lib/projectPermissions";
 import { usePermissions } from "@/composables/usePermissions";
+import { useDeviceClass } from "@/composables/useDeviceClass";
 import type { Project, TaskType } from "@/types/types";
 import { addDays, format } from "date-fns";
 import { ref, onMounted, computed, watch } from "vue";
@@ -64,6 +65,7 @@ const authStore = useAuthStore();
 const employeeStore = useEmployeeStore();
 const directoryStore = useDirectoryStore();
 const { isDL, isDM, userId: myUserId, departmentId: myDepartmentId } = usePermissions();
+const { isReadOnly } = useDeviceClass();
 const { selectedProject, selectedTask } = storeToRefs(projectsStore);
 
 // DL: department-scoped by default, per the spec's visible toggle. DM:
@@ -629,7 +631,7 @@ watch(()=>paginatedProjects.value,()=>{
         <div>
           <h1 class="text-2xl font-bold">Projects</h1>
         </div>
-        <div class="flex items-center gap-2 px-2 py-2">
+        <div v-if="!isReadOnly" class="flex items-center gap-2 px-2 py-2">
           <Button
             variant="outline"
             class="rounded-xl"

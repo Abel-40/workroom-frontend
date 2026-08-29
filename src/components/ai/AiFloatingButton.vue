@@ -18,12 +18,18 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/components/ui/toast/use-toast";
 import { usePagesStore } from "@/stores/pagesStore";
+import { useDeviceClass } from "@/composables/useDeviceClass";
 import CreateProjectModal from "@/components/projects/CreateProjectModal.vue";
 
 const route = useRoute();
 const router = useRouter();
 const { toast } = useToast();
 const pagesStore = usePagesStore();
+// Every option in this menu is a mutation (Create Project/Task/Folder/Pages)
+// or navigates somewhere that only matters if you can act once there --
+// hide it entirely on read-only mobile rather than surface a menu whose
+// options mostly just bounce into the "Read-only on mobile" toast.
+const { isReadOnly } = useDeviceClass();
 
 const open = ref(false);
 const isCreateProjectOpen = ref(false);
@@ -106,7 +112,7 @@ const menuItems = computed(() => [
        while the menu is open, per the expandable-menu design. -->
   <div v-if="open" class="fixed inset-0 z-40 bg-black/10" aria-hidden="true" />
 
-  <Popover v-model:open="open">
+  <Popover v-if="!isReadOnly" v-model:open="open">
     <PopoverTrigger as-child>
       <button
         type="button"
