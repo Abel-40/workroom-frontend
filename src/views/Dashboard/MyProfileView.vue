@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
-import { ArrowDown, ArrowUp, Calendar, Funnel, MapPin, Pencil, Settings } from "lucide-vue-next";
+import { computed, onMounted, reactive, ref } from "vue";
+import { ArrowDown, ArrowUp, Calendar, Check, FileText, Funnel, MapPin, Pencil, Settings, Upload } from "lucide-vue-next";
 import { RouterLink } from "vue-router";
 import Header from "@/components/layout/Header.vue";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import ProjectImage from "@/components/projects/ProjectImage.vue";
+import { useToast } from "@/components/ui/toast/use-toast";
 import { useAuthStore } from "@/stores/authStore";
 import { useUserProfileStore } from "@/stores/userProfileStore";
 import { useProjectStore } from "@/stores/projectStore";
@@ -22,6 +23,7 @@ const profileStore = useUserProfileStore();
 const projectStore = useProjectStore();
 const employeeStore = useEmployeeStore();
 const directoryStore = useDirectoryStore();
+const { toast } = useToast();
 
 const tab = ref<"projects" | "team" | "vacations">("projects");
 
@@ -29,7 +31,74 @@ onMounted(() => {
   employeeStore.fetchEmployees();
   if (!directoryStore.loaded) directoryStore.fetchAll();
   if (!projectStore.projects.length) projectStore.fetchProjects();
+  profileStore.fetchProfile();
 });
+
+// Self-service: editing your own profile isn't role-gated -- every member
+// edits their own Position/Location/Birthday/Skype/CV regardless of company
+// role. "Company"/"Email" below are read-only, sourced from real session
+// data (authStore), never part of the editable form.
+const isEditingProfile = ref(false);
+const savingProfile = ref(false);
+const profileForm = reactive({
+  profession: "",
+  address: "",
+  phoneNumber: "",
+  birthday: "" as string,
+  skype: "",
+});
+
+const startEditingProfile = () => {
+  profileForm.profession = profileStore.profile.profession;
+  profileForm.address = profileStore.profile.address;
+  profileForm.phoneNumber = profileStore.profile.phoneNumber;
+  profileForm.birthday = profileStore.profile.birthday ?? "";
+  profileForm.skype = profileStore.profile.skype;
+  isEditingProfile.value = true;
+};
+
+const saveProfileEdits = async () => {
+  savingProfile.value = true;
+  const { error } = await profileStore.saveProfile({
+    profession: profileForm.profession,
+    address: profileForm.address,
+    phoneNumber: profileForm.phoneNumber,
+    birthday: profileForm.birthday || null,
+    skype: profileForm.skype,
+  });
+  savingProfile.value = false;
+  if (error) {
+    toast({ title: "Profile not updated", description: error, variant: "destructive" });
+    return;
+  }
+  isEditingProfile.value = false;
+};
+
+const toggleProfileEdit = () => {
+  if (isEditingProfile.value) saveProfileEdits();
+  else startEditingProfile();
+};
+
+const resumeInput = ref<HTMLInputElement | null>(null);
+const uploadingResume = ref(false);
+const triggerResumeUpload = () => resumeInput.value?.click();
+const onResumeSelected = async (event: Event) => {
+  const file = (event.target as HTMLInputElement).files?.[0];
+  if (!file) return;
+  uploadingResume.value = true;
+  const { error } = await profileStore.uploadResume(file);
+  uploadingResume.value = false;
+  (event.target as HTMLInputElement).value = "";
+  if (error) {
+    toast({ title: "Resume not uploaded", description: error, variant: "destructive" });
+    return;
+  }
+  toast({ title: "Resume uploaded" });
+};
+const downloadResume = async () => {
+  const { error } = await profileStore.downloadResume(`${displayName.value}-resume`);
+  if (error) toast({ title: "Download failed", description: error, variant: "destructive" });
+};
 
 type PriorityLevel = "low" | "medium" | "high";
 const PRIORITY_OPTIONS: { value: PriorityLevel; label: string }[] = [
@@ -88,9 +157,6 @@ const filteredTeam = computed(() => {
   });
 });
 const displayName = computed(() => authStore.logedInUserInfo?.user?.username || "Abel");
-const canEditProfile = computed(() =>
-  ["Owner", "DL"].includes(authStore.logedInUserInfo?.role ?? "")
-);
 
 const initials = (name: string) =>
   (name || "?").split(" ").map((p) => p[0]).join("").slice(0, 2).toUpperCase();
@@ -103,7 +169,7 @@ const priorityColor = (level: string) => {
     case "high": return "text-red-500";
     case "medium": return "text-yellow-500";
     case "low": return "text-green-500";
-    default: return "text-gray-500";
+    default: return "text-subtle";
   }
 };
 
@@ -119,52 +185,56 @@ const roleBadgeClass: Record<string, string> = {
     <Header />
     <div class="mb-6 flex items-center justify-between">
       <h1 class="text-xl font-semibold">My Profile</h1>
-      <RouterLink :to="{ name: 'admin-dashboard', query: { section: 'settings' } }" class="flex h-9 w-9 items-center justify-center rounded-lg bg-white shadow-sm text-subtle hover:text-ink">
+      <RouterLink :to="{ name: 'admin-dashboard', query: { section: 'settings' } }" class="flex h-9 w-9 items-center justify-center rounded-lg bg-card shadow-sm text-subtle hover:text-ink">
         <Settings class="h-4 w-4" />
       </RouterLink>
     </div>
 
     <div class="flex flex-col gap-6 lg:flex-row">
       <!-- Profile card -->
-      <aside class="w-full rounded-2xl border border-gray-100 bg-white p-4 lg:w-72">
+      <aside class="w-full rounded-2xl border border-border bg-card p-4 lg:w-72">
         <div class="flex items-start justify-between">
           <Avatar size="sm" class="h-16 w-16 text-lg"><AvatarFallback>{{ initials(displayName) }}</AvatarFallback></Avatar>
           <button
-            v-if="canEditProfile"
             type="button"
-            class="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 text-subtle hover:border-primary/40"
+            class="flex h-8 w-8 items-center justify-center rounded-lg border disabled:opacity-50"
+            :class="isEditingProfile ? 'border-primary bg-primary/10 text-primary' : 'border-border text-subtle hover:border-primary/40'"
+            :title="isEditingProfile ? 'Save changes' : 'Edit profile'"
+            :disabled="savingProfile"
+            @click="toggleProfileEdit"
           >
-            <Pencil class="h-4 w-4" />
+            <Check v-if="isEditingProfile" class="h-4 w-4" />
+            <Pencil v-else class="h-4 w-4" />
           </button>
         </div>
         <p class="mt-3 font-semibold text-ink">{{ displayName }}</p>
-        <p class="text-sm text-subtle">{{ profileStore.profile.position }}</p>
-        <p v-if="!canEditProfile" class="mt-2 text-xs text-subtle">
-          Only company admins or department leaders can edit this profile.
-        </p>
+        <p class="text-sm text-subtle">{{ profileStore.profile.profession || "No position set" }}</p>
 
         <p class="mt-6 mb-2 text-sm font-semibold text-ink">Main info</p>
         <div class="space-y-3">
           <div class="space-y-1">
             <Label class="text-xs text-subtle">Position</Label>
-            <Input v-model="profileStore.profile.position" :disabled="!canEditProfile" class="rounded-xl" />
+            <Input v-if="isEditingProfile" v-model="profileForm.profession" class="rounded-xl" />
+            <p v-else class="truncate text-sm text-ink">{{ profileStore.profile.profession || "—" }}</p>
           </div>
           <div class="space-y-1">
             <Label class="text-xs text-subtle">Company</Label>
-            <Input v-model="profileStore.profile.company" :disabled="!canEditProfile" class="rounded-xl" />
+            <p class="truncate text-sm text-ink">{{ authStore.logedInUserInfo?.company_name || "—" }}</p>
           </div>
           <div class="space-y-1">
             <Label class="text-xs text-subtle">Location</Label>
-            <div class="relative">
-              <Input v-model="profileStore.profile.location" :disabled="!canEditProfile" class="rounded-xl pr-8" />
-              <MapPin class="absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-subtle" />
-            </div>
+            <template v-if="isEditingProfile">
+              <div class="relative">
+                <Input v-model="profileForm.address" class="rounded-xl pr-8" />
+                <MapPin class="absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-subtle" />
+              </div>
+            </template>
+            <p v-else class="truncate text-sm text-ink">{{ profileStore.profile.address || "—" }}</p>
           </div>
           <div class="space-y-1">
             <Label class="text-xs text-subtle">Birthday Date</Label>
-            <div class="relative">
-              <Input v-model="profileStore.profile.birthdayDate" :disabled="!canEditProfile" type="date" class="rounded-xl pr-8" />
-            </div>
+            <Input v-if="isEditingProfile" v-model="profileForm.birthday" type="date" class="rounded-xl" />
+            <p v-else class="truncate text-sm text-ink">{{ profileStore.profile.birthday || "—" }}</p>
           </div>
         </div>
 
@@ -172,30 +242,55 @@ const roleBadgeClass: Record<string, string> = {
         <div class="space-y-3">
           <div class="space-y-1">
             <Label class="text-xs text-subtle">Email</Label>
-            <Input v-model="profileStore.profile.email" :disabled="!canEditProfile" placeholder="you@email.com" class="rounded-xl" />
+            <p class="truncate text-sm text-ink">{{ authStore.logedInUserInfo?.user?.email || "—" }}</p>
           </div>
           <div class="space-y-1">
             <Label class="text-xs text-subtle">Mobile Number</Label>
-            <Input v-model="profileStore.profile.mobileNumber" :disabled="!canEditProfile" class="rounded-xl" />
+            <Input v-if="isEditingProfile" v-model="profileForm.phoneNumber" class="rounded-xl" />
+            <p v-else class="truncate text-sm text-ink">{{ profileStore.profile.phoneNumber || "—" }}</p>
           </div>
           <div class="space-y-1">
             <Label class="text-xs text-subtle">Skype</Label>
-            <Input v-model="profileStore.profile.skype" :disabled="!canEditProfile" placeholder="skype id" class="rounded-xl" />
+            <Input v-if="isEditingProfile" v-model="profileForm.skype" placeholder="skype id" class="rounded-xl" />
+            <p v-else class="truncate text-sm text-ink">{{ profileStore.profile.skype || "—" }}</p>
           </div>
+        </div>
+
+        <p class="mt-6 mb-2 text-sm font-semibold text-ink">Resume / CV</p>
+        <div class="space-y-2">
+          <Button
+            v-if="profileStore.profile.hasResume"
+            variant="outline"
+            class="w-full justify-start rounded-xl"
+            @click="downloadResume"
+          >
+            <FileText class="mr-2 h-4 w-4" /> Download current resume
+          </Button>
+          <p v-else class="text-sm text-subtle">No resume uploaded yet.</p>
+          <input ref="resumeInput" type="file" accept=".pdf,.doc,.docx" class="hidden" @change="onResumeSelected" />
+          <Button
+            variant="outline"
+            class="w-full justify-start rounded-xl"
+            :disabled="uploadingResume"
+            @click="triggerResumeUpload"
+          >
+            <Upload class="mr-2 h-4 w-4" /> {{ profileStore.profile.hasResume ? "Replace resume" : "Upload resume" }}
+          </Button>
+          <p class="text-xs text-subtle">PDF or Word, up to 5MB.</p>
         </div>
       </aside>
 
       <!-- Tabs content -->
       <div class="flex-1">
         <div class="mb-4 flex items-center justify-between">
-          <div class="flex rounded-xl bg-white p-1 shadow-sm">
+          <div class="flex rounded-xl bg-card p-1 shadow-sm">
             <button type="button" class="rounded-lg px-4 py-1.5 text-sm font-medium transition" :class="tab === 'projects' ? 'bg-primary text-white' : 'text-ink'" @click="tab = 'projects'">Projects</button>
             <button type="button" class="rounded-lg px-4 py-1.5 text-sm font-medium transition" :class="tab === 'team' ? 'bg-primary text-white' : 'text-ink'" @click="tab = 'team'">Team</button>
             <button type="button" class="rounded-lg px-4 py-1.5 text-sm font-medium transition" :class="tab === 'vacations' ? 'bg-primary text-white' : 'text-ink'" @click="tab = 'vacations'">My vacations</button>
           </div>
           <Popover v-if="tab !== 'vacations'">
             <PopoverTrigger as-child>
-              <Button variant="ghost" size="icon" class="relative bg-white shadow-sm">
+              <Button variant="ghost" size="icon" class="relative bg-card shadow-sm">
                 <Funnel class="w-4 h-4" />
                 <span
                   v-if="activeFilterCount"
@@ -270,13 +365,13 @@ const roleBadgeClass: Record<string, string> = {
         </div>
 
         <div v-if="tab === 'projects'" class="space-y-4">
-          <p v-if="!filteredProjects.length" class="rounded-2xl border border-dashed border-gray-200 bg-white p-8 text-center text-sm text-subtle">
+          <p v-if="!filteredProjects.length" class="rounded-2xl border border-dashed border-border bg-card p-8 text-center text-sm text-subtle">
             No projects match the selected filters.
           </p>
           <div
             v-for="project in filteredProjects"
             :key="project.id"
-            class="flex items-center justify-between gap-4 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm"
+            class="flex items-center justify-between gap-4 rounded-2xl border border-border bg-card p-4 shadow-sm"
           >
             <div class="flex min-w-0 items-center gap-3">
               <div class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-page text-xl">
@@ -311,10 +406,10 @@ const roleBadgeClass: Record<string, string> = {
         </div>
 
         <div v-else-if="tab === 'team'" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <p v-if="!filteredTeam.length" class="col-span-full rounded-2xl border border-dashed border-gray-200 bg-white p-8 text-center text-sm text-subtle">
+          <p v-if="!filteredTeam.length" class="col-span-full rounded-2xl border border-dashed border-border bg-card p-8 text-center text-sm text-subtle">
             No teammates match the selected filters.
           </p>
-          <div v-for="employee in filteredTeam" :key="employee.id" class="flex flex-col items-center rounded-2xl border border-gray-100 bg-white p-4 text-center shadow-sm">
+          <div v-for="employee in filteredTeam" :key="employee.id" class="flex flex-col items-center rounded-2xl border border-border bg-card p-4 text-center shadow-sm">
             <Avatar size="sm" class="h-14 w-14 text-sm">
               <AvatarFallback>{{ initials(employee.name) }}</AvatarFallback>
             </Avatar>
@@ -324,7 +419,7 @@ const roleBadgeClass: Record<string, string> = {
           </div>
         </div>
 
-        <div v-else class="rounded-2xl border border-gray-100 bg-white p-10 text-center text-sm text-subtle">
+        <div v-else class="rounded-2xl border border-border bg-card p-10 text-center text-sm text-subtle">
           No vacations scheduled.
         </div>
       </div>

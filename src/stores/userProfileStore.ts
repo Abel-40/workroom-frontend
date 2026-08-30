@@ -2,17 +2,60 @@ import { defineStore } from "pinia";
 import axiosInstance from "@/plugins/axios";
 import type { ApiResponse } from "@/types/types";
 
+interface ProfileFieldsApi {
+  profession: string;
+  address: string;
+  phone_number: string;
+  birthday: string | null;
+  skype: string;
+  has_resume: boolean;
+}
+
+interface ProfileFields {
+  profession: string;
+  address: string;
+  phoneNumber: string;
+  birthday: string | null;
+  skype: string;
+  hasResume: boolean;
+}
+
+export interface ProfileUpdateInput {
+  profession?: string;
+  address?: string;
+  phoneNumber?: string;
+  birthday?: string | null;
+  skype?: string;
+}
+
+const EMPTY_PROFILE: ProfileFields = {
+  profession: "",
+  address: "",
+  phoneNumber: "",
+  birthday: null,
+  skype: "",
+  hasResume: false,
+};
+
+const mapProfile = (api: ProfileFieldsApi): ProfileFields => ({
+  profession: api.profession,
+  address: api.address,
+  phoneNumber: api.phone_number,
+  birthday: api.birthday,
+  skype: api.skype,
+  hasResume: api.has_resume,
+});
+
+// Real backend fields only -- see users.services.PROFILE_UPDATABLE_FIELDS on
+// the API side. Position/Location/Skype/Birthday map 1:1 to
+// profession/address/skype/birthday; "Company"/"Email" are read-only display
+// data sourced from authStore, never edited here (see MyProfileView.vue).
 export const useUserProfileStore = defineStore("userProfileStore", {
   state: () => ({
-    profile: {
-      position: "UI/UX Designer",
-      company: "Cadabra",
-      location: "NYC, New York, USA",
-      birthdayDate: "1996-05-19",
-      email: "",
-      mobileNumber: "+1 675 346 23-10",
-      skype: "",
-    },
+    profile: { ...EMPTY_PROFILE },
+    loaded: false,
+    loading: false,
+    saving: false,
     // Backend-bound preference: whether optional (non-critical) notifications
     // email the caller -- see notifications_and_activity.services.TYPE_CATEGORY.
     // Critical notifications always email regardless of this setting.
@@ -20,6 +63,84 @@ export const useUserProfileStore = defineStore("userProfileStore", {
     loadingPreference: false,
   }),
   actions: {
+    async fetchProfile() {
+      this.loading = true;
+      try {
+        const { data } = await axiosInstance.get<ApiResponse<{ profile: ProfileFieldsApi }>>(
+          "/company/members/me/profile/"
+        );
+        this.profile = mapProfile(data.data.profile);
+        this.loaded = true;
+      } catch (error) {
+        // The company owner has no profile row to fetch (see the backend's
+        // 'no_profile' error) -- leave the empty defaults rather than
+        // surfacing an error for a case that isn't actually broken.
+        console.error("Failed to fetch profile:", error);
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async saveProfile(updates: ProfileUpdateInput): Promise<{ error?: string }> {
+      this.saving = true;
+      try {
+        const body: Record<string, string | null> = {};
+        if (updates.profession !== undefined) body.profession = updates.profession;
+        if (updates.address !== undefined) body.address = updates.address;
+        if (updates.phoneNumber !== undefined) body.phone_number = updates.phoneNumber;
+        if (updates.birthday !== undefined) body.birthday = updates.birthday;
+        if (updates.skype !== undefined) body.skype = updates.skype;
+        const { data } = await axiosInstance.patch<ApiResponse<{ profile: ProfileFieldsApi }>>(
+          "/company/members/me/profile/",
+          body
+        );
+        this.profile = mapProfile(data.data.profile);
+        return {};
+      } catch (error: any) {
+        return { error: error.response?.data?.message || "Failed to update profile" };
+      } finally {
+        this.saving = false;
+      }
+    },
+
+    async uploadResume(file: File): Promise<{ error?: string }> {
+      this.saving = true;
+      try {
+        const formData = new FormData();
+        formData.append("resume", file);
+        const { data } = await axiosInstance.post<ApiResponse<{ profile: ProfileFieldsApi }>>(
+          "/company/members/me/profile/resume/",
+          formData
+        );
+        this.profile = mapProfile(data.data.profile);
+        return {};
+      } catch (error: any) {
+        return { error: error.response?.data?.message || "Failed to upload resume" };
+      } finally {
+        this.saving = false;
+      }
+    },
+
+    // Auth-protected (no public /media/ route on the backend) -- fetched as
+    // a blob through axiosInstance (so the Bearer token rides along), same
+    // pattern UserCard.vue already uses for profile pictures.
+    async downloadResume(filename = "resume"): Promise<{ error?: string }> {
+      try {
+        const { data } = await axiosInstance.get("/company/members/me/profile/resume/", {
+          responseType: "blob",
+        });
+        const url = URL.createObjectURL(data as Blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = filename;
+        link.click();
+        URL.revokeObjectURL(url);
+        return {};
+      } catch (error: any) {
+        return { error: error.response?.data?.message || "Failed to download resume" };
+      }
+    },
+
     async fetchEmailPreference(userId: string) {
       this.loadingPreference = true;
       try {
@@ -51,10 +172,5 @@ export const useUserProfileStore = defineStore("userProfileStore", {
         this.loadingPreference = false;
       }
     },
-  },
-  persist: {
-    key: "pinia-userProfileStore",
-    storage: localStorage,
-    pick: ["profile"],
   },
 });
