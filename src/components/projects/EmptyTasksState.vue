@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { ClipboardList, Plus } from "lucide-vue-next";
 import { Button } from "@/components/ui/button";
+import { useDeviceClass } from "@/composables/useDeviceClass";
 
 defineEmits<{
   (e: "add-task"): void;
 }>();
+
+const { isReadOnly } = useDeviceClass();
 </script>
 
 <template>
@@ -16,7 +19,7 @@ defineEmits<{
       <p class="font-medium text-ink">There are no tasks in this project yet</p>
       <p class="text-sm text-subtle">Let's add them</p>
     </div>
-    <Button class="rounded-xl" @click="$emit('add-task')">
+    <Button v-if="!isReadOnly" class="rounded-xl" @click="$emit('add-task')">
       <Plus class="h-4 w-4" /> Add Task
     </Button>
   </div>

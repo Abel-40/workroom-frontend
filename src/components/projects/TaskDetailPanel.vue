@@ -139,10 +139,10 @@ const regenerateAiContent = async () => {
       <h3 class="text-sm font-semibold text-ink">Task Details</h3>
       <div class="flex items-center gap-2">
         <button
-          v-if="canEdit && task.source === 'ai_generated'"
+          v-if="canEdit"
           type="button"
           class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-border text-subtle hover:border-primary/40 disabled:opacity-50"
-          title="Regenerate AI content"
+          :title="task.source === 'ai_generated' ? 'Regenerate AI content' : 'Generate description with AI'"
           :disabled="regenerating"
           @click="regenerateAiContent"
         >
