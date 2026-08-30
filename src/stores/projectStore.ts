@@ -30,6 +30,7 @@ type ProjectApi = {
   collaborator_ids: string[];
   image: ProjectImageApi;
   has_saved_plan: boolean;
+  has_pending_visibility_request: boolean;
 };
 
 const STATUS_FROM_API: Record<ProjectApi["status"], Project["status"]> = {
@@ -83,6 +84,36 @@ const mapProjectStats = (api: ProjectStatsApi): ProjectStats => ({
   completionPercent: api.completion_percent,
 });
 
+// A Department Member's request to raise their own private project to
+// department visibility -- see api.routers.projects' visibility-requests
+// endpoints and projects_and_tasks.services' visibility-escalation section.
+export interface VisibilityRequest {
+  id: string;
+  projectId: string;
+  projectTitle: string;
+  requestedByName: string | null;
+  status: "pending" | "approved" | "denied";
+  createdAt: string;
+}
+
+type VisibilityRequestApi = {
+  id: string;
+  project_id: string;
+  project_title: string;
+  requested_by_name: string | null;
+  status: "pending" | "approved" | "denied";
+  created_at: string;
+};
+
+const mapVisibilityRequest = (api: VisibilityRequestApi): VisibilityRequest => ({
+  id: api.id,
+  projectId: api.project_id,
+  projectTitle: api.project_title,
+  requestedByName: api.requested_by_name,
+  status: api.status,
+  createdAt: api.created_at,
+});
+
 function mapProject(api: ProjectApi): Project {
   const employeeStore = useEmployeeStore();
   const creator = employeeStore.employees.find((e) => e.id === api.created_by);
@@ -115,6 +146,7 @@ function mapProject(api: ProjectApi): Project {
     image: api.image,
     hasSavedPlan: api.has_saved_plan,
     updatedAt: api.updated_at,
+    hasPendingVisibilityRequest: api.has_pending_visibility_request,
   };
 }
 
@@ -214,6 +246,7 @@ export const useProjectStore = defineStore("projectStore", {
     showDetial: false as boolean,
     selectedTask: null as TaskType | null,
     statsByProject: {} as Record<string, ProjectStats>,
+    visibilityRequests: [] as VisibilityRequest[],
   }),
   getters: {
     getSelectedState(state) {
@@ -275,6 +308,52 @@ export const useProjectStore = defineStore("projectStore", {
         return { project: updated };
       } catch (error: any) {
         return { error: error.response?.data?.message || "Failed to update project" };
+      }
+    },
+
+    // Visibility escalation (A7): a Department Member's private project can
+    // only reach department visibility by requesting it here and having
+    // their Department Leader (or Owner/CM) approve -- see updateProject
+    // above for the direct path DL/Owner/CM use instead.
+    async requestVisibilityChange(projectId: string, visibility: "department"): Promise<{ error?: string }> {
+      try {
+        await axiosInstance.post(`/projects/${projectId}/visibility-requests/`, { visibility });
+        return {};
+      } catch (error: any) {
+        return { error: error.response?.data?.message || "Failed to submit visibility request" };
+      }
+    },
+
+    async fetchVisibilityRequests(): Promise<VisibilityRequest[]> {
+      try {
+        const { data } = await axiosInstance.get<ApiResponse<{ results: VisibilityRequestApi[] }>>(
+          "/projects/visibility-requests/"
+        );
+        this.visibilityRequests = data.data.results.map(mapVisibilityRequest);
+        return this.visibilityRequests;
+      } catch (error) {
+        console.error("Failed to fetch visibility requests:", error);
+        return [];
+      }
+    },
+
+    async approveVisibilityRequest(requestId: string): Promise<{ error?: string }> {
+      try {
+        await axiosInstance.post(`/projects/visibility-requests/${requestId}/approve/`);
+        this.visibilityRequests = this.visibilityRequests.filter((r) => r.id !== requestId);
+        return {};
+      } catch (error: any) {
+        return { error: error.response?.data?.message || "Failed to approve request" };
+      }
+    },
+
+    async denyVisibilityRequest(requestId: string, comment = ""): Promise<{ error?: string }> {
+      try {
+        await axiosInstance.post(`/projects/visibility-requests/${requestId}/deny/`, { comment });
+        this.visibilityRequests = this.visibilityRequests.filter((r) => r.id !== requestId);
+        return {};
+      } catch (error: any) {
+        return { error: error.response?.data?.message || "Failed to deny request" };
       }
     },
 

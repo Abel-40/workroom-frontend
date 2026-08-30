@@ -149,6 +149,7 @@ export interface Project {
   currentOwnerName?: string | null;
   hasSavedPlan?: boolean;
   updatedAt?: string;
+  hasPendingVisibilityRequest?: boolean;
 }
 
 export type Departments = Department[];

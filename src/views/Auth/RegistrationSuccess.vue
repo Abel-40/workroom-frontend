@@ -2,12 +2,18 @@
 import { ArrowRight, LayoutDashboard } from "lucide-vue-next";
 import Button from "@/components/ui/button/Button.vue";
 import { useRouter } from "vue-router";
+import { useAuthStore } from "@/stores/authStore";
 
 const router = useRouter();
+const authStore = useAuthStore();
 
 const start = () => {
-  sessionStorage.removeItem("AuthStore");
-  router.push({ path: "/admin/dashboard/", query: { section: "dashboard" } });
+  // Signup silently authenticates the account to run the wizard -- clear
+  // that session here so the user has to actually log in with the
+  // credentials they just set, rather than landing straight in the
+  // dashboard (see A1: the success page must hand off to login, not skip it).
+  authStore.logout();
+  router.push({ path: "/auth/login" });
 };
 </script>
 

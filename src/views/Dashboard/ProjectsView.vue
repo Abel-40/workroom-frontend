@@ -28,7 +28,6 @@ import CreateProjectModal from "@/components/projects/CreateProjectModal.vue";
 import ProjectImage from "@/components/projects/ProjectImage.vue";
 import ProjectListRow from "@/components/projects/ProjectListRow.vue";
 import ConfirmDeleteDialog from "@/components/common/ConfirmDeleteDialog.vue";
-import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/components/ui/toast/use-toast";
 import { formatShortDate } from "@/lib/dates";
 import { useProjectStore } from "@/stores/projectStore";
@@ -64,7 +63,7 @@ const projectsStore = useProjectStore();
 const authStore = useAuthStore();
 const employeeStore = useEmployeeStore();
 const directoryStore = useDirectoryStore();
-const { isDL, isDM, userId: myUserId, departmentId: myDepartmentId } = usePermissions();
+const { isDL, isDM, isOwner, isCM, userId: myUserId, departmentId: myDepartmentId } = usePermissions();
 const { isReadOnly } = useDeviceClass();
 const { selectedProject, selectedTask } = storeToRefs(projectsStore);
 
@@ -73,7 +72,8 @@ const { selectedProject, selectedTask } = storeToRefs(projectsStore);
 // "Created by me" (full manage) vs "I'm a member of" (view/comment/work
 // tasks only, gated by the existing canManageProject checks already used
 // throughout the detail panel below).
-const showCompanyWide = ref(false);
+const projectScope = ref<"department" | "company">("department");
+const showCompanyWide = computed(() => projectScope.value === "company");
 const myDepartmentName = computed(
   () => directoryStore.departments.find((d) => d.id === myDepartmentId.value)?.name ?? null
 );
@@ -86,6 +86,60 @@ const canManageSelectedProject = computed(() =>
     authStore.logedInUserInfo.departmentId
   )
 );
+// A DM can never change visibility directly, even on a project they manage
+// by other rights (creator/owner) -- see update_project's visibility_locked
+// check. Everyone else who can manage the project may.
+const canEditVisibilityDirectly = computed(() => canManageSelectedProject.value && !isDM.value);
+const canRequestDepartmentVisibility = computed(() => {
+  const project = selectedProject.value;
+  return !!(
+    isDM.value && project &&
+    project.createdById === myUserId.value &&
+    project.visibility === "private" &&
+    project.departmentId &&
+    !project.hasPendingVisibilityRequest
+  );
+});
+const requestingVisibility = ref(false);
+const requestDepartmentVisibility = async () => {
+  if (!selectedProject.value) return;
+  requestingVisibility.value = true;
+  const { error } = await projectsStore.requestVisibilityChange(selectedProject.value.id, "department");
+  requestingVisibility.value = false;
+  if (error) {
+    toast({ title: "Request failed", description: error, variant: "destructive" });
+    return;
+  }
+  toast({ title: "Visibility request sent to your Department Leader" });
+};
+const updatingVisibility = ref(false);
+const setProjectVisibility = async (visibility: Project["visibility"]) => {
+  if (!selectedProject.value || !visibility) return;
+  updatingVisibility.value = true;
+  const { error } = await projectsStore.updateProject(selectedProject.value.id, { visibility });
+  updatingVisibility.value = false;
+  if (error) toast({ title: "Visibility not updated", description: error, variant: "destructive" });
+};
+
+// Visibility requests awaiting this user's review -- Owner/CM see every
+// pending request company-wide, a DL only their own department's (see
+// GET /projects/visibility-requests/'s scoping).
+const canReviewVisibilityRequests = computed(() => isOwner.value || isCM.value || isDL.value);
+const decidingRequestId = ref<string | null>(null);
+const approveVisibility = async (requestId: string) => {
+  decidingRequestId.value = requestId;
+  const { error } = await projectsStore.approveVisibilityRequest(requestId);
+  decidingRequestId.value = null;
+  if (error) toast({ title: "Could not approve", description: error, variant: "destructive" });
+  else if (selectedProject.value) await projectsStore.fetchProjects();
+};
+const denyVisibility = async (requestId: string) => {
+  decidingRequestId.value = requestId;
+  const { error } = await projectsStore.denyVisibilityRequest(requestId);
+  decidingRequestId.value = null;
+  if (error) toast({ title: "Could not deny", description: error, variant: "destructive" });
+};
+
 const onClick = (project: Project) => {
   selectedProject.value = project;
   projectsStore.selectTask(null);
@@ -310,6 +364,7 @@ onMounted(async ()=>{
   await employeeStore.fetchEmployees();
   if (!directoryStore.loaded) await directoryStore.fetchAll();
   await projectsStore.fetchProjects();
+  if (canReviewVisibilityRequests.value) projectsStore.fetchVisibilityRequests();
   selectProjectFromRoute();
   // Reached from the AI workspace's "View tasks in backlog" link -- show
   // the board filtered to just this project's AI-generated tasks.
@@ -676,10 +731,48 @@ watch(()=>paginatedProjects.value,()=>{
             </Select>
           </div>
 
-          <label v-if="isDL" class="flex items-center justify-between gap-2 text-xs text-subtle">
-            <span>{{ showCompanyWide ? "Company-visible projects" : `${myDepartmentName ?? "My department"} only` }}</span>
-            <Switch v-model="showCompanyWide" />
-          </label>
+          <div v-if="isDL" class="flex items-center justify-between gap-2 text-xs text-subtle">
+            <span>Scope</span>
+            <Select v-model="projectScope">
+              <SelectTrigger class="h-8 w-[180px] rounded-lg text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="department">{{ myDepartmentName ?? "My department" }} only</SelectItem>
+                <SelectItem value="company">Company-visible projects</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <!-- Visibility requests awaiting this user's review (A7) -->
+        <div v-if="canReviewVisibilityRequests && projectsStore.visibilityRequests.length" class="mx-3 mb-2 space-y-2 rounded-xl border border-border bg-card p-3">
+          <p class="text-xs font-medium text-subtle">Visibility requests</p>
+          <div
+            v-for="req in projectsStore.visibilityRequests"
+            :key="req.id"
+            class="flex items-center justify-between gap-2 text-xs"
+          >
+            <span class="min-w-0 truncate text-ink">
+              <span class="font-medium">{{ req.projectTitle }}</span> — {{ req.requestedByName ?? "Someone" }} wants department visibility
+            </span>
+            <div class="flex shrink-0 gap-1">
+              <Button
+                size="sm" variant="outline" class="h-7 rounded-lg px-2 text-xs"
+                :disabled="decidingRequestId === req.id"
+                @click="approveVisibility(req.id)"
+              >
+                Approve
+              </Button>
+              <Button
+                size="sm" variant="ghost" class="h-7 rounded-lg px-2 text-xs"
+                :disabled="decidingRequestId === req.id"
+                @click="denyVisibility(req.id)"
+              >
+                Deny
+              </Button>
+            </div>
+          </div>
         </div>
 
             <!-- projects list -->
@@ -902,9 +995,36 @@ watch(()=>paginatedProjects.value,()=>{
                   <!-- Visibility -->
                   <div class="mt-4">
                     <div class="text-sm text-subtle">Visibility</div>
-                    <div class="text-sm font-medium text-ink mt-1 capitalize">
+                    <Select
+                      v-if="canEditVisibilityDirectly"
+                      :model-value="selectedProject?.visibility ?? 'company'"
+                      :disabled="updatingVisibility"
+                      @update:model-value="(v) => setProjectVisibility(v as Project['visibility'])"
+                    >
+                      <SelectTrigger class="mt-1 h-8 w-[160px] rounded-lg text-sm capitalize">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="private">Private</SelectItem>
+                        <SelectItem value="department">Department</SelectItem>
+                        <SelectItem value="company">Company</SelectItem>
+                        <SelectItem value="public">Public</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <div v-else class="text-sm font-medium text-ink mt-1 capitalize">
                       {{ selectedProject?.visibility ?? "company" }}
                     </div>
+                    <Button
+                      v-if="canRequestDepartmentVisibility"
+                      size="sm" variant="outline" class="mt-2 rounded-lg text-xs"
+                      :disabled="requestingVisibility"
+                      @click="requestDepartmentVisibility"
+                    >
+                      Request department visibility
+                    </Button>
+                    <p v-else-if="isDM && selectedProject?.hasPendingVisibilityRequest" class="mt-2 text-xs text-subtle italic">
+                      Visibility request pending review
+                    </p>
                   </div>
 
                   <!-- Priority -->

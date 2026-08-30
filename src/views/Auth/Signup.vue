@@ -19,7 +19,8 @@ const stepMap:Record<string,number> = {
   step2: 2,
   step3: 3,
   step4: 4,
-  step5: 5
+  step5: 5,
+  success: 5
 }
 
 const activeStep = computed(() => {

@@ -22,6 +22,7 @@ import { useToast } from "@/components/ui/toast/use-toast";
 import { useProjectStore } from "@/stores/projectStore";
 import { useDirectoryStore } from "@/stores/directoryStore";
 import { useEmployeeStore } from "@/stores/employeeStore";
+import { usePermissions } from "@/composables/usePermissions";
 import type { ProjectVisibility } from "@/types/types";
 
 const open = defineModel<boolean>("open", { required: true });
@@ -30,10 +31,18 @@ const { toast } = useToast();
 const projectStore = useProjectStore();
 const directoryStore = useDirectoryStore();
 const employeeStore = useEmployeeStore();
+const { isDL, isDM, departmentId: myDepartmentId } = usePermissions();
+
+// A DL/DM's own department is fixed at creation -- mirrors the backend's
+// department_locked check in projects_and_tasks.services.create_project.
+// Owner/CM keep the full dropdown.
+const isDepartmentLocked = computed(() => isDL.value || isDM.value);
 
 onMounted(() => {
   if (!directoryStore.loaded) directoryStore.fetchAll();
   if (!employeeStore.employees.length) employeeStore.fetchEmployees();
+  if (isDepartmentLocked.value) form.departmentId = myDepartmentId.value ?? NO_DEPARTMENT;
+  if (isDM.value) form.visibility = "private";
 });
 
 // @mention-style assignee picker: typing "@" filters teammates by name;
@@ -252,7 +261,7 @@ const save = async () => {
 
         <div class="space-y-1.5">
           <Label class="text-xs text-subtle">Department</Label>
-          <Select v-model="form.departmentId">
+          <Select v-model="form.departmentId" :disabled="isDepartmentLocked">
             <SelectTrigger class="rounded-xl">
               <SelectValue placeholder="No department" />
             </SelectTrigger>
@@ -265,12 +274,13 @@ const save = async () => {
               </SelectGroup>
             </SelectContent>
           </Select>
+          <p v-if="isDepartmentLocked" class="text-xs text-subtle">Fixed to your own department.</p>
         </div>
 
         <div class="grid grid-cols-2 gap-3">
           <div class="space-y-1.5">
             <Label class="text-xs text-subtle">Visibility</Label>
-            <Select v-model="form.visibility">
+            <Select v-model="form.visibility" :disabled="isDM">
               <SelectTrigger class="rounded-xl">
                 <SelectValue placeholder="Company" />
               </SelectTrigger>
@@ -283,6 +293,9 @@ const save = async () => {
                 </SelectGroup>
               </SelectContent>
             </Select>
+            <p v-if="isDM" class="text-xs text-subtle">
+              Starts private -- request department visibility after creating it.
+            </p>
           </div>
           <div class="space-y-1.5">
             <Label class="text-xs text-subtle">Priority</Label>
