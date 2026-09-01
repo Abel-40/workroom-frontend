@@ -74,7 +74,7 @@ const teamMembers = (memberIds: string[]) =>
             <button
               type="button"
               class="rounded-lg px-4 py-1.5 text-sm font-medium transition"
-              :class="tab === 'departments' ? 'bg-primary text-white' : 'text-ink'"
+              :class="tab === 'departments' ? 'bg-primary text-primary-foreground' : 'text-ink'"
               @click="tab = 'departments'"
             >
               Departments ({{ directoryStore.departments.length }})
@@ -82,7 +82,7 @@ const teamMembers = (memberIds: string[]) =>
             <button
               type="button"
               class="rounded-lg px-4 py-1.5 text-sm font-medium transition"
-              :class="tab === 'teams' ? 'bg-primary text-white' : 'text-ink'"
+              :class="tab === 'teams' ? 'bg-primary text-primary-foreground' : 'text-ink'"
               @click="tab = 'teams'"
             >
               Teams ({{ directoryStore.teams.length }})
@@ -103,21 +103,21 @@ const teamMembers = (memberIds: string[]) =>
 
     <!-- Departments tab -->
     <div v-if="tab === 'departments'">
-      <div v-if="directoryStore.departments.length === 0" class="rounded-2xl border border-dashed border-gray-200 bg-white p-12 text-center">
+      <div v-if="directoryStore.departments.length === 0" class="rounded-2xl border border-dashed border-border bg-card p-12 text-center">
         <p class="font-medium text-ink">No departments yet</p>
         <p class="mt-1 text-sm text-subtle">Create your company's first department to start organizing members.</p>
         <Button v-if="canManage" class="mt-4 rounded-xl" @click="isDepartmentModalOpen = true">
           <Plus class="w-4 h-4" /> Add Department
         </Button>
       </div>
-      <div v-else-if="filteredDepartments.length === 0" class="rounded-2xl border border-dashed border-gray-200 bg-white p-12 text-center">
+      <div v-else-if="filteredDepartments.length === 0" class="rounded-2xl border border-dashed border-border bg-card p-12 text-center">
         <p class="font-medium text-ink">No departments match "{{ searchQuery }}"</p>
       </div>
       <div v-else class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <div
           v-for="department in filteredDepartments"
           :key="department.id"
-          class="cursor-pointer rounded-2xl border border-gray-100 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+          class="cursor-pointer rounded-2xl border border-border bg-card p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
           role="button"
           tabindex="0"
           @click="openDepartment(department.id)"
@@ -142,14 +142,14 @@ const teamMembers = (memberIds: string[]) =>
               v-for="person in membersOf(department.name).slice(0, 6)"
               :key="person.id"
               size="sm"
-              class="h-7 w-7 border-2 border-white text-[10px]"
+              class="h-7 w-7 border-2 border-card text-[10px]"
               :title="person.name"
             >
               <AvatarFallback>{{ initials(person.name) }}</AvatarFallback>
             </Avatar>
             <span
               v-if="membersOf(department.name).length > 6"
-              class="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-page text-[10px] font-medium text-subtle"
+              class="flex h-7 w-7 items-center justify-center rounded-full border-2 border-card bg-page text-[10px] font-medium text-subtle"
             >
               +{{ membersOf(department.name).length - 6 }}
             </span>
@@ -160,21 +160,21 @@ const teamMembers = (memberIds: string[]) =>
 
     <!-- Teams tab -->
     <div v-else>
-      <div v-if="directoryStore.teams.length === 0" class="rounded-2xl border border-dashed border-gray-200 bg-white p-12 text-center">
+      <div v-if="directoryStore.teams.length === 0" class="rounded-2xl border border-dashed border-border bg-card p-12 text-center">
         <p class="font-medium text-ink">No teams yet</p>
         <p class="mt-1 text-sm text-subtle">Teams mix members from different departments for a specific project or initiative.</p>
         <Button v-if="canManage" class="mt-4 rounded-xl" @click="isTeamModalOpen = true">
           <Plus class="w-4 h-4" /> Add Team
         </Button>
       </div>
-      <div v-else-if="filteredTeams.length === 0" class="rounded-2xl border border-dashed border-gray-200 bg-white p-12 text-center">
+      <div v-else-if="filteredTeams.length === 0" class="rounded-2xl border border-dashed border-border bg-card p-12 text-center">
         <p class="font-medium text-ink">No teams match "{{ searchQuery }}"</p>
       </div>
       <div v-else class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <div
           v-for="team in filteredTeams"
           :key="team.id"
-          class="cursor-pointer rounded-2xl border border-gray-100 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+          class="cursor-pointer rounded-2xl border border-border bg-card p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
           role="button"
           tabindex="0"
           @click="openTeam(team.id)"

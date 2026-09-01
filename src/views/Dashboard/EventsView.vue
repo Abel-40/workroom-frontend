@@ -111,11 +111,11 @@ const confirmBulkDelete = async () => {
           <h1 class="text-xl font-semibold pl-12">{{ isDM ? "My Events" : "Events" }}</h1>
         </div>
 
-        <div class="flex items-center gap-1 rounded-xl bg-[#F4F9FD] p-1 justify-self-center">
+        <div class="flex items-center gap-1 rounded-xl bg-page p-1 justify-self-center">
           <button
             type="button"
             class="flex h-7 w-7 items-center justify-center rounded-lg transition"
-            :class="layout === 'cards' ? 'bg-white text-[#3F8CFF] shadow-sm' : 'text-[#7D8592] hover:text-[#3F8CFF]'"
+            :class="layout === 'cards' ? 'bg-card text-primary shadow-sm' : 'text-subtle hover:text-primary'"
             title="Cards view"
             aria-label="Cards view"
             @click="layout = 'cards'"
@@ -125,7 +125,7 @@ const confirmBulkDelete = async () => {
           <button
             type="button"
             class="flex h-7 w-7 items-center justify-center rounded-lg transition"
-            :class="layout === 'calendar' ? 'bg-white text-[#3F8CFF] shadow-sm' : 'text-[#7D8592] hover:text-[#3F8CFF]'"
+            :class="layout === 'calendar' ? 'bg-card text-primary shadow-sm' : 'text-subtle hover:text-primary'"
             title="Calendar view"
             aria-label="Calendar view"
             @click="layout = 'calendar'"
@@ -137,7 +137,7 @@ const confirmBulkDelete = async () => {
         <div class="flex items-center gap-2 justify-self-end">
           <template v-if="layout === 'cards'">
             <div
-              class="flex justify-center items-center bg-white rounded-lg w-7 h-7 border border-gray-100"
+              class="flex justify-center items-center bg-card rounded-lg w-7 h-7 border border-border"
               title="Filter events"
               @click="onOpen"
             >
@@ -160,7 +160,7 @@ const confirmBulkDelete = async () => {
         </div>
       </div>
 
-      <div v-if="selectMode" class="mb-4 flex items-center justify-between rounded-xl bg-blue-50 px-4 py-2.5">
+      <div v-if="selectMode" class="mb-4 flex items-center justify-between rounded-xl bg-primary/10 px-4 py-2.5">
         <span class="text-sm font-medium text-primary">{{ selectedIds.length }} selected</span>
         <Button
           variant="destructive"
@@ -175,7 +175,7 @@ const confirmBulkDelete = async () => {
 
     <template v-if="layout === 'cards'">
       <p v-if="eventStore.loading" class="px-2 py-6 text-center text-sm text-subtle">Loading events…</p>
-      <p v-else-if="!eventStore.events.length" class="rounded-2xl border border-dashed border-gray-200 bg-white p-10 text-center text-sm text-subtle">
+      <p v-else-if="!eventStore.events.length" class="rounded-2xl border border-dashed border-border bg-card p-10 text-center text-sm text-subtle">
         No events match these filters.
       </p>
 

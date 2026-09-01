@@ -75,7 +75,7 @@ const iconFor = (type: ActivityType) => ICONS[type] ?? FolderPlus;
 
     <!-- Stat cards -->
     <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-      <div v-for="card in statCards" :key="card.label" class="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+      <div v-for="card in statCards" :key="card.label" class="rounded-2xl border border-border bg-card p-4 shadow-sm">
         <component :is="card.icon" class="h-5 w-5" :class="card.color" />
         <p class="mt-2 text-2xl font-semibold text-ink">{{ card.value }}</p>
         <p class="text-xs text-subtle">{{ card.label }}</p>
@@ -85,7 +85,7 @@ const iconFor = (type: ActivityType) => ICONS[type] ?? FolderPlus;
     <div class="mt-6 flex flex-col gap-6 lg:flex-row">
       <div class="lg:w-2/3 space-y-6">
         <!-- Department breakdown -->
-        <div class="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+        <div class="rounded-2xl border border-border bg-card p-4 shadow-sm">
           <h2 class="mb-4 font-semibold text-ink">Departments</h2>
           <div v-if="!analyticsStore.departmentStats.length" class="py-6 text-center text-sm text-subtle">
             No departments yet.
@@ -93,7 +93,7 @@ const iconFor = (type: ActivityType) => ICONS[type] ?? FolderPlus;
           <div v-else class="overflow-x-auto">
             <table class="w-full min-w-[480px] text-sm">
               <thead>
-                <tr class="border-b border-gray-100 text-left text-xs uppercase tracking-wide text-subtle">
+                <tr class="border-b border-border text-left text-xs uppercase tracking-wide text-subtle">
                   <th class="pb-2 font-medium">Department</th>
                   <th class="pb-2 font-medium">Members</th>
                   <th class="pb-2 font-medium">Projects</th>
@@ -102,7 +102,7 @@ const iconFor = (type: ActivityType) => ICONS[type] ?? FolderPlus;
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="d in analyticsStore.departmentStats" :key="d.id" class="border-b border-gray-50 last:border-0">
+                <tr v-for="d in analyticsStore.departmentStats" :key="d.id" class="border-b border-border/50 last:border-0">
                   <td class="py-2 font-medium text-ink">{{ d.name }}</td>
                   <td class="py-2 text-subtle">{{ d.memberCount }}</td>
                   <td class="py-2 text-subtle">{{ d.projectCount }}</td>
@@ -115,7 +115,7 @@ const iconFor = (type: ActivityType) => ICONS[type] ?? FolderPlus;
         </div>
 
         <!-- Workload -->
-        <div class="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+        <div class="rounded-2xl border border-border bg-card p-4 shadow-sm">
           <h2 class="mb-4 font-semibold text-ink">Member Workload</h2>
           <div v-if="!employeeStore.employees.length" class="py-6 text-center text-sm text-subtle">
             No members yet.
@@ -136,7 +136,7 @@ const iconFor = (type: ActivityType) => ICONS[type] ?? FolderPlus;
 
       <!-- Full activity feed -->
       <div class="lg:w-1/3">
-        <div class="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+        <div class="rounded-2xl border border-border bg-card p-4 shadow-sm">
           <h2 class="mb-4 font-semibold text-ink">Company Activity</h2>
           <div v-if="!activityStore.activities.length" class="py-6 text-center text-sm text-subtle">
             No company activity yet.
@@ -147,7 +147,7 @@ const iconFor = (type: ActivityType) => ICONS[type] ?? FolderPlus;
               :key="activity.id"
               class="flex items-start gap-2 rounded-lg bg-page p-3"
             >
-              <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white shadow-sm">
+              <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-card shadow-sm">
                 <component :is="iconFor(activity.type)" class="h-4 w-4 text-primary" />
               </span>
               <div class="min-w-0">

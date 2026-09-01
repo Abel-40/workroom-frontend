@@ -19,7 +19,7 @@ const shortProjectId = (id: string) => id.slice(0, 8).toUpperCase();
 
 <template>
   <div class="h-[90px] text-sm flex justify-between lg:text-md cursor-pointer gap-1" @click="emit('select')">
-    <div class="w-[95%] h-full px-3 py-3 rounded-l-xl" :class="active ? 'bg-blue-50' : ''">
+    <div class="w-[95%] h-full px-3 py-3 rounded-l-xl" :class="active ? 'bg-primary/10' : ''">
       <div class="flex h-full w-full items-center gap-2 overflow-hidden rounded-xl px-4 py-2">
         <div class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-page">
           <ProjectImage v-if="project.image" :image="project.image" :alt="project.title">

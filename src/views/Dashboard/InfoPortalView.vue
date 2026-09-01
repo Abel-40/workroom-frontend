@@ -211,10 +211,10 @@ watch(
 );
 
 const folderColor: Record<string, string> = {
-  amber: "text-amber-500 bg-amber-50",
-  emerald: "text-emerald-500 bg-emerald-50",
-  cyan: "text-cyan-500 bg-cyan-50",
-  violet: "text-violet-500 bg-violet-50",
+  amber: "text-amber-500 bg-amber-50 dark:bg-amber-500/15",
+  emerald: "text-emerald-500 bg-emerald-50 dark:bg-emerald-500/15",
+  cyan: "text-cyan-500 bg-cyan-50 dark:bg-cyan-500/15",
+  violet: "text-violet-500 bg-violet-50 dark:bg-violet-500/15",
 };
 
 // --- Delete: an individual action (3-dot menu) plus a bulk-select mode,
@@ -402,14 +402,14 @@ async function deleteSelectedPages() {
     <!-- Screen 1: folder grid -->
     <template v-if="screen === 'folders'">
       <div class="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div class="relative overflow-hidden rounded-2xl border border-gray-100 bg-white p-6 lg:col-span-2">
+        <div class="relative overflow-hidden rounded-2xl border border-border bg-card p-6 lg:col-span-2">
           <h2 class="text-lg font-semibold text-ink">Your project data warehouse</h2>
           <p class="mt-2 max-w-sm text-sm text-subtle">
             Add project data, create thematic pages, edit data, share information with team members.
           </p>
           <FolderOpen class="pointer-events-none absolute -right-4 -top-4 h-32 w-32 text-primary/10" />
         </div>
-        <div class="rounded-2xl border border-gray-100 bg-white p-6">
+        <div class="rounded-2xl border border-border bg-card p-6">
           <p class="text-sm text-subtle">Folders</p>
           <p class="mt-1 text-3xl font-semibold text-ink">{{ pagesStore.folders.length }}</p>
           <p class="mt-1 flex items-center gap-1 text-xs font-medium text-emerald-500">
@@ -418,7 +418,7 @@ async function deleteSelectedPages() {
         </div>
       </div>
 
-      <p v-if="!filteredFolders.length" class="rounded-2xl border border-dashed border-gray-200 bg-white p-10 text-center text-sm text-subtle">
+      <p v-if="!filteredFolders.length" class="rounded-2xl border border-dashed border-border bg-card p-10 text-center text-sm text-subtle">
         No folders match "{{ searchQuery }}"
       </p>
       <div v-else class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -426,7 +426,7 @@ async function deleteSelectedPages() {
           v-for="folder in filteredFolders"
           :key="folder.id"
           class="group relative cursor-pointer rounded-2xl border p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-          :class="selectedFolderIds.has(folder.id) ? 'border-primary bg-info/30' : 'border-gray-100 bg-white'"
+          :class="selectedFolderIds.has(folder.id) ? 'border-primary bg-info/30' : 'border-border bg-card'"
           @click="folderSelectMode ? toggleFolderChecked(folder.id) : openFolder(folder)"
         >
           <div class="flex items-start justify-between">
@@ -464,7 +464,7 @@ async function deleteSelectedPages() {
 
     <!-- Screen 2: this folder's pages, as square cards -->
     <template v-else-if="screen === 'pages'">
-      <p v-if="!filteredPages.length" class="rounded-2xl border border-dashed border-gray-200 bg-white p-10 text-center text-sm text-subtle">
+      <p v-if="!filteredPages.length" class="rounded-2xl border border-dashed border-border bg-card p-10 text-center text-sm text-subtle">
         No pages match "{{ searchQuery }}"
       </p>
       <div v-else class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
@@ -472,7 +472,7 @@ async function deleteSelectedPages() {
           v-for="page in filteredPages"
           :key="page.id"
           class="group relative flex aspect-square cursor-pointer flex-col justify-between rounded-2xl border p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-          :class="selectedPageIdsForDelete.has(page.id) ? 'border-primary bg-info/30' : 'border-gray-100 bg-white'"
+          :class="selectedPageIdsForDelete.has(page.id) ? 'border-primary bg-info/30' : 'border-border bg-card'"
           @click="pageSelectMode ? togglePageChecked(page.id) : openPage(page.id)"
         >
           <div class="flex items-start justify-between">
@@ -511,20 +511,20 @@ async function deleteSelectedPages() {
     </template>
 
     <!-- Screen 3: a single page, full width -->
-    <div v-else-if="screen === 'page' && selectedPage" class="flex-1 rounded-2xl border border-gray-100 bg-white p-6">
+    <div v-else-if="screen === 'page' && selectedPage" class="flex-1 rounded-2xl border border-border bg-card p-6">
       <div class="mb-4 flex items-center justify-between gap-3">
         <input
           v-if="isEditingPage"
           v-model="draftTitle"
           placeholder="Page title"
-          class="flex-1 rounded-lg border border-gray-200 px-2 py-1 text-sm font-semibold text-ink focus:border-primary focus:outline-none"
+          class="flex-1 rounded-lg border border-border px-2 py-1 text-sm font-semibold text-ink focus:border-primary focus:outline-none"
         />
         <h3 v-else class="text-sm font-semibold text-ink">{{ selectedPage.title }}</h3>
         <div class="flex shrink-0 gap-2">
           <button
             type="button"
             class="flex h-8 w-8 items-center justify-center rounded-lg border hover:border-primary/40 disabled:opacity-50"
-            :class="isEditingPage ? 'border-primary bg-primary/10 text-primary' : 'border-gray-200'"
+            :class="isEditingPage ? 'border-primary bg-primary/10 text-primary' : 'border-border'"
             :disabled="saving"
             :title="isEditingPage ? 'Save and stop editing' : 'Edit page'"
             @click="toggleEditPage"
@@ -532,12 +532,12 @@ async function deleteSelectedPages() {
             <Check v-if="isEditingPage" class="h-4 w-4" />
             <Pencil v-else class="h-4 w-4" />
           </button>
-          <button type="button" class="flex items-center gap-1 rounded-lg border border-gray-200 px-3 py-1.5 text-sm hover:border-primary/40" @click="isShareOpen = true">
+          <button type="button" class="flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-sm hover:border-primary/40" @click="isShareOpen = true">
             <Share2 class="h-4 w-4" /> Share
           </button>
           <button
             type="button"
-            class="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 text-subtle hover:border-red-300 hover:text-red-500"
+            class="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-subtle hover:border-red-300 hover:text-red-500"
             title="Delete page"
             @click="deletePage(selectedPage)"
           >
@@ -552,7 +552,7 @@ async function deleteSelectedPages() {
             v-if="block.type === 'heading' && isEditingPage"
             v-model="block.text"
             placeholder="Heading"
-            class="w-full rounded-lg border border-transparent bg-page/40 px-2 py-1.5 font-semibold text-ink focus:border-primary focus:bg-white focus:outline-none"
+            class="w-full rounded-lg border border-transparent bg-page/40 px-2 py-1.5 font-semibold text-ink focus:border-primary focus:bg-card focus:outline-none"
           />
           <h4 v-else-if="block.type === 'heading'" class="font-semibold text-ink" v-html="renderInlineMarkdown(block.text || '')" />
 
@@ -561,7 +561,7 @@ async function deleteSelectedPages() {
             v-model="block.text"
             rows="3"
             placeholder="Write something..."
-            class="w-full resize-y rounded-lg border border-transparent bg-page/40 px-2 py-1.5 text-sm leading-relaxed text-ink focus:border-primary focus:bg-white focus:outline-none"
+            class="w-full resize-y rounded-lg border border-transparent bg-page/40 px-2 py-1.5 text-sm leading-relaxed text-ink focus:border-primary focus:bg-card focus:outline-none"
           />
           <p
             v-else-if="block.type === 'paragraph'"
@@ -578,7 +578,7 @@ async function deleteSelectedPages() {
               <input
                 v-model="block.items![i]"
                 placeholder="List item"
-                class="flex-1 rounded-lg border border-transparent bg-page/40 px-2 py-1 text-sm text-ink focus:border-primary focus:bg-white focus:outline-none"
+                class="flex-1 rounded-lg border border-transparent bg-page/40 px-2 py-1 text-sm text-ink focus:border-primary focus:bg-card focus:outline-none"
               />
               <button type="button" class="text-subtle hover:text-red-500" @click="removeListItem(block, i)">
                 <X class="h-3.5 w-3.5" />
@@ -587,7 +587,7 @@ async function deleteSelectedPages() {
             <button type="button" class="text-xs font-medium text-primary" @click="addListItem(block)">+ Add item</button>
           </div>
 
-          <div v-if="block.type === 'attachment'" class="flex items-center gap-3 rounded-xl border border-gray-100 bg-page p-3">
+          <div v-if="block.type === 'attachment'" class="flex items-center gap-3 rounded-xl border border-border bg-page p-3">
             <div class="h-10 w-10 shrink-0 rounded-lg bg-gradient-to-br from-primary to-violet-500" />
             <p class="text-sm font-medium text-ink">{{ block.fileName }}</p>
             <Paperclip class="ml-auto h-4 w-4 text-subtle" />
@@ -596,7 +596,7 @@ async function deleteSelectedPages() {
           <button
             v-if="isEditingPage"
             type="button"
-            class="absolute -right-2 -top-2 hidden h-6 w-6 items-center justify-center rounded-full border border-gray-200 bg-white text-subtle hover:border-red-300 hover:text-red-500 group-hover:flex"
+            class="absolute -right-2 -top-2 hidden h-6 w-6 items-center justify-center rounded-full border border-border bg-card text-subtle hover:border-red-300 hover:text-red-500 group-hover:flex"
             title="Remove block"
             @click="removeBlock(index)"
           >
@@ -607,10 +607,10 @@ async function deleteSelectedPages() {
         <p v-if="!(isEditingPage ? draftBlocks : selectedPage.blocks).length" class="text-sm text-subtle">This page is empty.</p>
       </div>
 
-      <div v-if="isEditingPage" class="mt-4 flex flex-wrap gap-2 border-t border-dashed border-gray-200 pt-4">
-        <button type="button" class="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-ink hover:border-primary/40" @click="addBlock('heading')">+ Heading</button>
-        <button type="button" class="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-ink hover:border-primary/40" @click="addBlock('paragraph')">+ Paragraph</button>
-        <button type="button" class="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-ink hover:border-primary/40" @click="addBlock('list')">+ List</button>
+      <div v-if="isEditingPage" class="mt-4 flex flex-wrap gap-2 border-t border-dashed border-border pt-4">
+        <button type="button" class="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-ink hover:border-primary/40" @click="addBlock('heading')">+ Heading</button>
+        <button type="button" class="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-ink hover:border-primary/40" @click="addBlock('paragraph')">+ Paragraph</button>
+        <button type="button" class="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-ink hover:border-primary/40" @click="addBlock('list')">+ List</button>
       </div>
     </div>
   </div>

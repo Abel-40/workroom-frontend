@@ -89,7 +89,7 @@ const confirmDelete = async () => {
           <span class="text-base font-bold">{{ formatDayNumber(event.startAt) }}</span>
         </div>
         <div class="min-w-0">
-          <h3 class="truncate font-semibold text-[#0A1629]" :title="event.title">{{ event.title }}</h3>
+          <h3 class="truncate font-semibold text-ink" :title="event.title">{{ event.title }}</h3>
           <span v-if="event.eventTypeName" class="mt-1 inline-block truncate rounded-full px-2 py-0.5 text-[10px] font-medium" :class="badgeClass">
             {{ event.eventTypeName }}
           </span>
@@ -97,7 +97,7 @@ const confirmDelete = async () => {
       </div>
       <Checkbox
         v-if="selectable"
-        class="shrink-0 bg-white"
+        class="shrink-0 bg-card"
         :model-value="selected"
         :disabled="!canManage"
         :title="canManage ? undefined : 'You do not have permission to delete this event'"
@@ -124,7 +124,7 @@ const confirmDelete = async () => {
       </DropdownMenu>
     </div>
 
-    <div class="flex flex-col gap-1.5 text-sm text-[#91929E]">
+    <div class="flex flex-col gap-1.5 text-sm text-subtle">
       <div class="flex items-center gap-1.5">
         <Clock10 class="h-3.5 w-3.5 shrink-0" />
         <span>{{ formatTime(event.startAt) }}</span>
@@ -141,14 +141,14 @@ const confirmDelete = async () => {
           v-for="person in event.attendees.slice(0, 3)"
           :key="person.id"
           size="sm"
-          class="h-6 w-6 border-2 border-white text-[9px]"
+          class="h-6 w-6 border-2 border-card text-[9px]"
           :title="person.name"
         >
           <AvatarFallback>{{ initials(person.name) }}</AvatarFallback>
         </Avatar>
         <span
           v-if="event.attendees.length > 3"
-          class="flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-page text-[9px] font-medium text-subtle"
+          class="flex h-6 w-6 items-center justify-center rounded-full border-2 border-card bg-page text-[9px] font-medium text-subtle"
         >
           +{{ event.attendees.length - 3 }}
         </span>

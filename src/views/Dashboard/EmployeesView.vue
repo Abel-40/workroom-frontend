@@ -179,10 +179,10 @@ const rangeLabel = computed(() => {
 });
 
 const roleBadgeClass: Record<string, string> = {
-  Owner: "bg-violet-50 text-violet-600",
-  CM: "bg-indigo-50 text-indigo-600",
-  DL: "bg-blue-50 text-primary",
-  DM: "bg-slate-100 text-slate-600",
+  Owner: "bg-violet-50 text-violet-600 dark:bg-violet-500/15 dark:text-violet-400",
+  CM: "bg-indigo-50 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-400",
+  DL: "bg-blue-50 text-primary dark:bg-blue-500/15",
+  DM: "bg-slate-100 text-slate-600 dark:bg-slate-500/15 dark:text-slate-400",
 };
 </script>
 
@@ -198,7 +198,7 @@ const roleBadgeClass: Record<string, string> = {
             <button
               type="button"
               class="rounded-lg px-4 py-1.5 text-sm font-medium transition"
-              :class="layout === 'list' ? 'bg-primary text-white' : 'text-ink'"
+              :class="layout === 'list' ? 'bg-primary text-primary-foreground' : 'text-ink'"
               @click="layout = 'list'"
             >
               List
@@ -206,7 +206,7 @@ const roleBadgeClass: Record<string, string> = {
             <button
               type="button"
               class="rounded-lg px-4 py-1.5 text-sm font-medium transition"
-              :class="layout === 'activity' ? 'bg-primary text-white' : 'text-ink'"
+              :class="layout === 'activity' ? 'bg-primary text-primary-foreground' : 'text-ink'"
               @click="layout = 'activity'"
             >
               Activity
@@ -214,7 +214,7 @@ const roleBadgeClass: Record<string, string> = {
           </div>
           <Popover>
             <PopoverTrigger as-child>
-              <Button variant="ghost" size="icon" class="relative bg-white shadow-sm">
+              <Button variant="ghost" size="icon" class="relative bg-card shadow-sm">
                 <Funnel class="w-4 h-4" />
                 <span
                   v-if="activeFilterCount"
@@ -276,14 +276,14 @@ const roleBadgeClass: Record<string, string> = {
     </div>
 
     <!-- Empty states -->
-    <div v-if="employeeStore.total === 0" class="rounded-2xl border border-dashed border-gray-200 bg-white p-12 text-center">
+    <div v-if="employeeStore.total === 0" class="rounded-2xl border border-dashed border-border bg-card p-12 text-center">
       <p class="font-medium text-ink">No employees yet</p>
       <p class="mt-1 text-sm text-subtle">Invite your first teammate to get started.</p>
       <Button v-if="canInvite" class="mt-4 rounded-xl" @click="isInviteOpen = true">
         <Plus class="w-4 h-4" /> Add Employee
       </Button>
     </div>
-    <div v-else-if="filteredEmployees.length === 0" class="rounded-2xl border border-dashed border-gray-200 bg-white p-12 text-center">
+    <div v-else-if="filteredEmployees.length === 0" class="rounded-2xl border border-dashed border-border bg-card p-12 text-center">
       <p class="font-medium text-ink">
         {{ searchQuery ? `No employees match "${searchQuery}"` : "No employees match the selected filters" }}
       </p>
@@ -291,10 +291,10 @@ const roleBadgeClass: Record<string, string> = {
     </div>
 
     <!-- List layout -->
-    <div v-else-if="layout === 'list'" class="overflow-x-auto rounded-2xl border border-gray-100 bg-white">
+    <div v-else-if="layout === 'list'" class="overflow-x-auto rounded-2xl border border-border bg-card">
       <div class="min-w-[860px]">
         <div
-          class="grid grid-cols-[2fr_1fr_1fr_0.8fr_40px] items-center gap-4 border-b border-gray-100 px-4 py-3 text-xs font-medium uppercase tracking-wide text-subtle"
+          class="grid grid-cols-[2fr_1fr_1fr_0.8fr_40px] items-center gap-4 border-b border-border px-4 py-3 text-xs font-medium uppercase tracking-wide text-subtle"
         >
           <span>Employee</span>
           <span>Department</span>
@@ -306,7 +306,7 @@ const roleBadgeClass: Record<string, string> = {
         <div
           v-for="employee in paginated"
           :key="employee.id"
-          class="grid grid-cols-[2fr_1fr_1fr_0.8fr_40px] items-center gap-4 border-b border-gray-50 px-4 py-3 last:border-b-0 hover:bg-page/40"
+          class="grid grid-cols-[2fr_1fr_1fr_0.8fr_40px] items-center gap-4 border-b border-border/50 px-4 py-3 last:border-b-0 hover:bg-page/40"
         >
           <div class="flex min-w-0 cursor-pointer items-center gap-3" @click="openProfile(employee)">
             <Avatar size="sm" class="h-10 w-10 shrink-0 text-xs">
@@ -343,7 +343,7 @@ const roleBadgeClass: Record<string, string> = {
 
           <span
             class="shrink-0 justify-self-start rounded-full px-2 py-0.5 text-xs font-medium"
-            :class="employee.isActive ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'"
+            :class="employee.isActive ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400' : 'bg-red-50 text-red-500 dark:bg-red-500/15 dark:text-red-400'"
           >
             {{ employee.isActive ? "Active" : "Inactive" }}
           </span>
@@ -376,7 +376,7 @@ const roleBadgeClass: Record<string, string> = {
       <div
         v-for="employee in paginated"
         :key="employee.id"
-        class="cursor-pointer rounded-2xl border border-gray-100 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+        class="cursor-pointer rounded-2xl border border-border bg-card p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
         role="button"
         tabindex="0"
         @click="openProfile(employee)"
