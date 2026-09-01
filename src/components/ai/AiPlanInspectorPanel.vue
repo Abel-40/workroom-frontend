@@ -95,7 +95,7 @@ const saveComment = async () => {
 </script>
 
 <template>
-  <div class="flex h-full flex-col gap-4 overflow-y-auto rounded-3xl border border-primary/40 bg-white p-5 shadow-[0_8px_44px_rgba(63,140,255,0.14)]">
+  <div class="flex h-full flex-col gap-4 overflow-y-auto rounded-3xl border border-primary/40 bg-card p-5 shadow-[0_8px_44px_rgba(63,140,255,0.14)]">
     <div v-if="!task" class="flex flex-1 flex-col items-center justify-center gap-2 text-center">
       <Sparkles class="h-6 w-6 text-subtle" />
       <p class="text-sm text-subtle">Select a task from the sequence to inspect it.</p>
@@ -175,7 +175,7 @@ const saveComment = async () => {
         </Select>
       </div>
 
-      <div class="mt-auto space-y-2 border-t border-gray-100 pt-4">
+      <div class="mt-auto space-y-2 border-t border-border pt-4">
         <p class="flex items-center gap-1.5 text-xs font-medium text-subtle">
           <AlertCircle class="h-3.5 w-3.5" /> Request changes
         </p>

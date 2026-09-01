@@ -49,12 +49,22 @@ export function formatHoursToDuration(hours: number | null | undefined): string 
   return formatMinutesToDuration(Math.round(hours * MINUTES_PER_HOUR))
 }
 
-export function computeProgressFromHours(
+// Progress reflects real task completion, not just logged time -- a "Done"
+// task is 100% even if nobody logged hours, and a "To Do" task is 0% even
+// if time was pre-logged against it. Only while a task is actually being
+// worked (In Progress/In Review) does the spent/estimate ratio matter, and
+// even then it's clamped so it never visually reads as "not started" or
+// "finished" while the task's real status says otherwise.
+export function computeTaskProgress(
+  status: 'To Do' | 'In Progress' | 'In Review' | 'Done',
   spentHours: number | null | undefined,
   estimateHours: number | null | undefined
 ): string {
+  if (status === 'Done') return '100%'
+  if (status === 'To Do') return '0%'
   const spent = spentHours || 0
-  if (!estimateHours) return spent > 0 ? '100%' : '0%'
-  const percent = Math.min(100, Math.round((spent / estimateHours) * 100))
+  if (!estimateHours) return status === 'In Review' ? '90%' : '50%'
+  const ratio = Math.round((spent / estimateHours) * 100)
+  const percent = Math.min(95, Math.max(5, ratio))
   return `${percent}%`
 }

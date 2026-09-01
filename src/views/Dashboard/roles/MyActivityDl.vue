@@ -33,7 +33,10 @@ const deptEmployees = computed(() =>
     (a, b) => b.activeTaskCount - a.activeTaskCount
   )
 );
-const maxActive = computed(() => Math.max(1, ...deptEmployees.value.map((e) => e.activeTaskCount)));
+const FAIR_WORKLOAD_CAPACITY = 6;
+const maxActive = computed(() =>
+  Math.max(FAIR_WORKLOAD_CAPACITY, ...deptEmployees.value.map((e) => e.activeTaskCount))
+);
 
 onMounted(async () => {
   await Promise.all([

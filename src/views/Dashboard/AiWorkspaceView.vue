@@ -136,7 +136,7 @@ onMounted(() => {
     <button
       type="button"
       title="Help with the AI workspace"
-      class="fixed bottom-6 right-6 z-40 flex h-11 w-11 items-center justify-center rounded-full border border-gray-200 bg-white text-subtle shadow-lg transition hover:border-primary/40 hover:text-primary"
+      class="fixed bottom-6 left-6 z-40 flex h-11 w-11 items-center justify-center rounded-full border border-border bg-card text-subtle shadow-lg transition hover:border-primary/40 hover:text-primary"
       @click="openHelp"
     >
       <HelpCircle class="h-5 w-5" />

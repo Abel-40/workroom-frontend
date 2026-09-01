@@ -17,6 +17,8 @@ import {
 } from "lucide-vue-next";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -153,10 +155,24 @@ const addPage = async () => {
   if (page) await openPage(page.id);
 };
 
+const isCreateFolderOpen = ref(false);
+const newFolderName = ref("");
+const creatingFolder = ref(false);
+const openCreateFolder = () => {
+  newFolderName.value = `New Folder ${pagesStore.folders.length + 1}`;
+  isCreateFolderOpen.value = true;
+};
 const addFolder = async () => {
-  const name = `New Folder ${pagesStore.folders.length + 1}`;
+  const name = newFolderName.value.trim();
+  if (!name) return;
+  creatingFolder.value = true;
   const { error } = await pagesStore.createFolder(name);
-  if (error) toast({ title: "Couldn't create the folder", description: error, variant: "destructive" });
+  creatingFolder.value = false;
+  if (error) {
+    toast({ title: "Couldn't create the folder", description: error, variant: "destructive" });
+    return;
+  }
+  isCreateFolderOpen.value = false;
 };
 
 // Resolves ?folderId=/?pageId=/?newPage=true on arrival -- mirrors
@@ -335,6 +351,25 @@ async function deleteSelectedPages() {
 
 <template>
   <ShareFolderModal v-model:open="isShareOpen" />
+  <Dialog v-model:open="isCreateFolderOpen">
+    <DialogContent class="max-w-sm">
+      <DialogHeader>
+        <DialogTitle>New folder</DialogTitle>
+      </DialogHeader>
+      <Input
+        v-model="newFolderName"
+        placeholder="Folder name"
+        autofocus
+        @keyup.enter="addFolder"
+      />
+      <DialogFooter>
+        <Button variant="outline" class="rounded-xl" @click="isCreateFolderOpen = false">Cancel</Button>
+        <Button class="rounded-xl" :disabled="!newFolderName.trim() || creatingFolder" @click="addFolder">
+          {{ creatingFolder ? "Creating…" : "Create folder" }}
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
   <ConfirmDeleteDialog
     v-model:open="confirmDialogOpen"
     :title="confirmDialogTitle"
@@ -373,7 +408,7 @@ async function deleteSelectedPages() {
             <Button variant="outline" class="rounded-xl" @click="toggleFolderSelectMode">
               <CheckSquare class="h-4 w-4" /> Select
             </Button>
-            <Button v-if="!isReadOnly" class="rounded-xl" @click="addFolder">
+            <Button v-if="!isReadOnly" class="rounded-xl" @click="openCreateFolder">
               <Plus class="h-4 w-4" /> Add Folder
             </Button>
           </template>

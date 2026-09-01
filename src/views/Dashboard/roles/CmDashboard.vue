@@ -95,9 +95,14 @@ const WORKLOAD_PREVIEW_COUNT = 8;
 const workloadPreview = computed(() =>
   [...employeeStore.employees].sort((a, b) => b.activeTaskCount - a.activeTaskCount).slice(0, WORKLOAD_PREVIEW_COUNT)
 );
-// The ring fills relative to the busiest teammate, not an absolute task
-// count -- a team where everyone has 2 tasks shouldn't all look empty.
-const maxActiveTaskCount = computed(() => Math.max(1, ...employeeStore.employees.map((e) => e.activeTaskCount)));
+// The ring fills relative to a fair full workload, floored so it never
+// reads as "fully loaded" off a team where the busiest person only has a
+// couple of tasks -- but it still stretches past that baseline for anyone
+// who's genuinely carrying more than a fair share.
+const FAIR_WORKLOAD_CAPACITY = 6;
+const maxActiveTaskCount = computed(() =>
+  Math.max(FAIR_WORKLOAD_CAPACITY, ...employeeStore.employees.map((e) => e.activeTaskCount))
+);
 
 const statusBadgeClass = (status: Project["status"]) =>
   status === "Active"

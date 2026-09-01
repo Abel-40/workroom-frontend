@@ -42,7 +42,7 @@ const showDetail = ref(false);
     </div>
     <div v-if="showDetail" class="mt-1.5 space-y-1">
       <p class="text-[11px] text-red-600/90">{{ message }}</p>
-      <p v-if="detail" class="break-words rounded-lg bg-white/60 p-2 font-mono text-[10.5px] text-red-500">{{ detail }}</p>
+      <p v-if="detail" class="break-words rounded-lg bg-card/60 p-2 font-mono text-[10.5px] text-red-500">{{ detail }}</p>
     </div>
   </div>
 </template>

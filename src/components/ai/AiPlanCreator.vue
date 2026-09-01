@@ -333,7 +333,7 @@ watch(
             <button
               v-if="hasPendingComments"
               type="button"
-              class="flex items-center gap-1.5 rounded-lg bg-page px-2.5 py-1.5 text-xs font-medium text-ink hover:bg-gray-100"
+              class="flex items-center gap-1.5 rounded-lg bg-page px-2.5 py-1.5 text-xs font-medium text-ink hover:bg-page"
               :disabled="aiStore.regeneratingPlan || visibleGeneration.status === 'processing'"
               @click="regeneratePlan"
             >
@@ -341,7 +341,7 @@ watch(
             </button>
             <button
               type="button"
-              class="flex items-center gap-1.5 rounded-lg bg-page px-2.5 py-1.5 text-xs font-medium text-ink hover:bg-gray-100"
+              class="flex items-center gap-1.5 rounded-lg bg-page px-2.5 py-1.5 text-xs font-medium text-ink hover:bg-page"
               @click="newPlan"
             >
               <PlusCircle class="h-3.5 w-3.5 text-primary" /> New plan
@@ -374,7 +374,7 @@ watch(
           <button
             type="button"
             data-tour="planner-project"
-            class="inline-flex items-center h-12 gap-1.5 rounded-xl border border-gray-200 bg-white py-1.5 pl-3 pr-2.5 text-sm shadow-sm transition hover:border-primary/40"
+            class="inline-flex items-center h-12 gap-1.5 rounded-xl border border-border bg-card py-1.5 pl-3 pr-2.5 text-sm shadow-sm transition hover:border-primary/40"
             @click="projectModalOpen = true"
           >
             <ChevronDown class="h-3.5 w-3.5 text-subtle" />
@@ -386,14 +386,14 @@ watch(
           <button
             type="button"
             data-tour="planner-assignees"
-            class="flex h-12 items-center gap-0.5 rounded-xl border border-gray-200 bg-white px-3 py-1 text-sm shadow-sm transition hover:border-primary/40 disabled:cursor-not-allowed disabled:opacity-50"
+            class="flex h-12 items-center gap-0.5 rounded-xl border border-border bg-card px-3 py-1 text-sm shadow-sm transition hover:border-primary/40 disabled:cursor-not-allowed disabled:opacity-50"
             :disabled="!projectId"
             @click="openAssigneeModal"
           >
             <span class="text-[10px] font-medium text-subtle">Assignees</span>
             <span class="flex items-center gap-1.5">
               <AvatarStack v-if="assigneePeople.length" :people="assigneePeople" :max="3" />
-              <span v-else class="flex h-4 w-4 items-center justify-center rounded-full border border-dashed border-gray-300 text-subtle">
+              <span v-else class="flex h-4 w-4 items-center justify-center rounded-full border border-dashed border-border text-subtle">
                 <Plus class="h-2.5 w-2.5" />
               </span>
               <span class="text-[10px] font-small" :class="assigneePeople.length ? 'text-ink' : 'text-subtle'">
@@ -411,7 +411,7 @@ watch(
       <div class="flex items-center justify-center gap-2">
         <AiToolModeDropdown :model-value="mode" @update:model-value="emit('update:mode', $event)" />
 
-        <div data-tour="planner-composer" class="flex min-w-0 flex-1 max-w-lg items-center gap-2 rounded-full border border-gray-100 bg-white py-1 pl-3.5 pr-1 shadow-sm">
+        <div data-tour="planner-composer" class="flex min-w-0 flex-1 max-w-lg items-center gap-2 rounded-full border border-border bg-card py-1 pl-3.5 pr-1 shadow-sm">
           <div v-if="visibleGeneration" class="flex min-w-0 flex-1 items-center gap-1.5 py-1.5 text-sm text-subtle">
             <Lock class="h-3.5 w-3.5 shrink-0" />
             <span class="truncate">Context locked to {{ selectedProject?.title }} · {{ assigneeIds.length }} assignees</span>
@@ -437,7 +437,7 @@ watch(
           </Button>
         </div>
 
-        <div data-tour="planner-max-tasks" title="Maximum tasks the AI may create" class="flex shrink-0 items-center gap-1.5 rounded-full border border-gray-100 bg-white px-2.5 py-1.5 text-sm shadow-sm">
+        <div data-tour="planner-max-tasks" title="Maximum tasks the AI may create" class="flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1.5 text-sm shadow-sm">
           <button type="button" class="flex h-6 w-6 items-center justify-center rounded-full hover:bg-page disabled:opacity-40" :disabled="maxTasks <= 1 || !!visibleGeneration" @click="maxTasks--">
             <Minus class="h-3 w-3" />
           </button>

@@ -103,7 +103,7 @@ function back() {
   <Dialog v-model:open="open">
     <DialogContent
       hide-close
-      class="flex h-[660px] max-h-[calc(100vh-2rem)] w-[calc(100%-2rem)] max-w-[680px] flex-col gap-0 overflow-hidden rounded-[24px] border-0 bg-white p-0 shadow-2xl"
+      class="flex h-[660px] max-h-[calc(100vh-2rem)] w-[calc(100%-2rem)] max-w-[680px] flex-col gap-0 overflow-hidden rounded-[24px] border-0 bg-card p-0 shadow-2xl"
     >
       <div class="flex shrink-0 flex-col gap-5 px-7 pb-5 pt-6">
         <div class="flex items-start justify-between gap-3">
@@ -125,7 +125,7 @@ function back() {
           <button
             type="button"
             title="Close"
-            class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-page text-subtle transition hover:bg-gray-200 hover:text-ink"
+            class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-page text-subtle transition hover:bg-page hover:text-ink"
             @click="open = false"
           >
             <X class="h-4 w-4" />
@@ -143,7 +143,7 @@ function back() {
             />
           </div>
           <Select v-model="sort">
-            <SelectTrigger class="h-12 w-[198px] gap-2 rounded-xl border-gray-200 bg-white px-4 text-sm shadow-none">
+            <SelectTrigger class="h-12 w-[198px] gap-2 rounded-xl border-border bg-card px-4 text-sm shadow-none">
               <SlidersHorizontal class="h-3.5 w-3.5 text-subtle" />
               <span class="text-subtle">Sort</span>
               <SelectValue />
@@ -176,7 +176,7 @@ function back() {
               <span class="max-w-24 text-[10px] font-semibold uppercase leading-3 tracking-[0.08em] text-subtle">
                 {{ group.title }} &middot; {{ group.members.length }} eligible
               </span>
-              <div class="h-px flex-1 bg-gray-100" />
+              <div class="h-px flex-1 bg-border" />
               <button type="button" class="shrink-0 text-[11px] font-medium text-primary" @click="selectAllInGroup(group.members)">
                 Select all
               </button>
@@ -186,11 +186,11 @@ function back() {
               :key="member.id"
               type="button"
               class="flex min-h-[62px] items-center gap-3 rounded-2xl border px-3.5 py-2.5 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-              :class="selectedIds.includes(member.id) ? 'border-primary bg-[#e8f2ff]' : 'border-[#e8edf5] bg-white hover:border-primary/40'"
+              :class="selectedIds.includes(member.id) ? 'border-primary bg-primary/10' : 'border-border bg-card hover:border-primary/40'"
               @click="toggle(member.id)"
             >
               <Checkbox
-                class="h-5 w-5 rounded-md border-[#cbd5e1] shadow-none"
+                class="h-5 w-5 rounded-md border-border shadow-none"
                 :model-value="selectedIds.includes(member.id)"
                 @update:model-value="toggle(member.id)"
                 @click.stop
@@ -208,18 +208,18 @@ function back() {
         </div>
       </div>
 
-      <div class="flex shrink-0 items-center gap-3 bg-white px-7 pb-5 pt-4 shadow-[0_-10px_20px_rgba(31,41,55,0.04)]">
+      <div class="flex shrink-0 items-center gap-3 bg-card px-7 pb-5 pt-4 shadow-[0_-10px_20px_rgba(31,41,55,0.04)]">
         <AvatarStack v-if="selectedMembers.length" :people="selectedMembers" />
         <span class="text-sm leading-4 text-subtle">
           {{ selectedMembers.length }} assignee{{ selectedMembers.length === 1 ? "" : "s" }}<br />selected
         </span>
         <div class="flex-1" />
-        <button type="button" class="h-12 rounded-xl border border-gray-200 px-5 text-sm text-subtle transition hover:bg-page" @click="back">
+        <button type="button" class="h-12 rounded-xl border border-border px-5 text-sm text-subtle transition hover:bg-page" @click="back">
           Back
         </button>
         <button
           type="button"
-          class="flex h-12 items-center gap-12 rounded-xl bg-primary px-5 text-sm font-semibold text-white shadow-[0_8px_24px_rgba(63,140,255,0.3)]"
+          class="flex h-12 items-center gap-12 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-[0_8px_24px_rgba(63,140,255,0.3)]"
           @click="confirm"
         >
           <span>Confirm<br />assignees</span>

@@ -38,7 +38,7 @@ const firstVisitLabel = computed(() => {
   <Teleport to="body">
     <div class="fixed inset-0 z-[70]">
       <div class="absolute inset-0 bg-black/30" @click="emit('close')" />
-      <div class="absolute right-0 top-0 flex h-full w-full max-w-[420px] flex-col gap-5 overflow-y-auto bg-white p-6 shadow-2xl">
+      <div class="absolute right-0 top-0 flex h-full w-full max-w-[420px] flex-col gap-5 overflow-y-auto bg-card p-6 shadow-2xl">
         <div class="flex items-start justify-between">
           <div>
             <p class="text-[10.5px] font-semibold uppercase tracking-wide text-subtle">Help</p>
@@ -53,16 +53,16 @@ const firstVisitLabel = computed(() => {
           <div
             v-for="tool in TOOLS" :key="tool.mode"
             class="rounded-2xl p-4 transition"
-            :class="tool.mode === activeMode ? 'border border-primary/40 bg-info/30' : 'border border-gray-100 bg-white opacity-50'"
+            :class="tool.mode === activeMode ? 'border border-primary/40 bg-info/30' : 'border border-border bg-card opacity-50'"
           >
             <div class="flex items-start gap-3">
-              <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-primary shadow-sm">
+              <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-card text-primary shadow-sm">
                 <component :is="tool.icon" class="h-4 w-4" />
               </span>
               <div class="min-w-0 flex-1">
                 <div class="flex items-center justify-between gap-2">
                   <p class="font-semibold text-ink">{{ TOUR_SUMMARY[tool.mode].title }}</p>
-                  <span v-if="tool.mode === activeMode" class="shrink-0 rounded-full bg-white px-2 py-0.5 text-[10px] font-medium text-primary shadow-sm">This page</span>
+                  <span v-if="tool.mode === activeMode" class="shrink-0 rounded-full bg-card px-2 py-0.5 text-[10px] font-medium text-primary shadow-sm">This page</span>
                 </div>
 
                 <template v-if="tool.mode === activeMode">
@@ -75,11 +75,11 @@ const firstVisitLabel = computed(() => {
                   </ol>
                   <button
                     type="button"
-                    class="mt-4 flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-white"
+                    class="mt-4 flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground"
                     @click="emit('start', tool.mode)"
                   >
                     <Play class="h-3.5 w-3.5" /> Start walkthrough
-                    <span class="ml-1 text-xs font-normal text-white/80">{{ stepCount(tool.mode) }} steps</span>
+                    <span class="ml-1 text-xs font-normal text-primary-foreground/80">{{ stepCount(tool.mode) }} steps</span>
                   </button>
                 </template>
                 <div v-else class="mt-1 flex items-center justify-between">
@@ -98,7 +98,7 @@ const firstVisitLabel = computed(() => {
           </div>
         </div>
 
-        <div class="mt-auto flex items-center justify-between gap-4 border-t border-gray-100 pt-4">
+        <div class="mt-auto flex items-center justify-between gap-4 border-t border-border pt-4">
           <div>
             <p class="text-sm font-medium text-ink">Show the tour on my first visit</p>
             <p class="text-xs text-subtle">

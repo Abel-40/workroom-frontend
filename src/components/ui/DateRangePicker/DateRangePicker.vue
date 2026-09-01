@@ -211,11 +211,11 @@ const isDateDisabled = (date: Date) => {
     <PopoverTrigger as-child>
       <button
         :class="[
-          'flex items-center gap-2 px-4 py-2 border rounded-md shadow-sm bg-white hover:bg-gray-50 transition text-sm',
+          'flex items-center gap-2 px-4 py-2 border rounded-md shadow-sm bg-card hover:bg-page transition text-sm',
           props.class,
         ]"
       >
-        <span class="text-gray-700">
+        <span class="text-ink">
           <template v-if="selectedRange.start && selectedRange.end">
             {{ formatDate(selectedRange.start) }} →
             {{ formatDate(selectedRange.end) }}
@@ -228,7 +228,7 @@ const isDateDisabled = (date: Date) => {
     </PopoverTrigger>
 
     <PopoverContent
-      class="w-auto p-0 bg-white border rounded-md shadow-lg"
+      class="w-auto p-0 bg-card border rounded-md shadow-lg"
       :side="'right'"
       :align="'center'"
     >
@@ -239,7 +239,7 @@ const isDateDisabled = (date: Date) => {
               <Button
                 variant="ghost"
                 size="icon"
-                class="w-8 h-8 hover:bg-gray-100"
+                class="w-8 h-8 hover:bg-page"
                 @click="goToPreviousMonth"
               >
                 <ChevronLeft class="w-4 h-4" />
@@ -250,14 +250,14 @@ const isDateDisabled = (date: Date) => {
               <Button
                 variant="ghost"
                 size="icon"
-                class="w-8 h-8 hover:bg-gray-100"
+                class="w-8 h-8 hover:bg-page"
                 @click="goToNextMonth"
               >
                 <ChevronRight class="w-4 h-4" />
               </Button>
             </div>
             <Button
-              class="bg-gray-200 h-[20px] hover:bg-gray-300 text-xs text-black transition-all scale-100 duration-100 active:scale-105"
+              class="bg-page h-[20px] hover:bg-muted text-xs text-ink transition-all scale-100 duration-100 active:scale-105"
               @click="defaultChoice"
             >
               Default
@@ -269,7 +269,7 @@ const isDateDisabled = (date: Date) => {
             <div
               v-for="day in ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']"
               :key="day"
-              class="text-center text-xs text-gray-500 font-medium"
+              class="text-center text-xs text-subtle font-medium"
             >
               {{ day }}
             </div>
@@ -278,12 +278,12 @@ const isDateDisabled = (date: Date) => {
               :key="date.toISOString()"
               @click="handleDateClick(date)"
               :disabled="isDateDisabled(date)"
-              class="p-2 text-sm rounded-md hover:bg-gray-100 relative disabled:opacity-50 disabled:cursor-not-allowed"
+              class="p-2 text-sm rounded-md hover:bg-page relative disabled:opacity-50 disabled:cursor-not-allowed"
               :class="{
-                'text-gray-400': !isCurrentMonth || isDateDisabled(date),
-                'bg-blue-100': isDateSelected(date),
+                'text-subtle': !isCurrentMonth || isDateDisabled(date),
+                'bg-primary/15': isDateSelected(date),
                 'font-medium': isCurrentMonth,
-                'ring-2 ring-blue-400 ring-offset-2': isToday(date),
+                'ring-2 ring-primary ring-offset-2': isToday(date),
               }"
             >
               {{ date.getDate() }}

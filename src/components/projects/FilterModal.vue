@@ -33,15 +33,19 @@ import {
 import { computed, nextTick, onMounted, reactive, ref } from "vue";
 import CustomModal from "@/components/common/CustomModal.vue";
 import { useEmployeeStore } from "@/stores/employeeStore";
+import { useDirectoryStore } from "@/stores/directoryStore";
+import { useProjectStore } from "@/stores/projectStore";
 import { useToast } from "@/components/ui/toast/use-toast";
 
 const { isOpen, onClose } = filterComposables();
-const modelValue = ref(["Abel", "Abel2", "Abel3"]);
 const { toast } = useToast();
 
 const employeeStore = useEmployeeStore();
+const directoryStore = useDirectoryStore();
+const projectsStore = useProjectStore();
 onMounted(() => {
   if (!employeeStore.employees.length) employeeStore.fetchEmployees();
+  if (!directoryStore.loaded) directoryStore.fetchAll();
 });
 // "Assigned By" shows real company members (project creators) rather than
 // placeholder names, capped at 5 with a working "View more" toggle -- same
@@ -132,6 +136,31 @@ const priority = ref<FilterOptions["priority"]>(
   props.intialFilters.priority || null
 );
 
+// Live "N matches found" preview against the real project list, using the
+// same criteria Apply will send to ProjectsView -- estimate is left out of
+// this preview (its free-text duration parsing lives in ProjectsView) since
+// an approximate live count is enough here, the real filter still applies
+// exactly on Apply.
+const matchCount = computed(() => {
+  const { start, end } = dateRange.value;
+  return projectsStore.projects.filter((project) => {
+    const created = new Date(project.createdAt);
+    const matchesPeriod = (!start || created >= start) && (!end || created <= end);
+    const matchesTaskGroups =
+      !taskGroups.value.length ||
+      (() => {
+        const deptName = directoryStore.departments.find((d) => d.id === project.departmentId)?.name;
+        return !!deptName && taskGroups.value.some((g) => g.toLowerCase() === deptName.toLowerCase());
+      })();
+    const matchesAssignedBy = !assignedBy.value.length || assignedBy.value.includes(project.assignedBy);
+    const matchesAssignees =
+      !assignees.value.length ||
+      project.assignee.some((a) => assignees.value.some((sel) => sel.toLowerCase() === a.toLowerCase()));
+    const matchesPriority = !priority.value || project.priority?.level === priority.value;
+    return matchesPeriod && matchesTaskGroups && matchesAssignedBy && matchesAssignees && matchesPriority;
+  }).length;
+});
+
 const apply = () => {
   localFilters.period = dateRange.value;
   localFilters.taskGroups = taskGroups.value;
@@ -154,63 +183,21 @@ const apply = () => {
           <DateRangePicker v-model="dateRange" class="w-full rounded-xl" />
         </div>
 
-        <!-- Task Group Checkboxes -->
+        <!-- Task Group Checkboxes -- the company's real departments, not a
+             fixed guess list, so this actually matches project.departmentId. -->
         <div class="border-t-border border-t-[1px] px-3 py-3 space-y-1">
           <p class="text-xs font-normal mb-2">Task Group</p>
-          <div class="flex gap-1 items-center">
+          <div v-for="dept in directoryStore.departments" :key="dept.id" class="flex gap-1 items-center">
             <input
               type="checkbox"
               v-model="taskGroups"
-              value="Design"
-              id="design"
-              class="text-primary w-3 h-3"
+              :value="dept.name"
+              :id="`taskgroup-${dept.id}`"
+              class="w-3 h-3 accent-primary"
             />
-            <Label for="design" class="text-xs font-normal">Design</Label>
+            <Label :for="`taskgroup-${dept.id}`" class="text-xs font-normal">{{ dept.name }}</Label>
           </div>
-          <div class="flex gap-1 items-center">
-            <input
-              type="checkbox"
-              v-model="taskGroups"
-              value="Development"
-              id="development"
-              class="text-primary w-3 h-3"
-            />
-            <Label for="development" class="text-xs font-normal"
-              >Development</Label
-            >
-          </div>
-          <div class="flex gap-1 items-center">
-            <input
-              type="checkbox"
-              v-model="taskGroups"
-              value="Testing"
-              id="testing"
-              class="text-primary w-3 h-3"
-            />
-            <Label for="testing" class="text-xs font-normal">Testing</Label>
-          </div>
-          <div class="flex gap-1 items-center">
-            <input
-              type="checkbox"
-              v-model="taskGroups"
-              value="Marketing"
-              id="marketing"
-              class="text-primary w-3 h-3"
-            />
-            <Label for="marketing" class="text-xs font-normal">Marketing</Label>
-          </div>
-          <div class="flex gap-1 items-center">
-            <input
-              type="checkbox"
-              v-model="taskGroups"
-              value="Project Management"
-              id="promangement"
-              class="text-primary w-3 h-3"
-            />
-            <Label for="promangement" class="text-xs font-normal"
-              >Project Management</Label
-            >
-          </div>
+          <p v-if="!directoryStore.departments.length" class="text-xs text-subtle">No departments yet.</p>
         </div>
 
         <!-- Assigned By Checkboxes -->
@@ -227,7 +214,7 @@ const apply = () => {
               v-model="assignedBy"
               :value="person.name"
               :id="person.id"
-              class="text-primary w-3 h-3"
+              class="w-3 h-3 accent-primary"
             />
             <div class="w-5 h-5 rounded-full overflow-hidden">
               <img
@@ -317,7 +304,7 @@ const apply = () => {
         <div class="w-full flex justify-evenly items-center py-3">
           <p class="text-xs text-primary flex gap-1">
             <CircleAlert class="text-primary" :size="14" />
-            10 matches found!
+            {{ matchCount }} match{{ matchCount === 1 ? "" : "es" }} found
           </p>
           <Button class="h-6 w-20" @click="apply">Save Filters</Button>
         </div>

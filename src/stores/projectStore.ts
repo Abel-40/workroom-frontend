@@ -1,7 +1,7 @@
 // stores/projectStore.ts
 import { defineStore } from "pinia";
 import type { ApiResponse, Project, ProjectVisibility, TaskType } from "@/types/types";
-import { computeProgressFromHours } from "@/lib/duration";
+import { computeTaskProgress } from "@/lib/duration";
 import axiosInstance from "@/plugins/axios";
 import { useEmployeeStore } from "@/stores/employeeStore";
 
@@ -211,7 +211,7 @@ function mapTask(api: TaskApi): TaskType {
     deadline: api.deadline,
     estimatedTimeHours: api.estimated_time_hours,
     spentTimeHours: api.spent_time_hours,
-    progress: computeProgressFromHours(api.spent_time_hours, api.estimated_time_hours),
+    progress: computeTaskProgress(api.status, api.spent_time_hours, api.estimated_time_hours),
     createdAt: api.created_at,
     updatedAt: api.updated_at,
   };

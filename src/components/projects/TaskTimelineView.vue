@@ -75,19 +75,15 @@ const clampMonth = (date: Date) => {
   if (isAfter(month, currentMonth)) return currentMonth;
   return month;
 };
-const viewMonth = ref<Date>(clampMonth(earliestTaskMonth.value));
-const hasSetInitialTaskMonth = ref(false);
+// Always opens on the current month regardless of where a project's tasks
+// happen to sit -- users navigate elsewhere themselves via prev/next or the
+// month/year picker, which stay bounded to [companyCreatedAt, today].
+const viewMonth = ref<Date>(clampMonth(currentMonth));
 watch(
-  () => [props.tasks, props.companyCreatedAt] as const,
+  () => props.companyCreatedAt,
   () => {
-    if (!hasSetInitialTaskMonth.value && props.tasks.length) {
-      viewMonth.value = clampMonth(earliestTaskMonth.value);
-      hasSetInitialTaskMonth.value = true;
-    } else {
-      viewMonth.value = clampMonth(viewMonth.value);
-    }
+    viewMonth.value = clampMonth(viewMonth.value);
   },
-  { immediate: true },
 );
 
 const daysInMonth = computed(() => getDaysInMonth(viewMonth.value));

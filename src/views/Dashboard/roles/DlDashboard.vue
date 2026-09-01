@@ -52,8 +52,12 @@ const elsewhereMine = computed(() =>
   )
 );
 
-// Relative load, not an absolute capacity percentage -- see file header.
-const maxActive = computed(() => Math.max(1, ...departmentEmployees.value.map((e) => e.activeTaskCount)));
+// Floored to a fair full workload so a bar doesn't read as "maxed out" off
+// a department where the busiest person only has a couple of tasks.
+const FAIR_WORKLOAD_CAPACITY = 6;
+const maxActive = computed(() =>
+  Math.max(FAIR_WORKLOAD_CAPACITY, ...departmentEmployees.value.map((e) => e.activeTaskCount))
+);
 const workload = computed(() =>
   [...departmentEmployees.value]
     .sort((a, b) => b.activeTaskCount - a.activeTaskCount)

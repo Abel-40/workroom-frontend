@@ -171,8 +171,8 @@ watch(
 <template>
   <div class="mx-auto flex h-full w-full max-w-6xl min-h-[420px] gap-4 pb-4">
     <div class="flex min-w-0 flex-1 flex-col gap-3">
-      <div data-tour="assistant-response-area" class="flex flex-1 flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-        <div class="flex items-center gap-2 border-b border-gray-50 px-4 py-3">
+      <div data-tour="assistant-response-area" class="flex flex-1 flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+        <div class="flex items-center gap-2 border-b border-border/50 px-4 py-3">
           <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-indigo-500 text-white">
             <Sparkles class="h-3.5 w-3.5" />
           </span>
@@ -214,12 +214,12 @@ watch(
                 <template v-else-if="q.status === 'completed'">
                   <div class="rounded-2xl rounded-tl-sm bg-page px-3.5 py-2.5 text-sm text-ink">
                     <div class="mb-1.5 flex items-center gap-2">
-                      <span class="rounded-md bg-white px-1.5 py-0.5 text-[9.5px] font-semibold uppercase tracking-wide text-primary">AI response</span>
+                      <span class="rounded-md bg-card px-1.5 py-0.5 text-[9.5px] font-semibold uppercase tracking-wide text-primary">AI response</span>
                       <span v-if="q.pages.length" class="text-[11px] text-subtle">Generated from {{ q.pages.length }} selected page{{ q.pages.length === 1 ? "" : "s" }}</span>
                     </div>
                     <MarkdownText :text="q.answer" />
 
-                    <div v-if="q.pages.length || q.referenceUrl" class="mt-2.5 flex flex-col gap-1 border-t border-gray-200/70 pt-2">
+                    <div v-if="q.pages.length || q.referenceUrl" class="mt-2.5 flex flex-col gap-1 border-t border-border/70 pt-2">
                       <span class="text-[10px] font-semibold uppercase tracking-wide text-subtle">Sources &amp; links</span>
                       <span v-for="page in q.pages" :key="page.id" class="flex items-center gap-1.5 text-xs text-subtle">
                         <Link2 class="h-3 w-3" /> {{ page.title }} <span class="text-subtle/70">· {{ page.folderName }}</span>
@@ -238,10 +238,10 @@ watch(
                     >
                       <Sparkles class="h-3 w-3" /> Generate a plan for this
                     </button>
-                    <button type="button" class="flex items-center gap-1 rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs font-medium text-subtle hover:border-primary/40" @click="copyAnswer(q.answer)">
+                    <button type="button" class="flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-subtle hover:border-primary/40" @click="copyAnswer(q.answer)">
                       <Copy class="h-3 w-3" /> Copy
                     </button>
-                    <button type="button" class="flex items-center gap-1 rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs font-medium text-subtle hover:border-primary/40" @click="saveModalQuery = q">
+                    <button type="button" class="flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-subtle hover:border-primary/40" @click="saveModalQuery = q">
                       <Save class="h-3 w-3" /> Save to folder as a page
                     </button>
                   </div>
@@ -271,7 +271,7 @@ watch(
             <button
               type="button"
               data-tour="assistant-project"
-              class="inline-flex h-12 items-center gap-1.5 rounded-xl border border-gray-200 bg-white py-1.5 pl-3 pr-2.5 text-sm shadow-sm transition hover:border-primary/40"
+              class="inline-flex h-12 items-center gap-1.5 rounded-xl border border-border bg-card py-1.5 pl-3 pr-2.5 text-sm shadow-sm transition hover:border-primary/40"
               @click="projectModalOpen = true"
             >
               <ChevronDown class="h-3.5 w-3.5 text-subtle" />
@@ -280,7 +280,7 @@ watch(
               </span>
             </button>
 
-            <span v-if="teamPeople.length" class="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white py-1.5 pl-3 pr-2.5 text-sm shadow-sm">
+            <span v-if="teamPeople.length" class="inline-flex items-center gap-2 rounded-full border border-border bg-card py-1.5 pl-3 pr-2.5 text-sm shadow-sm">
               <span class="text-[10px] font-medium text-subtle">Shared with</span>
               <AvatarStack :people="teamPeople" :max="3" />
             </span>
@@ -291,7 +291,7 @@ watch(
           </Button>
         </div>
 
-        <div v-if="showReferenceInput" class="mx-auto flex w-full max-w-lg items-center gap-1.5 rounded-2xl border border-gray-100 bg-white px-3.5 py-2 shadow-sm">
+        <div v-if="showReferenceInput" class="mx-auto flex w-full max-w-lg items-center gap-1.5 rounded-2xl border border-border bg-card px-3.5 py-2 shadow-sm">
           <Link2 class="h-3.5 w-3.5 shrink-0 text-subtle" />
           <Input v-model="form.referenceUrl" type="url" placeholder="Reference URL (optional)" class="h-7 rounded-lg border-0 px-0 text-xs shadow-none focus-visible:ring-0" />
         </div>
@@ -299,14 +299,14 @@ watch(
         <div class="flex items-center justify-center gap-2">
           <AiToolModeDropdown :model-value="mode" @update:model-value="emit('update:mode', $event)" />
 
-          <div data-tour="assistant-composer" class="flex min-w-0 flex-1 max-w-lg items-center gap-2 rounded-full border border-gray-100 bg-white py-1 pl-3.5 pr-1 shadow-sm">
+          <div data-tour="assistant-composer" class="flex min-w-0 flex-1 max-w-lg items-center gap-2 rounded-full border border-border bg-card py-1 pl-3.5 pr-1 shadow-sm">
             <div v-if="selectedPages.length" class="flex shrink-0 flex-wrap gap-1.5">
               <span
                 v-for="page in selectedPages" :key="page.id"
                 class="flex items-center gap-1.5 rounded-full bg-page py-1 pl-2.5 pr-1.5 text-xs font-medium text-ink"
               >
                 {{ page.title }}
-                <button type="button" class="rounded-full p-0.5 hover:bg-gray-200" @click="removeSelectedPage(page.id)">×</button>
+                <button type="button" class="rounded-full p-0.5 hover:bg-page" @click="removeSelectedPage(page.id)">×</button>
               </span>
             </div>
 
@@ -327,7 +327,7 @@ watch(
           <button
             type="button"
             title="Add a reference URL"
-            class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-gray-100 bg-white text-subtle shadow-sm hover:bg-page hover:text-primary"
+            class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-card text-subtle shadow-sm hover:bg-page hover:text-primary"
             @click="showReferenceInput = !showReferenceInput"
           >
             <Link2 class="h-4 w-4" />
@@ -336,7 +336,7 @@ watch(
           <button
             type="button"
             data-tour="assistant-pages"
-            class="flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 text-xs font-medium text-subtle shadow-sm hover:border-primary/40 hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
+            class="flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-border bg-card px-3 text-xs font-medium text-subtle shadow-sm hover:border-primary/40 hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
             :disabled="!projectId"
             @click="pagePickerOpen = true"
           >
@@ -352,7 +352,7 @@ watch(
          question, so the sidebar works as a session log. Selecting one
          scrolls it into view in place -- no page reload, no separate detail
          fetch. -->
-    <div data-tour="assistant-history" class="hidden w-64 shrink-0 flex-col rounded-2xl border border-gray-100 bg-white p-3 shadow-sm lg:flex">
+    <div data-tour="assistant-history" class="hidden w-64 shrink-0 flex-col rounded-2xl border border-border bg-card p-3 shadow-sm lg:flex">
       <p class="mb-2 px-1 text-xs font-semibold uppercase tracking-wide text-subtle">History</p>
       <div class="flex-1 space-y-1 overflow-y-auto">
         <p v-if="!answeredQueries.length" class="px-1 py-4 text-center text-xs text-subtle">No answers yet.</p>
@@ -375,7 +375,7 @@ watch(
               <button
                 type="button"
                 title="More options"
-                class="absolute right-1 top-1.5 flex h-6 w-6 items-center justify-center rounded-lg text-subtle opacity-0 transition hover:bg-white hover:text-ink group-hover:opacity-100 focus-visible:opacity-100"
+                class="absolute right-1 top-1.5 flex h-6 w-6 items-center justify-center rounded-lg text-subtle opacity-0 transition hover:bg-card hover:text-ink group-hover:opacity-100 focus-visible:opacity-100"
                 :disabled="deletingId === q.id"
                 @click.stop
               >

@@ -84,7 +84,7 @@ async function download(summaryId: string) {
 }
 
 const STATUS_BARS = [
-  { key: "todoTasks", label: "Not started", color: "bg-gray-300" },
+  { key: "todoTasks", label: "Not started", color: "bg-muted" },
   { key: "inProgressTasks", label: "In progress", color: "bg-primary" },
   { key: "inReviewTasks", label: "In review", color: "bg-amber-400" },
   { key: "completedTasks", label: "Completed", color: "bg-emerald-500" },
@@ -111,17 +111,17 @@ watch(
            a long task table. Each column scrolls independently instead. -->
       <div class="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row">
       <div class="min-h-0 flex-1 space-y-4 overflow-y-auto pr-0.5">
-        <div v-if="!projectId" class="rounded-2xl border border-dashed border-gray-200 bg-white p-8 text-center text-sm text-subtle">
+        <div v-if="!projectId" class="rounded-2xl border border-dashed border-border bg-card p-8 text-center text-sm text-subtle">
           Select a project below to see its health report.
         </div>
 
         <!-- No tasks yet: nothing meaningful to report -->
-        <div v-else-if="stats && stats.totalTasks === 0" class="rounded-2xl border border-dashed border-gray-200 bg-white p-8 text-center">
+        <div v-else-if="stats && stats.totalTasks === 0" class="rounded-2xl border border-dashed border-border bg-card p-8 text-center">
           <p class="text-sm font-medium text-ink">This project has no tasks yet</p>
           <p class="mt-1 text-xs text-subtle">A health report needs at least one task to summarize. Add tasks to the backlog first.</p>
         </div>
 
-        <div v-else-if="stats" data-tour="health-report" class="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+        <div v-else-if="stats" data-tour="health-report" class="rounded-2xl border border-border bg-card p-5 shadow-sm">
           <div class="flex flex-wrap items-start justify-between gap-3">
             <div class="flex flex-col gap-1">
               <span class="text-[10.5px] font-semibold uppercase tracking-wide text-subtle">Health check report</span>
@@ -192,7 +192,7 @@ watch(
           <!-- Task table: name, assignee, status, due date -- no subtask
                column, since subtasks aren't a modeled concept in Workroom
                today (see ai_agent/exports.py). -->
-          <div v-if="tasks.length" class="mt-4 overflow-hidden rounded-xl border border-gray-100">
+          <div v-if="tasks.length" class="mt-4 overflow-hidden rounded-xl border border-border">
             <table class="w-full text-left text-xs">
               <thead class="bg-surface text-subtle">
                 <tr>
@@ -203,7 +203,7 @@ watch(
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="task in tasks" :key="task.id" class="border-t border-gray-50">
+                <tr v-for="task in tasks" :key="task.id" class="border-t border-border/50">
                   <td class="max-w-[220px] truncate px-3 py-2 font-medium text-ink">{{ task.title }}</td>
                   <td class="px-3 py-2 text-subtle">{{ task.assigneeName || "Unassigned" }}</td>
                   <td class="px-3 py-2 text-subtle">{{ task.status }}</td>
@@ -215,7 +215,7 @@ watch(
         </div>
       </div>
 
-      <div v-if="projectId" class="flex w-full min-h-0 flex-col overflow-y-auto rounded-2xl border border-gray-100 bg-white p-4 shadow-sm lg:w-72 lg:shrink-0">
+      <div v-if="projectId" class="flex w-full min-h-0 flex-col overflow-y-auto rounded-2xl border border-border bg-card p-4 shadow-sm lg:w-72 lg:shrink-0">
         <div class="mb-3 flex items-center gap-2">
           <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-indigo-500 text-white">
             <Sparkles class="h-3.5 w-3.5" />
@@ -254,7 +254,7 @@ watch(
             <button
               type="button"
               data-tour="health-project"
-              class="inline-flex items-center gap-1.5 h-12 rounded-xl border border-gray-200 bg-white py-1.5 pl-3 pr-2.5 text-sm shadow-sm transition hover:border-primary/40"
+              class="inline-flex items-center gap-1.5 h-12 rounded-xl border border-border bg-card py-1.5 pl-3 pr-2.5 text-sm shadow-sm transition hover:border-primary/40"
               @click="projectModalOpen = true"
             >
               <ChevronDown class="h-3.5 w-3.5 text-subtle" />
@@ -263,7 +263,7 @@ watch(
               </span>
             </button>
 
-            <span v-if="teamPeople.length" class="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white py-1.5 pl-3 pr-2.5 text-sm shadow-sm">
+            <span v-if="teamPeople.length" class="inline-flex items-center gap-2 rounded-full border border-border bg-card py-1.5 pl-3 pr-2.5 text-sm shadow-sm">
               <span class="text-[10px] font-medium text-subtle">Team</span>
               <AvatarStack :people="teamPeople" :max="3" />
             </span>

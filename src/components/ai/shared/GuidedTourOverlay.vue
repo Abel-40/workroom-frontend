@@ -59,11 +59,17 @@ const cardStyle = computed(() => {
     return { position: "fixed" as const, left: "50%", top: "62%", transform: "translate(-50%, -50%)" };
   }
   const cardWidth = 360;
+  const approxCardHeight = 220;
   const margin = 16;
   let top = r.bottom + margin;
   let transformY = "";
-  if (top + 220 > window.innerHeight) {
-    top = r.top - margin;
+  const spaceBelow = window.innerHeight - r.bottom;
+  const spaceAbove = r.top;
+  if (spaceBelow < approxCardHeight + margin && spaceAbove > spaceBelow) {
+    // Not enough room below -- flip above, but never push the card above
+    // the visible viewport (step 5/6's targets sit high on the page, so a
+    // naive flip put the card at a negative effective top).
+    top = Math.max(r.top - margin, approxCardHeight + margin);
     transformY = "translateY(-100%)";
   }
   let left = r.left + r.width / 2;
@@ -113,13 +119,13 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKeydown));
       </template>
       <div v-else class="absolute inset-0 bg-black/50" />
 
-      <div class="absolute left-1/2 top-4 flex -translate-x-1/2 items-center gap-2 rounded-full bg-white px-4 py-2 text-sm shadow-lg">
+      <div class="absolute left-1/2 top-4 flex -translate-x-1/2 items-center gap-2 rounded-full bg-card px-4 py-2 text-sm shadow-lg">
         <Sparkles class="h-3.5 w-3.5 text-primary" />
         <span class="font-medium text-ink">{{ TOUR_LABELS[mode] }}</span>
         <span class="text-subtle">{{ steps.length }} controls · about a minute</span>
       </div>
 
-      <div class="w-[360px] rounded-2xl bg-white p-5 shadow-2xl" :style="cardStyle">
+      <div class="w-[360px] rounded-2xl bg-card p-5 shadow-2xl" :style="cardStyle">
         <div class="mb-2 flex items-center justify-between">
           <span class="rounded-full bg-info px-2.5 py-1 text-[10.5px] font-semibold uppercase tracking-wide text-info-foreground">
             Step {{ stepIndex + 1 }} of {{ steps.length }}
@@ -140,13 +146,13 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKeydown));
           <div class="flex items-center gap-2">
             <button
               type="button"
-              class="flex items-center gap-1 rounded-xl border border-gray-200 px-3 py-2 text-sm text-subtle disabled:opacity-40"
+              class="flex items-center gap-1 rounded-xl border border-border px-3 py-2 text-sm text-subtle disabled:opacity-40"
               :disabled="stepIndex === 0"
               @click="back"
             >
               <ArrowLeft class="h-3.5 w-3.5" /> Back
             </button>
-            <button type="button" class="flex items-center gap-1 rounded-xl bg-primary px-3.5 py-2 text-sm font-medium text-white" @click="next">
+            <button type="button" class="flex items-center gap-1 rounded-xl bg-primary px-3.5 py-2 text-sm font-medium text-primary-foreground" @click="next">
               {{ isLast ? "Done" : "Next" }} <ArrowRight v-if="!isLast" class="h-3.5 w-3.5" />
             </button>
           </div>
@@ -155,7 +161,7 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKeydown));
 
       <button
         type="button"
-        class="absolute right-5 top-5 flex h-8 w-8 items-center justify-center rounded-full bg-white text-subtle shadow-lg hover:text-ink"
+        class="absolute right-5 top-5 flex h-8 w-8 items-center justify-center rounded-full bg-card text-subtle shadow-lg hover:text-ink"
         @click="emit('close')"
       >
         <X class="h-4 w-4" />

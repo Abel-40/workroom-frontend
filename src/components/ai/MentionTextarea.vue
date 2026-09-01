@@ -116,7 +116,7 @@ function onKeydown(event: KeyboardEvent) {
         :placeholder="placeholder"
         :rows="rows"
         class="flex w-full resize-none text-sm text-ink placeholder:text-subtle focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-        :class="bare ? 'bg-transparent px-0 py-0' : 'rounded-xl border border-gray-200 bg-white px-3 py-2 shadow-sm focus-visible:border-primary'"
+        :class="bare ? 'bg-transparent px-0 py-0' : 'rounded-xl border border-border bg-card px-3 py-2 shadow-sm focus-visible:border-primary'"
         @input="onInput"
         @keyup="detectMention"
         @keydown="onKeydown"

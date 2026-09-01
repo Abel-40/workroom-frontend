@@ -29,7 +29,7 @@ function choose(mode: AiMode) {
     <PopoverTrigger as-child>
       <button
         type="button"
-        class="flex shrink-0 items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-ink shadow-sm transition hover:border-primary/40"
+        class="flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-card px-3 py-2 text-sm font-medium text-ink shadow-sm transition hover:border-primary/40"
       >
         <component :is="MODES.find((m) => m.value === modelValue)?.icon" class="h-4 w-4 text-primary" />
         <span class="hidden sm:inline">{{ MODES.find((m) => m.value === modelValue)?.label }}</span>

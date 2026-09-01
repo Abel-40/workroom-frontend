@@ -32,7 +32,7 @@ function discard() {
           </span>
         </div>
         <div class="flex items-center justify-end gap-3">
-          <button type="button" class="rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-subtle" @click="open = false">
+          <button type="button" class="rounded-xl border border-border px-4 py-2.5 text-sm text-subtle" @click="open = false">
             Keep editing
           </button>
           <button type="button" class="rounded-xl bg-danger px-4 py-2.5 text-sm font-medium text-danger-foreground" @click="discard">

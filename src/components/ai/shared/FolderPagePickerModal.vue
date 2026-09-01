@@ -84,10 +84,10 @@ function confirm() {
               :key="page.id"
               type="button"
               class="flex items-center gap-3.5 rounded-2xl border p-3 text-left transition"
-              :class="selectedIds.includes(page.id) ? 'border-primary bg-info/40' : 'border-transparent bg-surface hover:border-gray-200'"
+              :class="selectedIds.includes(page.id) ? 'border-primary bg-info/40' : 'border-transparent bg-surface hover:border-border'"
               @click="toggle(page.id)"
             >
-              <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] bg-white text-primary shadow-sm">
+              <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] bg-card text-primary shadow-sm">
                 <FileText class="h-4 w-4" />
               </span>
               <span class="min-w-0 flex-1">
@@ -109,7 +109,7 @@ function confirm() {
         <div class="flex items-center gap-3 pt-1">
           <span class="text-xs text-subtle">{{ selectedIds.length }} page(s) selected</span>
           <div class="flex-1" />
-          <button type="button" class="rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-subtle" @click="open = false">
+          <button type="button" class="rounded-xl border border-border px-4 py-2.5 text-sm text-subtle" @click="open = false">
             Cancel
           </button>
           <button

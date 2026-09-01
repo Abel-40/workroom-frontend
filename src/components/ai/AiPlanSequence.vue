@@ -27,7 +27,7 @@ const cols = computed(() => Math.max(1, Math.min(COLS, props.tasks.length)));
 function statusOf(task: AiGeneratedTask): { label: string; tone: string } {
   if (!task.commentResolved) return { label: "Needs edit", tone: "bg-amber-100 text-amber-700" };
   if (task.assignedToId || task.suggestedAssigneeId) return { label: "Ready", tone: "bg-emerald-100 text-emerald-700" };
-  return { label: "Backlog", tone: "bg-gray-100 text-gray-500" };
+  return { label: "Backlog", tone: "bg-muted text-subtle" };
 }
 
 interface Row {
@@ -66,13 +66,13 @@ function assigneeName(task: AiGeneratedTask) {
         <button
           v-for="task in row.tasks" :key="task.id"
           type="button"
-          class="flex min-h-[104px] flex-col justify-between rounded-2xl border bg-white p-4 text-left shadow-sm transition"
-          :class="selectedTaskId === task.id ? 'border-primary ring-2 ring-primary/20' : 'border-gray-100 hover:border-primary/30'"
+          class="flex min-h-[104px] flex-col justify-between rounded-2xl border bg-card p-4 text-left shadow-sm transition"
+          :class="selectedTaskId === task.id ? 'border-primary ring-2 ring-primary/20' : 'border-border hover:border-primary/30'"
           @click="emit('select', task)"
         >
           <div class="flex items-center justify-between">
             <span class="text-[10.5px] font-semibold uppercase tracking-wide text-subtle">Step {{ tasks.indexOf(task) + 1 }}</span>
-            <span class="h-2 w-2 rounded-full" :class="selectedTaskId === task.id ? 'bg-primary' : 'bg-gray-200'" />
+            <span class="h-2 w-2 rounded-full" :class="selectedTaskId === task.id ? 'bg-primary' : 'bg-muted'" />
           </div>
           <p class="line-clamp-2 text-sm font-semibold text-ink">{{ task.title }}</p>
           <div class="flex items-center justify-between gap-2">
@@ -84,7 +84,7 @@ function assigneeName(task: AiGeneratedTask) {
         <!-- Horizontal connectors between cards in this row -->
         <span
           v-for="(pct, i) in arrowGapPositions(row.tasks.length)" :key="`h-${row.index}-${i}`"
-          class="pointer-events-none absolute top-1/2 z-10 flex h-6 w-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white text-subtle shadow"
+          class="pointer-events-none absolute top-1/2 z-10 flex h-6 w-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-card text-subtle shadow"
           :style="{ left: `${pct}%` }"
         >
           <component :is="row.reversed ? ArrowLeft : ArrowRight" class="h-3.5 w-3.5" />
@@ -95,7 +95,7 @@ function assigneeName(task: AiGeneratedTask) {
            card visually reached in this row's reading direction. -->
       <div v-if="row.index < rows.length - 1" class="relative h-6">
         <span
-          class="pointer-events-none absolute top-0 flex h-6 w-6 -translate-x-1/2 items-center justify-center rounded-full bg-white text-subtle shadow"
+          class="pointer-events-none absolute top-0 flex h-6 w-6 -translate-x-1/2 items-center justify-center rounded-full bg-card text-subtle shadow"
           :style="{ left: `${edgeFraction(row.reversed, row.tasks.length)}%` }"
         >
           <ArrowDown class="h-3.5 w-3.5" />
