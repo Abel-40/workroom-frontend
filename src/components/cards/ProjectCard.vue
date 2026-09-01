@@ -20,7 +20,7 @@ const initials = (name: string) =>
 
 <template>
   <div
-    class="w-full flex p-4 gap-5 bg-white rounded-3xl border border-gray-200 shadow-sm hover:shadow-md hover:border-[#3F8CFF]/20 transition-all duration-200 cursor-pointer"
+    class="w-full flex p-4 gap-5 bg-card rounded-3xl border border-border shadow-sm hover:shadow-md hover:border-primary/20 transition-all duration-200 cursor-pointer"
     role="button"
     tabindex="0"
     @click="goToDetail"
@@ -39,16 +39,16 @@ const initials = (name: string) =>
             <span v-else class="text-lg">{{ props.project.icon }}</span>
           </div>
           <div class="min-w-0">
-            <p class="text-xs font-mono tracking-wide text-[#91929E]" :title="props.project.id">{{ shortId(props.project.id) }}</p>
-            <h3 class="font-medium text-[#0A1629] truncate" :title="props.project.title">{{ props.project.title }}</h3>
+            <p class="text-xs font-mono tracking-wide text-subtle" :title="props.project.id">{{ shortId(props.project.id) }}</p>
+            <h3 class="font-medium text-ink truncate" :title="props.project.title">{{ props.project.title }}</h3>
           </div>
         </div>
         <div class="flex justify-between items-center">
-          <div class="flex items-center gap-1 text-sm text-[#91929E]">
+          <div class="flex items-center gap-1 text-sm text-subtle">
             <Calendar class="w-4 h-4" />
             <span>Created {{ formatShortDate(props.project.createdAt) }}</span>
           </div>
-          <div class="flex items-center gap-1 rounded-full bg-gray-50 px-2 py-1" :class="props.project.priority.color">
+          <div class="flex items-center gap-1 rounded-full bg-page px-2 py-1" :class="props.project.priority.color">
             <component :is="props.project.priority.icon === 'ArrowDown' ? ArrowDown : ArrowUp" class="w-3.5 h-3.5" />
             <span class="text-xs font-medium capitalize">{{ props.project.priority.level }}</span>
           </div>
@@ -57,18 +57,18 @@ const initials = (name: string) =>
 
       <!-- Right Side -->
       <div class="p-4">
-        <h4 class="font-medium mb-3 text-[#0A1629]">Project Data</h4>
+        <h4 class="font-medium mb-3 text-ink">Project Data</h4>
         <div class="flex justify-between items-center">
           <div>
-            <p class="text-sm text-[#91929E]">All tasks</p>
-            <p class="font-semibold text-[#0A1629]">{{ props.project.task.total }}</p>
+            <p class="text-sm text-subtle">All tasks</p>
+            <p class="font-semibold text-ink">{{ props.project.task.total }}</p>
           </div>
           <div>
-            <p class="text-sm text-[#91929E]">Active tasks</p>
-            <p class="font-semibold text-[#3F8CFF]">{{ props.project.task.active }}</p>
+            <p class="text-sm text-subtle">Active tasks</p>
+            <p class="font-semibold text-primary">{{ props.project.task.active }}</p>
           </div>
           <div class="text-center">
-            <p class="text-sm text-[#91929E]">Assignees</p>
+            <p class="text-sm text-subtle">Assignees</p>
             <div v-if="props.project.assignee.length" class="mt-1 flex -space-x-2">
               <Avatar
                 v-for="name in props.project.assignee.slice(0, 3)"

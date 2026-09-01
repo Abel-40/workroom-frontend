@@ -695,7 +695,7 @@ watch(()=>paginatedProjects.value,()=>{
             <Plus class="w-4 h-4" /> Add Project
           </Button>
           <Button
-            class="bg-primary hover:bg-blue-100 active:text-blue-500 active:bg-blue-100 text-white hover:bg-primary/90 rounded-xl"
+            class="bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl"
             :disabled="!selectedProject"
             @click="isAddTaskOpen = true"
           >
@@ -1061,7 +1061,7 @@ watch(()=>paginatedProjects.value,()=>{
                   <div v-if="canManageSelectedProject" class="mt-6 flex gap-2">
                     <button
                       type="button"
-                      class="w-9 h-9 bg-red-100 rounded-full flex items-center justify-center cursor-pointer disabled:opacity-50"
+                      class="w-9 h-9 bg-red-100 dark:bg-red-500/15 rounded-full flex items-center justify-center cursor-pointer disabled:opacity-50"
                       title="Archive project"
                       :disabled="archiving"
                       @click="isDeleteProjectDialogOpen = true"

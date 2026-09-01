@@ -164,15 +164,15 @@ const goBack = () => router.push({ name: "admin-dashboard", query: { section: "e
       </button>
     </div>
 
-    <div v-if="loading" class="rounded-2xl border border-gray-100 bg-white p-12 text-center text-sm text-subtle">
+    <div v-if="loading" class="rounded-2xl border border-border bg-card p-12 text-center text-sm text-subtle">
       Loading…
     </div>
-    <div v-else-if="!employee" class="rounded-2xl border border-dashed border-gray-200 bg-white p-12 text-center">
+    <div v-else-if="!employee" class="rounded-2xl border border-dashed border-border bg-card p-12 text-center">
       <p class="font-medium text-ink">Employee not found</p>
     </div>
 
     <div v-else class="flex flex-col gap-4 lg:flex-row">
-      <div class="w-full rounded-2xl border border-gray-100 bg-white p-6 shadow-sm lg:w-80">
+      <div class="w-full rounded-2xl border border-border bg-card p-6 shadow-sm lg:w-80">
         <div class="flex flex-col items-center text-center">
           <Avatar size="sm" class="h-16 w-16 text-lg">
             <AvatarFallback>{{ initials(employee.name) }}</AvatarFallback>
@@ -190,7 +190,7 @@ const goBack = () => router.push({ name: "admin-dashboard", query: { section: "e
           </span>
         </div>
 
-        <div v-if="canManage && !isSelf" class="mt-6 space-y-4 border-t border-gray-100 pt-4">
+        <div v-if="canManage && !isSelf" class="mt-6 space-y-4 border-t border-border pt-4">
           <div class="flex items-center justify-between">
             <span class="text-sm text-ink">Active</span>
             <Switch
@@ -237,7 +237,7 @@ const goBack = () => router.push({ name: "admin-dashboard", query: { section: "e
       </div>
 
       <div class="flex-1 space-y-4">
-        <div class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+        <div class="rounded-2xl border border-border bg-card p-6 shadow-sm">
           <h3 class="mb-4 text-sm font-semibold text-ink">Workload</h3>
           <div class="grid grid-cols-3 gap-4 text-center">
             <div>
@@ -255,7 +255,7 @@ const goBack = () => router.push({ name: "admin-dashboard", query: { section: "e
           </div>
         </div>
 
-        <div v-if="canManageLeadership && !isSelf" class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+        <div v-if="canManageLeadership && !isSelf" class="rounded-2xl border border-border bg-card p-6 shadow-sm">
           <h3 class="mb-3 flex items-center gap-1.5 text-sm font-semibold text-ink">
             <Crown class="h-4 w-4" /> Department Leadership
           </h3>
@@ -300,7 +300,7 @@ const goBack = () => router.push({ name: "admin-dashboard", query: { section: "e
           </div>
         </div>
 
-        <div v-if="canManageLeadership && !isSelf" class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+        <div v-if="canManageLeadership && !isSelf" class="rounded-2xl border border-border bg-card p-6 shadow-sm">
           <h3 class="mb-3 flex items-center gap-1.5 text-sm font-semibold text-ink">
             <Users class="h-4 w-4" /> Team Leadership
           </h3>

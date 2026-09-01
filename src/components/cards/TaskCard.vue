@@ -41,32 +41,32 @@ const onClick = ()=>{
   <div class="w-full flex justify-between items-center p-4 gap-5 bg-card rounded-3xl border border-border shadow-sm cursor-pointer" @click="onClick">
     <div class="min-w-[20%] max-w-[28%]">
       <div class="flex min-w-0 flex-col gap-3 justify-center ">
-        <p class="text-sm text-left whitespace-nowrap text-[#91929E]">Task Name</P>
+        <p class="text-sm text-left whitespace-nowrap text-subtle">Task Name</P>
         <p class="line-clamp-2 break-words" :title="props.Task.title">{{props.Task.title}}</p>
       </div>
     </div>
     <!-- left side properties -->
     <div class="w-[70%] grid grid-cols-6 gap-3 items-center">
       <div class="flex flex-col gap-3 justify-center items-center">
-        <p class="text-sm whitespace-nowrap text-[#91929E]">Estimate </P>
+        <p class="text-sm whitespace-nowrap text-subtle">Estimate </P>
         <p class="text-sm font-semibold">{{formatHoursToDuration(props.Task.estimatedTimeHours)}}</p>
 
       </div>
 
       <div class="flex flex-col justify-center items-center gap-3">
-        <p class="text-sm whitespace-nowrap text-[#91929E]">Spent Time</P>
+        <p class="text-sm whitespace-nowrap text-subtle">Spent Time</P>
         <p class="text-sm font-semibold">{{formatHoursToDuration(props.Task.spentTimeHours)}}</p>
       </div>
 
       <div class="flex flex-col justify-center items-center gap-3">
-        <p class="text-sm whitespace-nowrap text-[#91929E]">Assignee</P>
+        <p class="text-sm whitespace-nowrap text-subtle">Assignee</P>
         <Avatar size="sm" class="h-6 w-6 text-[10px]">
           <AvatarFallback>{{ initials(props.Task.assigneeName || "?") }}</AvatarFallback>
         </Avatar>
       </div>
 
       <div class="flex flex-col justify-center items-center gap-3">
-        <p class="text-sm whitespace-nowrap text-[#91929E]">Priority</P>
+        <p class="text-sm whitespace-nowrap text-subtle">Priority</P>
           <span class="flex gap-1">
             <component class="w-4 h-4" :is="getIcon(props.Task.priority)" :class="getPriorityColor(props.Task.priority)"/>
             <p class="text-sm font-semibold" :class="getPriorityColor(props.Task.priority)">{{props.Task.priority}}</p>
@@ -74,12 +74,12 @@ const onClick = ()=>{
       </div>
 
       <div class="flex flex-col justify-center items-center gap-3">
-        <p class="text-sm whitespace-nowrap text-[#91929E]">Status</P>
+        <p class="text-sm whitespace-nowrap text-subtle">Status</P>
         <TaskStatusPill :task="props.Task" />
       </div>
 
       <div class="flex flex-col justify-center items-center gap-3">
-        <p class="text-sm whitespace-nowrap text-[#91929E]">progress</P>
+        <p class="text-sm whitespace-nowrap text-subtle">progress</P>
         <div class="w-5 h-5 rounded-full" :class="getProgresStatus(props.Task.progress)"></div>
       </div>
     </div>

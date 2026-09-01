@@ -79,14 +79,14 @@ const confirmDelete = async () => {
       </button>
     </div>
 
-    <p v-if="loading" class="rounded-2xl border border-dashed border-gray-200 bg-white p-12 text-center text-sm text-subtle">
+    <p v-if="loading" class="rounded-2xl border border-dashed border-border bg-card p-12 text-center text-sm text-subtle">
       Loading…
     </p>
-    <div v-else-if="!event" class="rounded-2xl border border-dashed border-gray-200 bg-white p-12 text-center">
+    <div v-else-if="!event" class="rounded-2xl border border-dashed border-border bg-card p-12 text-center">
       <p class="font-medium text-ink">Event not found</p>
     </div>
 
-    <div v-else class="max-w-2xl rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+    <div v-else class="max-w-2xl rounded-2xl border border-border bg-card p-6 shadow-sm">
       <div class="flex items-start justify-between gap-3">
         <div class="min-w-0 flex-1">
           <p v-if="event.eventTypeName" class="text-xs font-medium uppercase tracking-wide text-primary">{{ event.eventTypeName }}</p>
@@ -95,7 +95,7 @@ const confirmDelete = async () => {
         <button
           v-if="canManage"
           type="button"
-          class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:border-red-300 hover:text-red-500"
+          class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border text-subtle hover:border-red-300 hover:text-red-500"
           title="Delete event"
           @click="isDeleteDialogOpen = true"
         >

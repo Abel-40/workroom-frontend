@@ -112,17 +112,17 @@ const goBack = () => router.push({ name: "admin-dashboard", query: { section: "d
       </button>
     </div>
 
-    <div v-if="!team" class="rounded-2xl border border-dashed border-gray-200 bg-white p-12 text-center">
+    <div v-if="!team" class="rounded-2xl border border-dashed border-border bg-card p-12 text-center">
       <p class="font-medium text-ink">Team not found</p>
     </div>
 
-    <div v-else class="max-w-2xl rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+    <div v-else class="max-w-2xl rounded-2xl border border-border bg-card p-6 shadow-sm">
       <div class="flex items-start justify-between gap-3">
         <div class="min-w-0 flex-1">
           <input
             v-if="isEditing"
             v-model="editName"
-            class="w-full rounded-lg border border-gray-200 px-2 py-1 text-xl font-semibold text-ink focus:border-primary focus:outline-none"
+            class="w-full rounded-lg border border-border px-2 py-1 text-xl font-semibold text-ink focus:border-primary focus:outline-none"
           />
           <h1 v-else class="truncate text-xl font-semibold text-ink">{{ team.name }}</h1>
         </div>
@@ -130,7 +130,7 @@ const goBack = () => router.push({ name: "admin-dashboard", query: { section: "d
           v-if="canManage"
           type="button"
           class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border hover:border-primary/40"
-          :class="isEditing ? 'border-primary bg-primary/10 text-primary' : 'border-gray-200 text-gray-400'"
+          :class="isEditing ? 'border-primary bg-primary/10 text-primary' : 'border-border text-subtle'"
           :disabled="saving"
           @click="isEditing ? saveEdit() : startEdit()"
         >
@@ -145,7 +145,7 @@ const goBack = () => router.push({ name: "admin-dashboard", query: { section: "d
           v-model="editDescription"
           rows="3"
           placeholder="Add a description"
-          class="w-full resize-y rounded-lg border border-gray-200 px-2 py-1 text-sm text-ink focus:border-primary focus:outline-none"
+          class="w-full resize-y rounded-lg border border-border px-2 py-1 text-sm text-ink focus:border-primary focus:outline-none"
         />
         <p v-else-if="team.description" class="text-sm text-subtle">{{ team.description }}</p>
         <p v-else class="text-sm italic text-subtle">No description</p>
@@ -172,7 +172,7 @@ const goBack = () => router.push({ name: "admin-dashboard", query: { section: "d
           <button
             v-if="team.leaderId"
             type="button"
-            class="flex h-7 w-7 items-center justify-center rounded-lg text-subtle hover:bg-white hover:text-red-500"
+            class="flex h-7 w-7 items-center justify-center rounded-lg text-subtle hover:bg-card hover:text-red-500"
             title="Revoke leadership"
             :disabled="assigningLeader"
             @click="revokeLeader"

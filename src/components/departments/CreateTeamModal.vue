@@ -148,7 +148,7 @@ const save = async () => {
             />
             <div
               v-if="showMemberMatches && memberMatches.length"
-              class="absolute z-10 mt-1 w-full rounded-xl border border-gray-100 bg-white p-1 shadow-lg"
+              class="absolute z-10 mt-1 w-full rounded-xl border border-border bg-card p-1 shadow-lg"
             >
               <button
                 v-for="person in memberMatches"

@@ -112,9 +112,9 @@ const jumpToToday = () => {
 
 <template>
   <AddEventModal v-model:open="isAddEventOpen" :default-date="addEventDate" />
-  <div class="rounded-2xl border border-gray-100 bg-white p-4">
+  <div class="rounded-2xl border border-border bg-card p-4">
     <div class="mb-4 flex items-center justify-center gap-4">
-      <button type="button" class="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 hover:border-primary/40" @click="goPrev">
+      <button type="button" class="flex h-8 w-8 items-center justify-center rounded-lg border border-border hover:border-primary/40" @click="goPrev">
         <ChevronLeft class="h-4 w-4" />
       </button>
 
@@ -154,12 +154,12 @@ const jumpToToday = () => {
         </PopoverContent>
       </Popover>
 
-      <button type="button" class="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 hover:border-primary/40" @click="goNext">
+      <button type="button" class="flex h-8 w-8 items-center justify-center rounded-lg border border-border hover:border-primary/40" @click="goNext">
         <ChevronRight class="h-4 w-4" />
       </button>
     </div>
 
-    <div class="grid grid-cols-7 border-b border-gray-100 pb-2">
+    <div class="grid grid-cols-7 border-b border-border pb-2">
       <div v-for="day in WEEKDAYS" :key="day" class="text-center text-xs font-medium text-subtle">
         {{ day }}
       </div>
@@ -167,18 +167,18 @@ const jumpToToday = () => {
 
     <p v-if="eventStore.loading" class="py-10 text-center text-sm text-subtle">Loading events…</p>
     <div v-else class="grid grid-cols-7">
-      <div v-for="n in leadingBlanks()" :key="`blank-${n}`" class="min-h-[110px] border-b border-r border-gray-50" />
+      <div v-for="n in leadingBlanks()" :key="`blank-${n}`" class="min-h-[110px] border-b border-r border-border/50" />
       <div
         v-for="day in daysInMonth()"
         :key="day.toISOString()"
-        class="min-h-[110px] border-b border-r border-gray-50 p-2 transition"
-        :class="isPastDay(day) ? 'bg-gray-50/50' : 'cursor-pointer hover:bg-page/50'"
+        class="min-h-[110px] border-b border-r border-border/50 p-2 transition"
+        :class="isPastDay(day) ? 'bg-muted/50' : 'cursor-pointer hover:bg-page/50'"
         :title="isPastDay(day) ? 'Past date — view only' : 'Click to add an event'"
         @click="openAddEvent(day)"
       >
         <span
           class="flex h-6 w-6 items-center justify-center rounded-full text-xs"
-          :class="isSameDay(day, today) ? 'bg-primary text-white font-semibold' : isPastDay(day) ? 'text-gray-300' : 'text-ink'"
+          :class="isSameDay(day, today) ? 'bg-primary text-primary-foreground font-semibold' : isPastDay(day) ? 'text-subtle' : 'text-ink'"
         >
           {{ format(day, "d") }}
         </span>

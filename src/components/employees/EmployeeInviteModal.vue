@@ -84,7 +84,7 @@ const approve = async () => {
 
       <div v-if="!sent" class="space-y-4">
         <div class="flex items-center justify-center rounded-2xl bg-primary/10 py-8">
-          <div class="flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-sm">
+          <div class="flex h-16 w-16 items-center justify-center rounded-full bg-card shadow-sm">
             <UserPlus class="h-8 w-8 text-primary" />
           </div>
         </div>
