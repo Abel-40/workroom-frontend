@@ -16,6 +16,7 @@ import {
   BarChart3,
   MessageSquare,
   FolderKanban,
+  History,
 } from "lucide-vue-next";
 import type { Role } from "@/lib/permissions";
 
@@ -80,6 +81,12 @@ const BASE_ITEMS: Array<{ key: string; sectionName: string; icon: Component; lab
     sectionName: "info-portal",
     icon: FolderKanban,
     labels: { Owner: "Info Portal", CM: "Info Portal", DL: "Info Portal", DM: "Info Portal" },
+  },
+  {
+    key: "activity",
+    sectionName: "activity",
+    icon: History,
+    labels: { Owner: "Activity", CM: "Activity", DL: "Activity", DM: "Activity" },
   },
 ];
 

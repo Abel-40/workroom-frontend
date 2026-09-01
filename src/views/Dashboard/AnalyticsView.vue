@@ -7,6 +7,7 @@ import {
   ListTodo,
   Users,
   FolderPlus,
+  RotateCcw,
   ArrowRightLeft,
   UserPlus,
   UserCheck,
@@ -55,6 +56,7 @@ const statCards = computed(() => [
 const ICONS: Record<ActivityType, typeof FolderPlus> = {
   project_created: FolderPlus,
   project_completed: CheckCircle2,
+  project_reopened: RotateCcw,
   project_ownership_transferred: ArrowRightLeft,
   member_invited: UserPlus,
   member_joined: UserCheck,

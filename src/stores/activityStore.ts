@@ -5,6 +5,7 @@ import type { ApiResponse } from "@/types/types";
 export type ActivityType =
   | "project_created"
   | "project_completed"
+  | "project_reopened"
   | "project_ownership_transferred"
   | "member_invited"
   | "member_joined"
