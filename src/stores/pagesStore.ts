@@ -20,6 +20,7 @@ export interface PageFolder {
   id: string;
   name: string;
   color: PageFolderColor;
+  createdBy: string | null;
   createdAt: string;
 }
 
@@ -35,7 +36,7 @@ export interface WorkroomPage {
   updatedAt: string;
 }
 
-type PageFolderApi = { id: string; name: string; color: PageFolderColor; created_at: string };
+type PageFolderApi = { id: string; name: string; color: PageFolderColor; created_by: string | null; created_at: string };
 type PageBlockApi = { type: PageBlock["type"]; text?: string; items?: string[]; file_name?: string };
 type PageApi = {
   id: string; folder_id: string; folder_name?: string; project_id: string | null; title: string;
@@ -43,7 +44,7 @@ type PageApi = {
 };
 
 const mapFolder = (api: PageFolderApi): PageFolder => ({
-  id: api.id, name: api.name, color: api.color, createdAt: api.created_at,
+  id: api.id, name: api.name, color: api.color, createdBy: api.created_by, createdAt: api.created_at,
 });
 
 const mapBlock = (api: PageBlockApi): PageBlock => ({
@@ -167,6 +168,15 @@ export const usePagesStore = defineStore("pagesStore", {
         return {};
       } catch (error: any) {
         return { error: error.response?.data?.message || "Failed to delete the page" };
+      }
+    },
+
+    async shareFolder(folderId: string, userIds: string[]): Promise<{ error?: string }> {
+      try {
+        await axiosInstance.post(`/page-folders/${folderId}/share/`, { user_ids: userIds });
+        return {};
+      } catch (error: any) {
+        return { error: error.response?.data?.message || "Failed to share the folder" };
       }
     },
 

@@ -33,12 +33,15 @@ import { renderInlineMarkdown } from "@/lib/markdown";
 import { formatShortDate } from "@/lib/dates";
 import { usePagesStore, type PageBlock, type PageFolder, type WorkroomPage } from "@/stores/pagesStore";
 import { useDeviceClass } from "@/composables/useDeviceClass";
+import { usePermissions } from "@/composables/usePermissions";
 
 const pagesStore = usePagesStore();
 const { toast } = useToast();
 const route = useRoute();
 const router = useRouter();
 const { isReadOnly } = useDeviceClass();
+const { userId } = usePermissions();
+const isFolderOwner = (folder: PageFolder) => folder.createdBy === userId.value;
 const selectedFolder = ref<PageFolder | null>(null);
 const selectedPageId = ref<string | null>(null);
 const isShareOpen = ref(false);
@@ -350,7 +353,7 @@ async function deleteSelectedPages() {
 </script>
 
 <template>
-  <ShareFolderModal v-model:open="isShareOpen" />
+  <ShareFolderModal v-model:open="isShareOpen" :folder-id="selectedFolder?.id ?? null" />
   <Dialog v-model:open="isCreateFolderOpen">
     <DialogContent class="max-w-sm">
       <DialogHeader>
@@ -447,8 +450,8 @@ async function deleteSelectedPages() {
         <div class="rounded-2xl border border-border bg-card p-6">
           <p class="text-sm text-subtle">Folders</p>
           <p class="mt-1 text-3xl font-semibold text-ink">{{ pagesStore.folders.length }}</p>
-          <p class="mt-1 flex items-center gap-1 text-xs font-medium text-emerald-500">
-            <Sparkles class="h-3 w-3" /> Shared across your company
+          <p class="mt-1 flex items-center gap-1 text-xs font-medium text-subtle">
+            <Sparkles class="h-3 w-3" /> Private to you unless shared
           </p>
         </div>
       </div>
@@ -474,7 +477,7 @@ async function deleteSelectedPages() {
               @update:model-value="toggleFolderChecked(folder.id)"
               @click.stop
             />
-            <DropdownMenu v-else>
+            <DropdownMenu v-else-if="isFolderOwner(folder)">
               <DropdownMenuTrigger as-child>
                 <button
                   type="button"
@@ -492,7 +495,10 @@ async function deleteSelectedPages() {
             </DropdownMenu>
           </div>
           <p class="mt-3 font-medium text-ink">{{ folder.name }}</p>
-          <p class="text-xs text-subtle">{{ pagesStore.pagesFor(folder.id).length || "—" }} pages</p>
+          <p class="text-xs text-subtle">
+            {{ pagesStore.pagesFor(folder.id).length || "—" }} pages
+            <span v-if="!isFolderOwner(folder)">· Shared with you</span>
+          </p>
         </div>
       </div>
     </template>
@@ -567,7 +573,12 @@ async function deleteSelectedPages() {
             <Check v-if="isEditingPage" class="h-4 w-4" />
             <Pencil v-else class="h-4 w-4" />
           </button>
-          <button type="button" class="flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-sm hover:border-primary/40" @click="isShareOpen = true">
+          <button
+            v-if="selectedFolder && isFolderOwner(selectedFolder)"
+            type="button"
+            class="flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-sm hover:border-primary/40"
+            @click="isShareOpen = true"
+          >
             <Share2 class="h-4 w-4" /> Share
           </button>
           <button

@@ -17,12 +17,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useEmployeeStore } from "@/stores/employeeStore";
+import { usePagesStore } from "@/stores/pagesStore";
+import { useToast } from "@/components/ui/toast/use-toast";
 
+const props = defineProps<{ folderId: string | null }>();
 const open = defineModel<boolean>("open", { required: true });
 const employeeStore = useEmployeeStore();
+const pagesStore = usePagesStore();
+const { toast } = useToast();
 
 const selected = ref<string[]>([""]);
 const shared = ref(false);
+const sharing = ref(false);
 
 watch(open, (isOpen) => {
   if (isOpen) {
@@ -33,8 +39,20 @@ watch(open, (isOpen) => {
 
 const addAnother = () => selected.value.push("");
 
-const share = () => {
-  if (!selected.value.some((v) => v)) return;
+const share = async () => {
+  const emails = selected.value.filter(Boolean);
+  if (!emails.length || !props.folderId) return;
+  const userIds = emails
+    .map((email) => employeeStore.employees.find((e) => e.email === email)?.id)
+    .filter((id): id is string => !!id);
+  if (!userIds.length) return;
+  sharing.value = true;
+  const { error } = await pagesStore.shareFolder(props.folderId, userIds);
+  sharing.value = false;
+  if (error) {
+    toast({ title: "Couldn't share the folder", description: error, variant: "destructive" });
+    return;
+  }
   shared.value = true;
 };
 </script>
@@ -72,7 +90,7 @@ const share = () => {
         </button>
 
         <div class="flex justify-end">
-          <Button class="rounded-xl" @click="share">Share</Button>
+          <Button class="rounded-xl" :disabled="sharing" @click="share">{{ sharing ? "Sharing…" : "Share" }}</Button>
         </div>
       </div>
 
