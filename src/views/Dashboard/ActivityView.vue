@@ -3,9 +3,9 @@
 // preview). The backend endpoint has no category/kind concept, so both
 // filters are derived client-side from the small, stable ActivityType enum
 // -- see ACTIVITY_KIND / ACTIVITY_CATEGORY below.
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import {
-  ArrowRightLeft, Building2, CheckCircle2, FolderPlus, History,
+  ArrowLeft, ArrowRight, ArrowRightLeft, Building2, CheckCircle2, FolderPlus, History,
   RotateCcw, UserCheck, UserMinus, UserPlus, Users,
 } from "lucide-vue-next";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -17,10 +17,14 @@ import { formatRelativeTime, formatShortDate } from "@/lib/dates";
 const activityStore = useActivityStore();
 const { isAdmin, userId } = usePermissions();
 
-// The API has no offset/page param yet (hard-capped at 50 most recent), so
-// this is the fullest history available today -- see fetchActivities.
-const ACTIVITY_FETCH_LIMIT = 50;
-onMounted(() => activityStore.fetchActivities(ACTIVITY_FETCH_LIMIT));
+const page = ref(1);
+const PAGE_SIZE = 20;
+const load = () => activityStore.fetchActivitiesPage(page.value, PAGE_SIZE);
+onMounted(load);
+watch(page, load);
+const totalPages = computed(() =>
+  activityStore.meta ? Math.max(1, Math.ceil(activityStore.meta.count / activityStore.meta.page_size)) : 1
+);
 
 const ICONS: Record<ActivityType, typeof FolderPlus> = {
   project_created: FolderPlus,
@@ -150,6 +154,16 @@ const visibleActivities = computed(() =>
           </div>
         </div>
       </div>
+    </div>
+
+    <div v-if="activityStore.meta && activityStore.meta.count > 0" class="mt-4 flex items-center justify-end gap-3 text-sm text-subtle">
+      <span>Page {{ page }} of {{ totalPages }}</span>
+      <button type="button" class="rounded-lg p-1 hover:bg-page disabled:opacity-40" :disabled="page === 1" @click="page--">
+        <ArrowLeft class="h-4 w-4" />
+      </button>
+      <button type="button" class="rounded-lg p-1 hover:bg-page disabled:opacity-40" :disabled="!activityStore.meta.has_next" @click="page++">
+        <ArrowRight class="h-4 w-4" />
+      </button>
     </div>
   </div>
 </template>

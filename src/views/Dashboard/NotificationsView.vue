@@ -87,7 +87,7 @@ const totalPages = computed(() =>
       <h1 class="text-xl font-semibold">Notifications</h1>
     </div>
 
-    <div class="mb-4 flex flex-wrap items-center gap-3 rounded-2xl border border-gray-100 bg-white p-3">
+    <div class="mb-4 flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-card p-3">
       <Select v-model="typeFilter">
         <SelectTrigger class="w-44 rounded-xl text-sm">
           <SelectValue placeholder="All types" />
@@ -128,17 +128,17 @@ const totalPages = computed(() =>
       <Input v-model="dateTo" type="date" class="w-40 rounded-xl text-sm" />
     </div>
 
-    <div class="rounded-2xl border border-gray-100 bg-white">
+    <div class="rounded-2xl border border-border bg-card">
       <div v-if="notificationStore.loading" class="p-8 text-center text-sm text-subtle">Loading…</div>
       <div v-else-if="!notificationStore.notifications.length" class="p-8 text-center text-sm text-subtle">
         No notifications match these filters.
       </div>
-      <div v-else class="divide-y divide-gray-50">
+      <div v-else class="divide-y divide-border">
         <div
           v-for="notif in notificationStore.notifications"
           :key="notif.id"
           class="flex items-start gap-3 px-4 py-3"
-          :class="!notif.isRead ? 'bg-blue-50/40' : ''"
+          :class="!notif.isRead ? 'bg-primary/5' : ''"
         >
           <Avatar size="sm" class="h-9 w-9 shrink-0 text-xs">
             <AvatarFallback>{{ initials(notif.title) }}</AvatarFallback>
@@ -148,7 +148,7 @@ const totalPages = computed(() =>
               <p class="text-sm font-medium text-ink">{{ notif.title }}</p>
               <span
                 v-if="notif.category === 'critical'"
-                class="rounded-full bg-red-50 px-1.5 py-0.5 text-[10px] font-medium text-red-600"
+                class="rounded-full bg-red-50 px-1.5 py-0.5 text-[10px] font-medium text-red-600 dark:bg-red-500/15 dark:text-red-400"
               >
                 Critical
               </span>

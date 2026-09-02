@@ -46,12 +46,17 @@ const mapActivity = (a: ActivityApi): ActivityEntry => ({
   createdAt: a.created_at,
 });
 
+type PaginationMeta = { count: number; page: number; page_size: number; has_next: boolean };
+
 export const useActivityStore = defineStore("activityStore", {
   state: () => ({
     activities: [] as ActivityEntry[],
+    meta: null as PaginationMeta | null,
     loading: false,
   }),
   actions: {
+    // Fixed recent-N preview -- used by the small Analytics/dashboard
+    // widgets that just want "the last N", not a real page.
     async fetchActivities(limit = 10) {
       this.loading = true;
       try {
@@ -59,6 +64,22 @@ export const useActivityStore = defineStore("activityStore", {
           params: { limit },
         });
         this.activities = data.data.results.map(mapActivity);
+      } catch (error) {
+        console.error("Failed to fetch company activity:", error);
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    // Real page-through-everything listing, for the dedicated Activity page.
+    async fetchActivitiesPage(page = 1, pageSize = 20) {
+      this.loading = true;
+      try {
+        const { data } = await axiosInstance.get<
+          ApiResponse<{ results: ActivityApi[]; meta: PaginationMeta }>
+        >("/activity/paginated/", { params: { page, page_size: pageSize } });
+        this.activities = data.data.results.map(mapActivity);
+        this.meta = data.data.meta;
       } catch (error) {
         console.error("Failed to fetch company activity:", error);
       } finally {
