@@ -103,6 +103,23 @@ export interface TaskType {
   updatedAt: string;
 }
 
+// One real, attributable entry of logged work (api/routers/tasks.py's
+// TimeLogIn/time_log_data) -- replaces the old single overwritable
+// spentTimeHours-only flow, which had no history or per-user attribution.
+export interface TimeLogEntry {
+  id: string;
+  taskId: string;
+  taskTitle?: string; // only present on /time-logs/mine/ rows
+  projectId?: string | null; // only present on /time-logs/mine/ rows
+  projectTitle?: string | null; // only present on /time-logs/mine/ rows
+  userId: string | null;
+  userName: string | null;
+  hours: number;
+  workDate: string;
+  description: string;
+  createdAt: string;
+}
+
 // default task type
 export interface DefaultTaskType {
    id:string;

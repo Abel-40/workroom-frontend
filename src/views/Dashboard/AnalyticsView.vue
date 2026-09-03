@@ -16,6 +16,8 @@ import {
 } from "lucide-vue-next";
 import Header from "@/components/layout/Header.vue";
 import UserCard from "@/components/cards/UserCard.vue";
+import EmptyState from "@/components/shared/EmptyState.vue";
+import { ILLUSTRATIONS } from "@/lib/illustrations";
 import { useAnalyticsStore } from "@/stores/analyticsStore";
 import { useActivityStore, type ActivityType } from "@/stores/activityStore";
 import { useEmployeeStore } from "@/stores/employeeStore";
@@ -26,13 +28,16 @@ const activityStore = useActivityStore();
 const employeeStore = useEmployeeStore();
 const router = useRouter();
 
+const loading = ref(true);
 const activityLimit = ref(15);
 onMounted(async () => {
+  loading.value = true;
   await Promise.all([
     analyticsStore.fetchAll(),
     activityStore.fetchActivities(activityLimit.value),
     employeeStore.employees.length ? Promise.resolve() : employeeStore.fetchEmployees(),
   ]);
+  loading.value = false;
 });
 
 const loadMoreActivity = () => {
@@ -44,6 +49,16 @@ const openEmployee = (employeeId: string) =>
   router.push({ name: "admin-dashboard", query: { section: "employee-detail", employeeId } });
 
 const stats = computed(() => analyticsStore.companyStats);
+const hasAnyCompanyData = computed(() => {
+  const s = stats.value;
+  return (
+    (s?.projectCount ?? 0) > 0 ||
+    (s?.taskCount ?? 0) > 0 ||
+    (s?.memberCount ?? 0) > 1 ||
+    analyticsStore.departmentStats.length > 0 ||
+    activityStore.activities.length > 0
+  );
+});
 const statCards = computed(() => [
   { label: "Total Projects", value: stats.value?.projectCount ?? 0, icon: FolderKanban, color: "text-[#3F8CFF]" },
   { label: "Active Projects", value: stats.value?.activeProjects ?? 0, icon: ListTodo, color: "text-amber-500" },
@@ -75,6 +90,20 @@ const iconFor = (type: ActivityType) => ICONS[type] ?? FolderPlus;
       <p class="mt-1 text-sm text-subtle">Project, task, department, and activity overview for your company.</p>
     </div>
 
+    <p v-if="loading" class="rounded-2xl border border-border bg-card p-12 text-center text-sm text-subtle">
+      Loading analytics…
+    </p>
+
+    <EmptyState
+      v-else-if="!hasAnyCompanyData"
+      size="lg"
+      :image="ILLUSTRATIONS.emptyAnalytics"
+      image-alt="Nothing to analyze yet"
+      title="Nothing to analyze yet"
+      message="Once your company has projects, tasks, or teammates, insights will show up here."
+    />
+
+    <template v-else>
     <!-- Stat cards -->
     <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
       <div v-for="card in statCards" :key="card.label" class="rounded-2xl border border-border bg-card p-4 shadow-sm">
@@ -169,5 +198,6 @@ const iconFor = (type: ActivityType) => ICONS[type] ?? FolderPlus;
         </div>
       </div>
     </div>
+    </template>
   </div>
 </template>

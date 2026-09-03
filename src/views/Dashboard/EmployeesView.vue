@@ -24,6 +24,8 @@ import { useToast } from "@/components/ui/toast/use-toast";
 import Header from "@/components/layout/Header.vue";
 import EmployeeInviteModal from "@/components/employees/EmployeeInviteModal.vue";
 import ConfirmDeleteDialog from "@/components/common/ConfirmDeleteDialog.vue";
+import EmptyState from "@/components/shared/EmptyState.vue";
+import { ILLUSTRATIONS } from "@/lib/illustrations";
 import { useEmployeeStore, type Employee, type EmployeeRole, type RemovalBlockers } from "@/stores/employeeStore";
 import { useDirectoryStore } from "@/stores/directoryStore";
 import { useAuthStore } from "@/stores/authStore";
@@ -276,13 +278,18 @@ const roleBadgeClass: Record<string, string> = {
     </div>
 
     <!-- Empty states -->
-    <div v-if="employeeStore.total === 0" class="rounded-2xl border border-dashed border-border bg-card p-12 text-center">
-      <p class="font-medium text-ink">No employees yet</p>
-      <p class="mt-1 text-sm text-subtle">Invite your first teammate to get started.</p>
-      <Button v-if="canInvite" class="mt-4 rounded-xl" @click="isInviteOpen = true">
+    <EmptyState
+      v-if="employeeStore.total === 0"
+      size="lg"
+      :image="ILLUSTRATIONS.emptyEmployees"
+      image-alt="No employees yet"
+      title="No employees yet"
+      message="Invite your first teammate to get started."
+    >
+      <Button v-if="canInvite" class="rounded-xl" @click="isInviteOpen = true">
         <Plus class="w-4 h-4" /> Add Employee
       </Button>
-    </div>
+    </EmptyState>
     <div v-else-if="filteredEmployees.length === 0" class="rounded-2xl border border-dashed border-border bg-card p-12 text-center">
       <p class="font-medium text-ink">
         {{ searchQuery ? `No employees match "${searchQuery}"` : "No employees match the selected filters" }}

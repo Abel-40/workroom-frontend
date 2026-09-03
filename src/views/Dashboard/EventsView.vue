@@ -8,6 +8,8 @@ import CalendarView from "./CalendarView.vue";
 import Header from "@/components/layout/Header.vue";
 import AddEventModal from "@/components/calendar/AddEventModal.vue";
 import ConfirmDeleteDialog from "@/components/common/ConfirmDeleteDialog.vue";
+import EmptyState from "@/components/shared/EmptyState.vue";
+import { ILLUSTRATIONS } from "@/lib/illustrations";
 import { useToast } from "@/components/ui/toast/use-toast";
 import { useRouter } from "vue-router";
 import filterComposables from "@/composables/filterComposables";
@@ -49,6 +51,8 @@ const attendingScopedEvents = computed(() =>
 const attendingCompanyEvents = computed(() =>
   eventStore.events.filter((e) => e.organizerId !== myUserId.value && !e.departmentId && !e.teamId)
 );
+
+const hasActiveFilters = computed(() => Object.keys(activeFilters.value).length > 0);
 
 const onFiltersChange = (filters: EventFilters) => {
   activeFilters.value = filters;
@@ -175,6 +179,16 @@ const confirmBulkDelete = async () => {
 
     <template v-if="layout === 'cards'">
       <p v-if="eventStore.loading" class="px-2 py-6 text-center text-sm text-subtle">Loading events…</p>
+      <EmptyState
+        v-else-if="!eventStore.events.length && !hasActiveFilters"
+        size="lg"
+        :image="ILLUSTRATIONS.emptyEvents"
+        image-alt="No events yet"
+        title="No events yet"
+        :message="isDM ? 'You have no events yet.' : 'Schedule your first event to keep the team in sync.'"
+      >
+        <Button @click="isAddEventOpen = true"><Plus class="h-4 w-4" /> Add Event</Button>
+      </EmptyState>
       <p v-else-if="!eventStore.events.length" class="rounded-2xl border border-dashed border-border bg-card p-10 text-center text-sm text-subtle">
         No events match these filters.
       </p>

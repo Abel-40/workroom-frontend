@@ -13,6 +13,7 @@ import SectionKicker from "@/components/shared/SectionKicker.vue";
 import PersonRow from "@/components/shared/PersonRow.vue";
 import MetricBar from "@/components/shared/MetricBar.vue";
 import EmptyState from "@/components/shared/EmptyState.vue";
+import { ILLUSTRATIONS } from "@/lib/illustrations";
 import { useAnalyticsStore } from "@/stores/analyticsStore";
 import { useEmployeeStore } from "@/stores/employeeStore";
 import { useDirectoryStore } from "@/stores/directoryStore";
@@ -63,7 +64,12 @@ const openEmployee = (employeeId: string) =>
 
     <SectionKicker label="Team load" />
     <GlassCard v-if="!deptEmployees.length">
-      <EmptyState :icon="Users" message="No one in this department yet." />
+      <EmptyState
+        :icon="Users"
+        :image="ILLUSTRATIONS.dashboardEmptyWorkload"
+        image-alt="No one in this department yet"
+        message="No one in this department yet."
+      />
     </GlassCard>
     <GlassCard v-else>
       <div class="space-y-1">

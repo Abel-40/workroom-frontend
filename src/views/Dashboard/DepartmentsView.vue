@@ -6,6 +6,8 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import Header from "@/components/layout/Header.vue";
 import CreateDepartmentModal from "@/components/departments/CreateDepartmentModal.vue";
 import CreateTeamModal from "@/components/departments/CreateTeamModal.vue";
+import EmptyState from "@/components/shared/EmptyState.vue";
+import { ILLUSTRATIONS } from "@/lib/illustrations";
 import { useDirectoryStore } from "@/stores/directoryStore";
 import { useEmployeeStore } from "@/stores/employeeStore";
 import { usePermissions } from "@/composables/usePermissions";
@@ -103,13 +105,18 @@ const teamMembers = (memberIds: string[]) =>
 
     <!-- Departments tab -->
     <div v-if="tab === 'departments'">
-      <div v-if="directoryStore.departments.length === 0" class="rounded-2xl border border-dashed border-border bg-card p-12 text-center">
-        <p class="font-medium text-ink">No departments yet</p>
-        <p class="mt-1 text-sm text-subtle">Create your company's first department to start organizing members.</p>
-        <Button v-if="canManage" class="mt-4 rounded-xl" @click="isDepartmentModalOpen = true">
+      <EmptyState
+        v-if="directoryStore.departments.length === 0"
+        size="lg"
+        :image="ILLUSTRATIONS.emptyDepartmentsAndTeams"
+        image-alt="No departments yet"
+        title="No departments yet"
+        message="Create your company's first department to start organizing members."
+      >
+        <Button v-if="canManage" class="rounded-xl" @click="isDepartmentModalOpen = true">
           <Plus class="w-4 h-4" /> Add Department
         </Button>
-      </div>
+      </EmptyState>
       <div v-else-if="filteredDepartments.length === 0" class="rounded-2xl border border-dashed border-border bg-card p-12 text-center">
         <p class="font-medium text-ink">No departments match "{{ searchQuery }}"</p>
       </div>
@@ -160,13 +167,18 @@ const teamMembers = (memberIds: string[]) =>
 
     <!-- Teams tab -->
     <div v-else>
-      <div v-if="directoryStore.teams.length === 0" class="rounded-2xl border border-dashed border-border bg-card p-12 text-center">
-        <p class="font-medium text-ink">No teams yet</p>
-        <p class="mt-1 text-sm text-subtle">Teams mix members from different departments for a specific project or initiative.</p>
-        <Button v-if="canManage" class="mt-4 rounded-xl" @click="isTeamModalOpen = true">
+      <EmptyState
+        v-if="directoryStore.teams.length === 0"
+        size="lg"
+        :image="ILLUSTRATIONS.emptyDepartmentsAndTeams"
+        image-alt="No teams yet"
+        title="No teams yet"
+        message="Teams mix members from different departments for a specific project or initiative."
+      >
+        <Button v-if="canManage" class="rounded-xl" @click="isTeamModalOpen = true">
           <Plus class="w-4 h-4" /> Add Team
         </Button>
-      </div>
+      </EmptyState>
       <div v-else-if="filteredTeams.length === 0" class="rounded-2xl border border-dashed border-border bg-card p-12 text-center">
         <p class="font-medium text-ink">No teams match "{{ searchQuery }}"</p>
       </div>

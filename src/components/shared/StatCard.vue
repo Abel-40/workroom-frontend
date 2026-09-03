@@ -8,13 +8,15 @@ withDefaults(
     icon?: Component;
     delta?: string;
     deltaDirection?: "up" | "down" | "neutral";
+    // See GlassCard.vue's variant prop -- same opt-in flat/glass split.
+    variant?: "glass" | "flat";
   }>(),
-  { deltaDirection: "neutral" }
+  { deltaDirection: "neutral", variant: "glass" }
 );
 </script>
 
 <template>
-  <div class="wr-glass rounded-2xl p-5">
+  <div class="rounded-2xl p-5" :class="variant === 'flat' ? 'border border-border bg-card shadow-sm' : 'wr-glass'">
     <div class="flex items-start justify-between gap-3">
       <p class="text-xs font-semibold uppercase tracking-[.06em] text-[#7D8592]">{{ label }}</p>
       <component :is="icon" v-if="icon" class="h-4 w-4 text-primary-strong" />

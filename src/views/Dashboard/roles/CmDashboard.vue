@@ -30,6 +30,7 @@ import { useEventStore } from "@/stores/eventStore";
 import { useEmployeeStore } from "@/stores/employeeStore";
 import { useAuthStore } from "@/stores/authStore";
 import { hasPermission } from "@/lib/permissions";
+import { ILLUSTRATIONS } from "@/lib/illustrations";
 import { EVENT_BORDER_CLASS, eventColorFor } from "@/lib/eventColor";
 import { formatTime } from "@/lib/dates";
 
@@ -164,11 +165,9 @@ const setupSteps = computed(() => {
 
     <template v-if="!loading && isWorkspaceEmpty">
       <div class="grid grid-cols-12 gap-4">
-        <GlassCard class="col-span-12 md:col-span-6" padding="airy">
+        <GlassCard variant="flat" class="col-span-12 md:col-span-6" padding="airy">
           <div class="flex flex-col items-center gap-3 py-4 text-center">
-            <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary-soft">
-              <Users class="h-8 w-8 text-primary-strong" />
-            </div>
+            <img :src="ILLUSTRATIONS.dashboardEmptyWorkload" alt="No team members yet" class="h-24 w-24 object-contain" />
             <div>
               <p class="font-bold text-ink">No team members yet</p>
               <p class="mx-auto mt-1 max-w-xs text-sm text-subtle">
@@ -181,11 +180,9 @@ const setupSteps = computed(() => {
           </div>
         </GlassCard>
 
-        <GlassCard class="col-span-12 md:col-span-6" padding="airy">
+        <GlassCard variant="flat" class="col-span-12 md:col-span-6" padding="airy">
           <div class="flex flex-col items-center gap-3 py-4 text-center">
-            <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary-soft">
-              <FolderPlus class="h-8 w-8 text-primary-strong" />
-            </div>
+            <img :src="ILLUSTRATIONS.dashboardEmptyProjects" alt="No projects yet" class="h-24 w-24 object-contain" />
             <div>
               <p class="font-bold text-ink">No projects yet</p>
               <p class="mx-auto mt-1 max-w-xs text-sm text-subtle">
@@ -198,11 +195,9 @@ const setupSteps = computed(() => {
           </div>
         </GlassCard>
 
-        <GlassCard class="col-span-12 md:col-span-6" padding="airy">
+        <GlassCard variant="flat" class="col-span-12 md:col-span-6" padding="airy">
           <div class="flex flex-col items-center gap-3 py-4 text-center">
-            <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary-soft">
-              <CalendarPlus class="h-8 w-8 text-primary-strong" />
-            </div>
+            <img :src="ILLUSTRATIONS.dashboardEmptyEvents" alt="No upcoming events" class="h-24 w-24 object-contain" />
             <div>
               <p class="font-bold text-ink">No upcoming events</p>
               <p class="mx-auto mt-1 max-w-xs text-sm text-subtle">
@@ -215,7 +210,7 @@ const setupSteps = computed(() => {
           </div>
         </GlassCard>
 
-        <GlassCard class="col-span-12 md:col-span-6" padding="airy">
+        <GlassCard variant="flat" class="col-span-12 md:col-span-6" padding="airy">
           <div class="flex flex-col items-center gap-3 py-4 text-center">
             <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary-soft">
               <Activity class="h-8 w-8 text-primary-strong" />
@@ -230,7 +225,7 @@ const setupSteps = computed(() => {
         </GlassCard>
       </div>
 
-      <GlassCard title="Let's set up your workspace!" padding="airy">
+      <GlassCard variant="flat" title="Let's set up your workspace!" padding="airy">
         <p class="-mt-2 mb-4 text-sm text-subtle">Complete a few quick steps to get the most out of your dashboard.</p>
         <div class="grid gap-3 sm:grid-cols-3">
           <RouterLink
@@ -274,8 +269,14 @@ const setupSteps = computed(() => {
             </RouterLink>
           </div>
           <SkeletonCard v-if="loading" :rows="4" />
-          <GlassCard v-else>
-            <EmptyState v-if="!employeeStore.employees.length" :icon="Users" message="No team members yet." />
+          <GlassCard v-else variant="flat" class="flex min-h-[240px] flex-col justify-center">
+            <EmptyState
+              v-if="!employeeStore.employees.length"
+              :icon="Users"
+              :image="ILLUSTRATIONS.dashboardEmptyWorkload"
+              image-alt="No team members yet"
+              message="No team members yet."
+            />
             <div v-else class="grid grid-cols-2 gap-2 sm:grid-cols-4">
               <UserCard
                 v-for="member in workloadPreview"
@@ -305,21 +306,23 @@ const setupSteps = computed(() => {
             </RouterLink>
           </div>
           <SkeletonCard v-if="loading" :rows="4" />
-          <EmptyState v-else-if="!attentionProjects.length" :icon="AlertTriangle" message="Nothing overdue. Every project is on track." />
-          <div v-else class="space-y-3">
-            <div v-for="row in attentionProjects" :key="row.project.id" class="relative">
-              <span class="absolute right-4 top-4 z-10 rounded-full bg-rose-100 px-2 py-0.5 text-[11px] font-semibold text-rose-700 dark:bg-rose-500/15 dark:text-rose-400">
-                {{ row.daysOverdue }}d overdue
-              </span>
-              <ProjectCard :project="row.project" />
+          <GlassCard v-else variant="flat" class="flex min-h-[240px] flex-col justify-center">
+            <EmptyState v-if="!attentionProjects.length" :icon="AlertTriangle" message="Nothing overdue. Every project is on track." />
+            <div v-else class="space-y-3">
+              <div v-for="row in attentionProjects" :key="row.project.id" class="relative">
+                <span class="absolute right-4 top-4 z-10 rounded-full bg-rose-100 px-2 py-0.5 text-[11px] font-semibold text-rose-700 dark:bg-rose-500/15 dark:text-rose-400">
+                  {{ row.daysOverdue }}d overdue
+                </span>
+                <ProjectCard :project="row.project" />
+              </div>
             </div>
-          </div>
+          </GlassCard>
         </div>
 
         <div>
           <SectionKicker label="Load by department" />
           <SkeletonCard v-if="loading" :rows="4" />
-          <GlassCard v-else>
+          <GlassCard v-else variant="flat">
             <EmptyState v-if="!departmentLoad.length" :icon="Gauge" message="No departments yet." />
             <div v-else class="space-y-4">
               <MetricBar
@@ -346,8 +349,14 @@ const setupSteps = computed(() => {
             </RouterLink>
           </div>
           <SkeletonCard v-if="loading" :rows="3" />
-          <GlassCard v-else>
-            <EmptyState v-if="!eventStore.nearest.length" :icon="CalendarClock" message="No upcoming events." />
+          <GlassCard v-else variant="flat" class="flex min-h-[240px] flex-col justify-center">
+            <EmptyState
+              v-if="!eventStore.nearest.length"
+              :icon="CalendarClock"
+              :image="ILLUSTRATIONS.dashboardEmptyEvents"
+              image-alt="No upcoming events"
+              message="No upcoming events."
+            />
             <ul v-else class="space-y-2.5">
               <li v-for="event in eventStore.nearest" :key="event.id">
                 <RouterLink

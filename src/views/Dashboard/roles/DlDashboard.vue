@@ -28,6 +28,7 @@ import { useEmployeeStore } from "@/stores/employeeStore";
 import { useDirectoryStore } from "@/stores/directoryStore";
 import { useEventStore } from "@/stores/eventStore";
 import { usePermissions } from "@/composables/usePermissions";
+import { ILLUSTRATIONS } from "@/lib/illustrations";
 import { formatMonthShort, formatDayNumber, formatTime } from "@/lib/dates";
 
 const projectStore = useProjectStore();
@@ -128,7 +129,13 @@ const projectDonePercent = (p: (typeof departmentProjects.value)[number]) =>
           <SectionKicker label="Team workload this week" />
           <SkeletonCard v-if="loading" :rows="4" />
           <GlassCard v-else>
-            <EmptyState v-if="!workload.length" :icon="Users" message="No one in this department yet." />
+            <EmptyState
+              v-if="!workload.length"
+              :icon="Users"
+              :image="ILLUSTRATIONS.dashboardEmptyWorkload"
+              image-alt="No one in this department yet"
+              message="No one in this department yet."
+            />
             <div v-else class="space-y-1">
               <PersonRow
                 v-for="row in workload"
@@ -170,7 +177,13 @@ const projectDonePercent = (p: (typeof departmentProjects.value)[number]) =>
           <SectionKicker label="Department projects" />
           <SkeletonCard v-if="loading" :rows="3" />
           <GlassCard v-else>
-            <EmptyState v-if="!departmentProjects.length" :icon="FolderKanban" message="No projects in this department yet.">
+            <EmptyState
+              v-if="!departmentProjects.length"
+              :icon="FolderKanban"
+              :image="ILLUSTRATIONS.dashboardEmptyProjects"
+              image-alt="No projects in this department yet"
+              message="No projects in this department yet."
+            >
               <Button size="sm" class="bg-gradient-to-br from-[#3F8CFF] to-accent-2 text-white" @click="showCreateProject = true">
                 New project
               </Button>
@@ -196,7 +209,13 @@ const projectDonePercent = (p: (typeof departmentProjects.value)[number]) =>
           <SectionKicker label="Department events" />
           <SkeletonCard v-if="loading" :rows="3" />
           <GlassCard v-else>
-            <EmptyState v-if="!eventStore.nearest.length" :icon="CalendarClock" message="No upcoming department events." />
+            <EmptyState
+              v-if="!eventStore.nearest.length"
+              :icon="CalendarClock"
+              :image="ILLUSTRATIONS.dashboardEmptyEvents"
+              image-alt="No upcoming department events"
+              message="No upcoming department events."
+            />
             <ul v-else class="space-y-1">
               <li v-for="event in eventStore.nearest" :key="event.id">
                 <RouterLink

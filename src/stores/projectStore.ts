@@ -1,6 +1,6 @@
 // stores/projectStore.ts
 import { defineStore } from "pinia";
-import type { ApiResponse, Project, ProjectVisibility, TaskType } from "@/types/types";
+import type { ApiResponse, Project, ProjectVisibility, TaskType, TimeLogEntry } from "@/types/types";
 import { computeTaskProgress } from "@/lib/duration";
 import axiosInstance from "@/plugins/axios";
 import { useEmployeeStore } from "@/stores/employeeStore";
@@ -238,6 +238,45 @@ export interface UpdateTaskInput {
   estimatedTimeHours?: number | null;
 }
 
+// One real, attributable entry of logged work (api/routers/tasks.py's
+// time_log_data/my_time_log_data) -- task_title/project_id/project_title
+// are only populated on /time-logs/mine/ rows, not per-task listings.
+type TimeLogApi = {
+  id: string;
+  task_id: string;
+  task_title?: string;
+  project_id?: string | null;
+  project_title?: string | null;
+  user_id: string | null;
+  user_name: string | null;
+  hours: number;
+  work_date: string;
+  description: string;
+  created_at: string;
+};
+
+function mapTimeLog(api: TimeLogApi): TimeLogEntry {
+  return {
+    id: api.id,
+    taskId: api.task_id,
+    taskTitle: api.task_title,
+    projectId: api.project_id,
+    projectTitle: api.project_title,
+    userId: api.user_id,
+    userName: api.user_name,
+    hours: api.hours,
+    workDate: api.work_date,
+    description: api.description,
+    createdAt: api.created_at,
+  };
+}
+
+export interface CreateTimeLogInput {
+  hours: number;
+  workDate?: string;
+  description?: string;
+}
+
 export const useProjectStore = defineStore("projectStore", {
   state: () => ({
     projects: [] as Project[],
@@ -247,6 +286,7 @@ export const useProjectStore = defineStore("projectStore", {
     selectedTask: null as TaskType | null,
     statsByProject: {} as Record<string, ProjectStats>,
     visibilityRequests: [] as VisibilityRequest[],
+    timeLogsByTask: {} as Record<string, TimeLogEntry[]>,
   }),
   getters: {
     getSelectedState(state) {
@@ -597,21 +637,69 @@ export const useProjectStore = defineStore("projectStore", {
       }
     },
 
-    // addedHours: parsed from the free-text "time spent" input by the caller
-    // (lib/duration.ts's parseDurationToMinutes) -- the backend field itself
-    // is a plain hours float.
-    async logTime(taskId: string, addedHours: number): Promise<{ error?: string }> {
-      const task = this.findTask(taskId);
-      if (!task) return { error: "Task not found" };
+    // Creates one real, attributable time-log entry (replaces the old
+    // logTime, which just overwrote a single running-total field and
+    // silently discarded the date/description -- see TaskTimeLog).
+    async createTimeLog(taskId: string, input: CreateTimeLogInput): Promise<{ entry?: TimeLogEntry; error?: string }> {
       try {
-        const newTotal = (task.spentTimeHours || 0) + addedHours;
-        const { data } = await axiosInstance.patch<ApiResponse<{ task: TaskApi }>>(`/tasks/${taskId}/`, {
-          spent_time_hours: newTotal,
-        });
-        this._applyUpdatedTask(mapTask(data.data.task));
-        return {};
+        const { data } = await axiosInstance.post<ApiResponse<{ time_log: TimeLogApi; spent_time_hours: number | null }>>(
+          `/tasks/${taskId}/time-logs/`,
+          { hours: input.hours, work_date: input.workDate, description: input.description }
+        );
+        const entry = mapTimeLog(data.data.time_log);
+        this.timeLogsByTask[taskId] = [entry, ...(this.timeLogsByTask[taskId] ?? [])];
+        this._applySpentHours(taskId, data.data.spent_time_hours);
+        return { entry };
       } catch (error: any) {
         return { error: error.response?.data?.message || "Failed to log time" };
+      }
+    },
+
+    async fetchTimeLogs(taskId: string): Promise<{ error?: string }> {
+      try {
+        const { data } = await axiosInstance.get<ApiResponse<{ results: TimeLogApi[] }>>(
+          `/tasks/${taskId}/time-logs/`,
+          { params: { page_size: 100 } }
+        );
+        this.timeLogsByTask[taskId] = data.data.results.map(mapTimeLog);
+        return {};
+      } catch (error: any) {
+        return { error: error.response?.data?.message || "Failed to load time logs" };
+      }
+    },
+
+    async deleteTimeLog(taskId: string, logId: string): Promise<{ error?: string }> {
+      try {
+        const { data } = await axiosInstance.delete<ApiResponse<{ spent_time_hours: number | null }>>(
+          `/tasks/${taskId}/time-logs/${logId}/`
+        );
+        this.timeLogsByTask[taskId] = (this.timeLogsByTask[taskId] ?? []).filter((entry) => entry.id !== logId);
+        this._applySpentHours(taskId, data.data.spent_time_hours);
+        return {};
+      } catch (error: any) {
+        return { error: error.response?.data?.message || "Failed to delete time log" };
+      }
+    },
+
+    _applySpentHours(taskId: string, spentTimeHours: number | null) {
+      const task = this.findTask(taskId);
+      if (!task) return;
+      task.spentTimeHours = spentTimeHours;
+      task.progress = computeTaskProgress(task.status, task.spentTimeHours, task.estimatedTimeHours);
+    },
+
+    // The current user's own logged entries across every task/project,
+    // optionally scoped to a date range -- powers My Activity's real
+    // per-period "Time by projects" (view-specific, so not cached here).
+    async fetchMyTimeLogs(range?: { startDate?: string; endDate?: string }): Promise<TimeLogEntry[]> {
+      try {
+        const { data } = await axiosInstance.get<ApiResponse<{ results: TimeLogApi[] }>>("/time-logs/mine/", {
+          params: { start_date: range?.startDate, end_date: range?.endDate, page_size: 200 },
+        });
+        return data.data.results.map(mapTimeLog);
+      } catch (error) {
+        console.error("Failed to fetch my time logs:", error);
+        return [];
       }
     },
   },

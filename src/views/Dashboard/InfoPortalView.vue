@@ -29,6 +29,8 @@ import { useToast } from "@/components/ui/toast/use-toast";
 import Header from "@/components/layout/Header.vue";
 import ShareFolderModal from "@/components/info-portal/ShareFolderModal.vue";
 import ConfirmDeleteDialog from "@/components/common/ConfirmDeleteDialog.vue";
+import EmptyState from "@/components/shared/EmptyState.vue";
+import { ILLUSTRATIONS } from "@/lib/illustrations";
 import { renderInlineMarkdown } from "@/lib/markdown";
 import { formatShortDate } from "@/lib/dates";
 import { usePagesStore, type PageBlock, type PageFolder, type WorkroomPage } from "@/stores/pagesStore";
@@ -456,7 +458,19 @@ async function deleteSelectedPages() {
         </div>
       </div>
 
-      <p v-if="!filteredFolders.length" class="rounded-2xl border border-dashed border-border bg-card p-10 text-center text-sm text-subtle">
+      <EmptyState
+        v-if="!pagesStore.folders.length"
+        size="lg"
+        :image="ILLUSTRATIONS.emptyFolder"
+        image-alt="No folders yet"
+        title="No folders yet"
+        message="Create a folder to start organizing project data and shared pages."
+      >
+        <Button v-if="!isReadOnly" class="rounded-xl" @click="openCreateFolder">
+          <Plus class="h-4 w-4" /> Add Folder
+        </Button>
+      </EmptyState>
+      <p v-else-if="!filteredFolders.length" class="rounded-2xl border border-dashed border-border bg-card p-10 text-center text-sm text-subtle">
         No folders match "{{ searchQuery }}"
       </p>
       <div v-else class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">

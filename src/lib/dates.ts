@@ -71,6 +71,23 @@ export function formatShortDate(iso: string | null | undefined): string {
   }).format(date);
 }
 
+// "Mar 5, 2026" for a bare calendar date with no time-of-day (e.g.
+// TaskTimeLog.work_date) -- deliberately does NOT go through toDate/
+// currentTimeZone. A plain "YYYY-MM-DD" has no instant to convert from, so
+// treating it as UTC-midnight (like formatShortDate does for real
+// timestamps) can shift it a day either way depending on the viewer's zone.
+// Parsing the Y/M/D directly and formatting with the browser's own local
+// zone (no `timeZone` override) guarantees the date shown is the date that
+// was logged, everywhere.
+export function formatCalendarDate(value: string | null | undefined): string {
+  if (!value) return "Not set";
+  const [year, month, day] = value.split("-").map(Number);
+  if (!year || !month || !day) return "Not set";
+  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(
+    new Date(year, month - 1, day)
+  );
+}
+
 // "AUG" -- for the compact month/day date badge on event cards.
 export function formatMonthShort(iso: string | null | undefined): string {
   const date = toDate(iso);

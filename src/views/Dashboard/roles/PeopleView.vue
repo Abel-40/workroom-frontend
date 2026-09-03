@@ -16,6 +16,7 @@ import GlassCard from "@/components/shared/GlassCard.vue";
 import PageHeader from "@/components/shared/PageHeader.vue";
 import EmptyState from "@/components/shared/EmptyState.vue";
 import SkeletonCard from "@/components/shared/SkeletonCard.vue";
+import { ILLUSTRATIONS } from "@/lib/illustrations";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import EmployeeInviteModal from "@/components/employees/EmployeeInviteModal.vue";
 import ConfirmDeleteDialog from "@/components/common/ConfirmDeleteDialog.vue";
@@ -100,9 +101,14 @@ const initials = (name: string) => (name || "?").split(" ").map((p) => p[0]).joi
     <div v-if="loading" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       <SkeletonCard v-for="i in 4" :key="i" :rows="2" />
     </div>
-    <GlassCard v-else-if="!roster.length">
-      <EmptyState :icon="Users" :message="searchQuery ? `No one matches “${searchQuery}”.` : 'No one in this department yet.'" />
-    </GlassCard>
+    <EmptyState
+      v-else-if="!roster.length"
+      size="lg"
+      :icon="Users"
+      :image="searchQuery ? undefined : ILLUSTRATIONS.emptyEmployees"
+      image-alt="No one in this department yet"
+      :message="searchQuery ? `No one matches “${searchQuery}”.` : 'No one in this department yet.'"
+    />
     <div v-else class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       <GlassCard v-for="employee in roster" :key="employee.id" padding="dense">
         <div class="flex flex-col items-center text-center">

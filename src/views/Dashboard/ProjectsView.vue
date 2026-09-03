@@ -28,6 +28,8 @@ import CreateProjectModal from "@/components/projects/CreateProjectModal.vue";
 import ProjectImage from "@/components/projects/ProjectImage.vue";
 import ProjectListRow from "@/components/projects/ProjectListRow.vue";
 import ConfirmDeleteDialog from "@/components/common/ConfirmDeleteDialog.vue";
+import EmptyState from "@/components/shared/EmptyState.vue";
+import { ILLUSTRATIONS } from "@/lib/illustrations";
 import { useToast } from "@/components/ui/toast/use-toast";
 import { formatShortDate } from "@/lib/dates";
 import { useProjectStore } from "@/stores/projectStore";
@@ -661,6 +663,12 @@ const goToPrevious = () => {
 }
 
 const totalProjects = computed(() => projectsStore.projects.length);
+// True company/department-wide emptiness (no projects exist at all), as
+// opposed to the current status tab or search/filters just happening to
+// match zero -- only this takes over the whole page (sidebar + task panel
+// hidden) with one centered illustration; a tab/filter miss stays a small
+// inline notice inside the still-visible sidebar.
+const isProjectsWorkspaceEmpty = computed(() => totalProjects.value === 0);
 watch(()=>paginatedProjects.value,()=>{
   selectedProject.value = paginatedProjects.value[0]
 })
@@ -695,6 +703,7 @@ watch(()=>paginatedProjects.value,()=>{
             <Plus class="w-4 h-4" /> Add Project
           </Button>
           <Button
+            v-if="!isProjectsWorkspaceEmpty"
             class="bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl"
             :disabled="!selectedProject"
             @click="isAddTaskOpen = true"
@@ -705,8 +714,25 @@ watch(()=>paginatedProjects.value,()=>{
       </div>
     </div>
 
+    <!-- Whole company/department has no projects yet -- one centered
+         illustration takes over the space where the sidebar + task panel
+         would otherwise sit, instead of squeezing it into the narrow aside. -->
+    <div v-if="isProjectsWorkspaceEmpty" class="flex min-h-[60vh] w-full items-center justify-center">
+      <EmptyState
+        size="xl"
+        :image="ILLUSTRATIONS.emptyProjects"
+        image-alt="No projects yet"
+        title="No projects yet"
+        message="Create your first project to start organizing work."
+      >
+        <Button v-if="!isReadOnly" class="rounded-xl" @click="isAddProjectOpen = true">
+          <Plus class="w-4 h-4" /> Add Project
+        </Button>
+      </EmptyState>
+    </div>
+
     <!--project aside + projects Task -->
-    <div class="w-full flex flex-col lg:flex-row gap-6">
+    <div v-else class="w-full flex flex-col lg:flex-row gap-6">
       <!-- aside -->
       <div
         class="w-full lg:w-1/4 rounded-2xl bg-card border border-border shadow-lg flex flex-col justify-between"
@@ -1106,9 +1132,12 @@ watch(()=>paginatedProjects.value,()=>{
                 <p v-if="!paginatedProjects.length && searchQuery" class="px-4 py-6 text-center text-sm text-subtle">
                   No projects match "{{ searchQuery }}"
                 </p>
-                <p v-else-if="!paginatedProjects.length" class="px-4 py-6 text-center text-sm text-subtle">
-                  No projects to show.
-                </p>
+                <EmptyState
+                  v-else-if="!paginatedProjects.length"
+                  :image="ILLUSTRATIONS.emptyProjects"
+                  image-alt="No projects in this view"
+                  message="No projects in this view."
+                />
                 <div v-else class="max-h-[500px]">
                   <ProjectListRow
                     v-for="project in paginatedProjects"

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
-import { ArrowDown, ArrowUp, Calendar } from "lucide-vue-next";
+import { computed, onMounted, ref, watch } from "vue";
+import { ArrowDown, ArrowUp, Calendar, Trash2 } from "lucide-vue-next";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,7 +16,7 @@ import { useAuthStore } from "@/stores/authStore";
 import { useEmployeeStore } from "@/stores/employeeStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { formatHoursToDuration } from "@/lib/duration";
-import { formatShortDate } from "@/lib/dates";
+import { formatShortDate, formatCalendarDate } from "@/lib/dates";
 import { canManageTask } from "@/lib/projectPermissions";
 import type { Project, TaskType } from "@/types/types";
 import TimeTrackingModal from "./TimeTrackingModal.vue";
@@ -71,6 +71,23 @@ const priorityIcon = (level: string) => (level === "low" ? ArrowDown : ArrowUp);
 const progressPercent = computed(() => parseInt(props.task.progress, 10) || 0);
 const ringCircumference = 2 * Math.PI * 18;
 const ringOffset = computed(() => ringCircumference * (1 - progressPercent.value / 100));
+
+const timeLogs = computed(() => projectsStore.timeLogsByTask[props.task.id] ?? []);
+const deletingLogId = ref<string | null>(null);
+const myUserId = computed(() => authStore.logedInUserInfo.user?.id);
+
+const loadTimeLogs = () => projectsStore.fetchTimeLogs(props.task.id);
+onMounted(loadTimeLogs);
+watch(() => props.task.id, loadTimeLogs);
+
+const canDeleteLog = (entry: { userId: string | null }) => entry.userId === myUserId.value || canReassign.value;
+
+const removeTimeLog = async (logId: string) => {
+  deletingLogId.value = logId;
+  const { error } = await projectsStore.deleteTimeLog(props.task.id, logId);
+  deletingLogId.value = null;
+  if (error) toast({ title: "Time entry not removed", description: error, variant: "destructive" });
+};
 
 const UNASSIGNED = "__unassigned__";
 const assigneeValue = computed({
@@ -152,6 +169,27 @@ const assigneeValue = computed({
         <Button class="mt-3 w-full rounded-xl" size="sm" @click="timeTrackingOpen = true">
           Log time
         </Button>
+
+        <div v-if="timeLogs.length" class="mt-3 max-h-40 space-y-2 overflow-y-auto border-t border-border pt-3">
+          <div v-for="entry in timeLogs" :key="entry.id" class="flex items-start justify-between gap-2 text-xs">
+            <div class="min-w-0">
+              <p class="font-medium text-ink">{{ entry.userName ?? "Unknown" }} · {{ formatHoursToDuration(entry.hours) }}</p>
+              <p class="truncate text-subtle">
+                {{ formatCalendarDate(entry.workDate) }}<span v-if="entry.description"> · {{ entry.description }}</span>
+              </p>
+            </div>
+            <button
+              v-if="canDeleteLog(entry)"
+              type="button"
+              class="shrink-0 text-subtle hover:text-red-500 disabled:opacity-50"
+              title="Remove entry"
+              :disabled="deletingLogId === entry.id"
+              @click="removeTimeLog(entry.id)"
+            >
+              <Trash2 class="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
       </div>
 
       <div>
