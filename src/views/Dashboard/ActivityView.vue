@@ -25,6 +25,37 @@ const totalPages = computed(() =>
   activityStore.meta ? Math.max(1, Math.ceil(activityStore.meta.count / activityStore.meta.page_size)) : 1
 );
 
+// A windowed page list, so a company with hundreds of entries doesn't render
+// hundreds of buttons: always first/last, plus a couple either side of the
+// current page, with gaps collapsed to an ellipsis.
+const pageItems = computed<Array<number | "gap">>(() => {
+  const total = totalPages.value;
+  const current = page.value;
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+
+  const items: Array<number | "gap"> = [1];
+  const start = Math.max(2, current - 1);
+  const end = Math.min(total - 1, current + 1);
+  if (start > 2) items.push("gap");
+  for (let i = start; i <= end; i++) items.push(i);
+  if (end < total - 1) items.push("gap");
+  items.push(total);
+  return items;
+});
+
+const goToPage = (target: number) => {
+  if (target >= 1 && target <= totalPages.value && target !== page.value) page.value = target;
+};
+
+// Human-readable "showing X-Y of Z" for the current page.
+const rangeLabel = computed(() => {
+  const meta = activityStore.meta;
+  if (!meta || meta.count === 0) return "";
+  const from = (meta.page - 1) * meta.page_size + 1;
+  const to = Math.min(meta.page * meta.page_size, meta.count);
+  return `${from}-${to} of ${meta.count}`;
+});
+
 const ICONS: Record<ActivityType, typeof FolderPlus> = {
   project_created: FolderPlus,
   project_completed: CheckCircle2,
@@ -154,14 +185,51 @@ const visibleActivities = computed(() =>
       </div>
     </div>
 
-    <div v-if="activityStore.meta && activityStore.meta.count > 0" class="mt-4 flex items-center justify-end gap-3 text-sm text-subtle">
-      <span>Page {{ page }} of {{ totalPages }}</span>
-      <button type="button" class="rounded-lg p-1 hover:bg-page disabled:opacity-40" :disabled="page === 1" @click="page--">
-        <ArrowLeft class="h-4 w-4" />
-      </button>
-      <button type="button" class="rounded-lg p-1 hover:bg-page disabled:opacity-40" :disabled="!activityStore.meta.has_next" @click="page++">
-        <ArrowRight class="h-4 w-4" />
-      </button>
+    <div
+      v-if="activityStore.meta && activityStore.meta.count > 0"
+      class="mt-4 flex flex-col items-center justify-between gap-3 sm:flex-row"
+    >
+      <p class="text-xs text-subtle">Showing {{ rangeLabel }}</p>
+
+      <nav class="flex items-center gap-1" aria-label="Activity pagination">
+        <button
+          type="button"
+          class="flex h-8 w-8 items-center justify-center rounded-lg text-subtle transition-colors hover:bg-page hover:text-ink disabled:pointer-events-none disabled:opacity-40"
+          :disabled="page === 1"
+          aria-label="Previous page"
+          @click="goToPage(page - 1)"
+        >
+          <ArrowLeft class="h-4 w-4" />
+        </button>
+
+        <template v-for="(item, index) in pageItems" :key="`${item}-${index}`">
+          <span v-if="item === 'gap'" class="px-1 text-xs text-subtle">…</span>
+          <button
+            v-else
+            type="button"
+            class="h-8 min-w-8 rounded-lg px-2 text-xs font-medium transition-colors"
+            :class="
+              item === page
+                ? 'bg-primary text-primary-foreground'
+                : 'text-subtle hover:bg-page hover:text-ink'
+            "
+            :aria-current="item === page ? 'page' : undefined"
+            @click="goToPage(item)"
+          >
+            {{ item }}
+          </button>
+        </template>
+
+        <button
+          type="button"
+          class="flex h-8 w-8 items-center justify-center rounded-lg text-subtle transition-colors hover:bg-page hover:text-ink disabled:pointer-events-none disabled:opacity-40"
+          :disabled="!activityStore.meta.has_next"
+          aria-label="Next page"
+          @click="goToPage(page + 1)"
+        >
+          <ArrowRight class="h-4 w-4" />
+        </button>
+      </nav>
     </div>
   </div>
 </template>

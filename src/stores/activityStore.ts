@@ -81,9 +81,37 @@ export const useActivityStore = defineStore("activityStore", {
         this.activities = data.data.results.map(mapActivity);
         this.meta = data.data.meta;
       } catch (error) {
-        console.error("Failed to fetch company activity:", error);
+        // /activity/paginated/ only exists on newer backends. Against an older
+        // one it 404s, which used to leave the Activity page with an empty
+        // feed and no pagination controls at all -- fall back to the capped
+        // preview endpoint and page through it client-side instead.
+        if ((error as { response?: { status?: number } })?.response?.status === 404) {
+          await this.fetchActivitiesPageFallback(page, pageSize);
+        } else {
+          console.error("Failed to fetch company activity:", error);
+        }
       } finally {
         this.loading = false;
+      }
+    },
+
+    async fetchActivitiesPageFallback(page: number, pageSize: number) {
+      const PREVIEW_CAP = 50; // The old endpoint's own MAX_LIMIT.
+      try {
+        const { data } = await axiosInstance.get<ApiResponse<{ results: ActivityApi[] }>>("/activity/", {
+          params: { limit: PREVIEW_CAP },
+        });
+        const all = data.data.results.map(mapActivity);
+        const offset = (page - 1) * pageSize;
+        this.activities = all.slice(offset, offset + pageSize);
+        this.meta = {
+          count: all.length,
+          page,
+          page_size: pageSize,
+          has_next: offset + pageSize < all.length,
+        };
+      } catch (error) {
+        console.error("Failed to fetch company activity:", error);
       }
     },
   },
