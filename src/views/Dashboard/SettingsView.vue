@@ -1,18 +1,13 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
 import {
-  Blocks,
-  Building2,
   ChevronLeft,
-  CreditCard,
-  Lock,
   Monitor,
-  ShieldCheck,
   Sun,
   Moon,
-  User,
 } from "lucide-vue-next";
-import { RouterLink } from "vue-router";
+import { RouterLink, useRoute } from "vue-router";
+import { SETTINGS_TABS, getVisibleSettingsTabs, type SettingsTabKey } from "@/lib/settingsTabs";
 import { Switch } from "@/components/ui/switch";
 import {
   Select,
@@ -23,13 +18,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/components/ui/toast/use-toast";
-import Header from "@/components/layout/Header.vue";
 import { useAuthStore } from "@/stores/authStore";
 import { useUserProfileStore } from "@/stores/userProfileStore";
 import { useCompanyConfigStore } from "@/stores/companyConfigStore";
 import { useDirectoryStore } from "@/stores/directoryStore";
 import { currentTimeZone } from "@/lib/dates";
-import { hasPermission } from "@/lib/permissions";
 import { useTheme, type ThemePreference } from "@/composables/useTheme";
 import type { AcceptableValue } from "reka-ui";
 
@@ -38,7 +31,20 @@ const profileStore = useUserProfileStore();
 const companyConfigStore = useCompanyConfigStore();
 const directoryStore = useDirectoryStore();
 const { toast } = useToast();
-const activeTab = ref<"account" | "notifications" | "company" | "apps" | "payments" | "confidentiality" | "safety">("notifications");
+const route = useRoute();
+
+// Deep-linkable via ?section=settings&tab=<key> (global search routes here) --
+// falls back to "notifications" when absent/invalid, same as before.
+const initialTab = SETTINGS_TABS.find((t) => t.key === route.query.tab)?.key ?? "notifications";
+const activeTab = ref<SettingsTabKey>(initialTab);
+
+watch(
+  () => route.query.tab,
+  (tab) => {
+    const match = SETTINGS_TABS.find((t) => t.key === tab);
+    if (match) activeTab.value = match.key;
+  }
+);
 
 onMounted(() => {
   const userId = authStore.logedInUserInfo?.user?.id;
@@ -118,33 +124,12 @@ const enableEventType = async (id: string) => {
   else directoryStore.fetchAll();
 };
 
-const TABS = [
-  { key: "account", label: "Account", icon: User },
-  { key: "notifications", label: "Notifications", icon: Blocks },
-  { key: "company", label: "My Company", icon: Building2 },
-  { key: "apps", label: "Connected Apps", icon: Blocks },
-  { key: "payments", label: "Payments", icon: CreditCard },
-  { key: "confidentiality", label: "Confidentiality", icon: Lock },
-  { key: "safety", label: "Safety", icon: ShieldCheck },
-] as const;
-
-// "My Company" only makes sense for a role that can actually enable
-// defaults there (departments/task-types/event-types:manage all require the
-// same tier -- Owner/CM/DL); "Payments" is subscription:manage, Owner-only.
-const visibleTabs = computed(() => {
-  const role = authStore.logedInUserInfo?.role;
-  return TABS.filter((tab) => {
-    if (tab.key === "company") return hasPermission(role, "departments:manage");
-    if (tab.key === "payments") return hasPermission(role, "subscription:manage");
-    return true;
-  });
-});
+const visibleTabs = computed(() => getVisibleSettingsTabs(authStore.logedInUserInfo?.role));
 </script>
 
 <template>
   <div class="flex-1 p-4">
     <div class="mb-6">
-      <Header />
       <RouterLink :to="{ name: 'admin-dashboard', query: { section: 'profile' } }" class="flex items-center gap-1 text-sm text-primary">
         <ChevronLeft class="h-4 w-4" /> Settings
       </RouterLink>
