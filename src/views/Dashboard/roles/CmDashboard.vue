@@ -12,15 +12,17 @@
 import { computed, onMounted, ref } from "vue";
 import { RouterLink } from "vue-router";
 import {
-  Activity, AlertTriangle, ArrowRight, CalendarClock, CalendarPlus, FolderPlus, Gauge, Users,
+  Activity, AlertTriangle, ArrowRight, Calendar, CalendarClock, CalendarPlus, ChevronRight, FolderPlus, Gauge, Users,  CalendarDays,ChevronDown, UserPlus,
 } from "lucide-vue-next";
 import GlassCard from "@/components/shared/GlassCard.vue";
+import EmployeeInviteModal from "@/components/employees/EmployeeInviteModal.vue";
 import SectionKicker from "@/components/shared/SectionKicker.vue";
 import MetricBar from "@/components/shared/MetricBar.vue";
 import EmptyState from "@/components/shared/EmptyState.vue";
 import SkeletonCard from "@/components/shared/SkeletonCard.vue";
 import UserCard from "@/components/cards/UserCard.vue";
 import ProjectCard from "@/components/cards/ProjectCard.vue";
+import EventCardCompact from "@/components/cards/EventCardCompact.vue";
 import ActivityStream from "@/components/dashboard/ActivityStream.vue";
 import { Button } from "@/components/ui/button";
 import { useProjectStore } from "@/stores/projectStore";
@@ -31,8 +33,6 @@ import { useEmployeeStore } from "@/stores/employeeStore";
 import { useAuthStore } from "@/stores/authStore";
 import { hasPermission } from "@/lib/permissions";
 import { ILLUSTRATIONS } from "@/lib/illustrations";
-import { EVENT_BORDER_CLASS, eventColorFor } from "@/lib/eventColor";
-import { formatTime } from "@/lib/dates";
 
 const projectStore = useProjectStore();
 const analyticsStore = useAnalyticsStore();
@@ -42,6 +42,7 @@ const employeeStore = useEmployeeStore();
 const authStore = useAuthStore();
 
 const loading = ref(true);
+const isInviteOpen = ref(false);
 
 onMounted(async () => {
   loading.value = true;
@@ -67,7 +68,7 @@ const attentionProjects = computed(() => {
       daysOverdue: Math.max(1, Math.ceil((now - new Date(p.deadline).getTime()) / 86_400_000)),
     }))
     .sort((a, b) => b.daysOverdue - a.daysOverdue)
-    .slice(0, 4);
+    .slice(0, 2);
 });
 
 const departmentLoad = computed(() =>
@@ -96,21 +97,6 @@ const maxActiveTaskCount = computed(() =>
   Math.max(FAIR_WORKLOAD_CAPACITY, ...employeeStore.employees.map((e) => e.activeTaskCount))
 );
 
-// "Today"/"Tomorrow"/short-date label for the Nearest Events row -- mirrors
-// how the reference layout reads event dates relative to now instead of a
-// bare timestamp.
-const eventDayLabel = (iso: string | null | undefined) => {
-  if (!iso) return "";
-  const date = new Date(iso);
-  const today = new Date();
-  const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-  const diffDays = Math.round((startOfDay(date) - startOfDay(today)) / 86_400_000);
-  if (diffDays === 0) return "Today";
-  if (diffDays === 1) return "Tomorrow";
-  if (diffDays === -1) return "Yesterday";
-  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-};
-
 // A brand-new company has neither a team nor a project yet -- the two
 // foundational things this dashboard is otherwise built around. Rather than
 // showing four empty widgets and a KPI row full of dashes, walk the owner/CM
@@ -118,6 +104,9 @@ const eventDayLabel = (iso: string | null | undefined) => {
 // be reporting on.
 const isWorkspaceEmpty = computed(() => employeeStore.employees.length === 0 && projectStore.projects.length === 0);
 const displayName = computed(() => authStore.logedInUserInfo?.user?.username || "there");
+const todayLabel = computed(() =>
+  new Date().toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })
+);
 const canInvite = computed(() => hasPermission(authStore.logedInUserInfo?.role, "members:invite"));
 
 const setupSteps = computed(() => {
@@ -155,12 +144,18 @@ const setupSteps = computed(() => {
 
 <template>
   <div class="space-y-6 pb-6">
-    <div>
-      <p class="text-[13px] font-semibold uppercase tracking-[.06em] text-subtle">Company</p>
-      <h1 class="text-[28px] font-extrabold leading-tight text-ink md:text-[32px]">
-        <template v-if="!loading && isWorkspaceEmpty">Welcome to Workroom, {{ displayName }}! &#128075;</template>
-        <template v-else>Dashboard</template>
-      </h1>
+    <div class="mx-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      <div>
+        <p class="text-[13px] font-semibold uppercase tracking-[.06em] text-subtle">Company</p>
+        <h1 class="text-[28px] font-extrabold leading-tight text-ink md:text-[32px]">
+          <template v-if="!loading && isWorkspaceEmpty">Welcome to Workroom, {{ displayName }}! &#128075;</template>
+          <template v-else>Dashboard</template>
+        </h1>
+      </div>
+      <span class="inline-flex items-center gap-1.5 self-start rounded-full bg-primary-soft px-3 py-1 text-xs font-semibold text-primary-strong md:self-end md:mb-1">
+        <Calendar class="h-3.5 w-3.5" />
+        {{ todayLabel }}
+      </span>
     </div>
 
     <template v-if="!loading && isWorkspaceEmpty">
@@ -255,21 +250,22 @@ const setupSteps = computed(() => {
     </template>
 
     <template v-else>
-    <div class="grid grid-cols-12 gap-4">
+    <div class="grid grid-cols-12 gap-10 mx-4">
       <div class="col-span-12 space-y-6 xl:col-span-7">
-        <div>
-          <div class="mb-3 flex items-center justify-between">
-            <SectionKicker label="Workload" />
-            <RouterLink
-              v-if="employeeStore.employees.length > WORKLOAD_PREVIEW_COUNT"
-              :to="{ name: 'admin-dashboard', query: { section: 'employees' } }"
-              class="text-xs font-semibold text-primary hover:underline"
+        <div class="flex min-h-[480px] w-full flex-col rounded-xl border border-border bg-card p-6 shadow-sm transition-shadow duration-200 hover:shadow-md">
+          <div class="mb-4 flex items-center justify-between">
+            <h2 class="relative pl-3 font-semibold text-ink before:absolute before:left-0 before:top-0.5 before:h-4 before:w-1 before:rounded-full before:bg-primary-strong">Workload</h2>
+            <Button
+              variant="link"
+              class="group p-0 text-sm text-primary-strong"
+              @click="$router.push({ name: 'admin-dashboard', query: { section: 'analytics' } })"
             >
-              View all
-            </RouterLink>
+              View Company Insights <ChevronRight class="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+            </Button>
           </div>
+
           <SkeletonCard v-if="loading" :rows="4" />
-          <GlassCard v-else variant="flat" class="flex min-h-[240px] flex-col justify-center">
+          <template v-else>
             <EmptyState
               v-if="!employeeStore.employees.length"
               :icon="Users"
@@ -277,7 +273,7 @@ const setupSteps = computed(() => {
               image-alt="No team members yet"
               message="No team members yet."
             />
-            <div v-else class="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <div v-else class="grid flex-1 auto-rows-min grid-cols-2 content-start gap-3 sm:grid-cols-3 lg:grid-cols-4">
               <UserCard
                 v-for="member in workloadPreview"
                 :key="member.id"
@@ -291,9 +287,29 @@ const setupSteps = computed(() => {
                 :max-active-task-count="maxActiveTaskCount"
                 @click="$router.push({ name: 'admin-dashboard', query: { section: 'employee-detail', employeeId: member.id } })"
               />
+
+              <!-- Fills the remaining preview slot(s) with an invite CTA
+                   shaped like a UserCard -- disappears once the preview is
+                   fully seated at WORKLOAD_PREVIEW_COUNT (8) real members,
+                   since there's no room left to invite into here. -->
+              <div
+                v-if="canInvite && workloadPreview.length < WORKLOAD_PREVIEW_COUNT"
+                class="group relative flex h-[180px] cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border p-3 text-center transition-all duration-300 ease-out hover:-translate-y-1 hover:border-primary/40 hover:shadow-lg"
+                role="button"
+                tabindex="0"
+                @click="isInviteOpen = true"
+                @keydown.enter="isInviteOpen = true"
+              >
+                <span class="flex h-14 w-14 items-center justify-center rounded-full border-2 border-dashed border-primary/40 text-primary-strong transition-transform duration-300 group-hover:scale-105">
+                  <UserPlus class="h-6 w-6" />
+                </span>
+                <p class="text-sm font-semibold text-ink">Invite user</p>
+              </div>
             </div>
-          </GlassCard>
+          </template>
         </div>
+
+        <EmployeeInviteModal v-model:open="isInviteOpen" />
 
         <div>
           <div class="mb-3 flex items-center justify-between">
@@ -338,9 +354,9 @@ const setupSteps = computed(() => {
       </div>
 
       <div class="col-span-12 space-y-6 xl:col-span-5">
-        <div>
+        <div class="flex min-h-[480px] w-full flex-col rounded-xl border border-border bg-card p-4 shadow-sm transition-shadow duration-200 hover:shadow-md">
           <div class="mb-3 flex items-center justify-between">
-            <SectionKicker label="Nearest events" />
+            <h2 class="relative pl-3 font-semibold text-ink before:absolute before:left-0 before:top-0.5 before:h-4 before:w-1 before:rounded-full before:bg-primary-strong">Nearest Event</h2>
             <RouterLink
               :to="{ name: 'admin-dashboard', query: { section: 'events' } }"
               class="text-xs font-semibold text-primary hover:underline"
@@ -349,7 +365,7 @@ const setupSteps = computed(() => {
             </RouterLink>
           </div>
           <SkeletonCard v-if="loading" :rows="3" />
-          <GlassCard v-else variant="flat" class="flex min-h-[240px] flex-col justify-center">
+          <template v-else>
             <EmptyState
               v-if="!eventStore.nearest.length"
               :icon="CalendarClock"
@@ -357,21 +373,10 @@ const setupSteps = computed(() => {
               image-alt="No upcoming events"
               message="No upcoming events."
             />
-            <ul v-else class="space-y-2.5">
-              <li v-for="event in eventStore.nearest" :key="event.id">
-                <RouterLink
-                  :to="{ name: 'admin-dashboard', query: { section: 'event-detail', eventId: event.id } }"
-                  class="wr-well flex items-center gap-3 rounded-xl border-l-4 py-2.5 pl-3 pr-2 transition hover:opacity-90"
-                  :class="EVENT_BORDER_CLASS[eventColorFor(event.eventTypeName || event.title)]"
-                >
-                  <div class="min-w-0 flex-1">
-                    <p class="truncate text-sm font-semibold text-ink">{{ event.title }}</p>
-                    <p class="truncate text-xs text-[#7D8592]">{{ eventDayLabel(event.startAt) }} · {{ formatTime(event.startAt) }}</p>
-                  </div>
-                </RouterLink>
-              </li>
-            </ul>
-          </GlassCard>
+            <div v-else class="flex-1 space-y-2.5">
+              <EventCardCompact v-for="event in eventStore.nearest" :key="event.id" :event="event" />
+            </div>
+          </template>
         </div>
 
         <ActivityStream />
