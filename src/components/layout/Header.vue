@@ -3,13 +3,16 @@ import {
   Search,
   Bell,
   Calendar,
+  Moon,
+  Sun,
 } from "lucide-vue-next";
-import { ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useNotificationStore } from "@/stores/notificationStore";
 import NotificationsPanel from "@/components/layout/NotificationsPanel.vue";
+import { useTheme } from "@/composables/useTheme";
 
 const notificationStore = useNotificationStore();
 const isNotificationsOpen = ref(false);
@@ -21,6 +24,16 @@ const emit = defineEmits<{
 const searchQuery = ref("");
 watch(searchQuery, (value) => emit("update:search", value));
 const emitSearch = () => emit("search", searchQuery.value);
+
+// Quick on/off toggle -- the 3-way light/dark/system choice still lives in
+// Settings for anyone who wants "system"; this button just flips between the
+// two explicit states from wherever the effective theme currently sits.
+const { isDark, setTheme } = useTheme();
+const toggleTheme = () => setTheme(isDark.value ? "light" : "dark");
+
+const todayLabel = computed(() =>
+  new Date().toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })
+);
 </script>
 
 <template>
@@ -43,6 +56,16 @@ const emitSearch = () => emit("search", searchQuery.value);
 
             <!-- User Controls -->
             <div class="flex items-center gap-3">
+              <span class="hidden items-center gap-2 rounded-xl bg-card px-3.5 h-12 text-sm text-subtle shadow-sm sm:flex">
+                <Calendar class="h-4 w-4" />
+                {{ todayLabel }}
+              </span>
+
+              <Button variant="ghost" size="icon" class="bg-card shadow-sm" :title="isDark ? 'Switch to light mode' : 'Switch to dark mode'" @click="toggleTheme">
+                <Moon v-if="!isDark" class="w-5 h-5" />
+                <Sun v-else class="w-5 h-5" />
+              </Button>
+
               <Popover v-model:open="isNotificationsOpen">
                 <PopoverTrigger as-child>
                   <Button variant="ghost" size="icon" class="relative bg-card shadow-sm">
