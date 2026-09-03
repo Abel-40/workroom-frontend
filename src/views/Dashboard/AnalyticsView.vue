@@ -28,7 +28,11 @@ const employeeStore = useEmployeeStore();
 const router = useRouter();
 
 const loading = ref(true);
-const activityLimit = ref(15);
+// Deliberately short: this is a preview alongside the charts, not the log.
+// "Load more" steps it up, and the Activity section has the full paginated
+// history for anyone who wants to read past the last handful of events.
+const ACTIVITY_PAGE = 5;
+const activityLimit = ref(ACTIVITY_PAGE);
 onMounted(async () => {
   loading.value = true;
   await Promise.all([
@@ -40,7 +44,7 @@ onMounted(async () => {
 });
 
 const loadMoreActivity = () => {
-  activityLimit.value += 15;
+  activityLimit.value += ACTIVITY_PAGE;
   activityStore.fetchActivities(activityLimit.value);
 };
 
