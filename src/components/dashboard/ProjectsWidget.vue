@@ -28,7 +28,7 @@ onMounted(async () => {
 
     <!-- Project Cards -->
     <div v-if="projectStore.projects.length" class="space-y-4">
-      <ProjectCard v-for="project in projectStore.projects.slice(0, 3)" :key="project.id" :project="project" />
+      <ProjectCard v-for="project in projectStore.projects.slice(0, 2)" :key="project.id" :project="project" />
     </div>
     <div v-else class="rounded-2xl border border-dashed border-gray-200 bg-white p-8 text-center text-sm text-subtle">
       No projects yet.

@@ -73,15 +73,15 @@ const ringTone = computed(() => {
 </script>
 
 <template>
-            <div
-              class="group relative max-w-[175px] h-[180px] bg-card flex flex-col justify-center items-center rounded-lg p-3 m-2 border border-border shadow-sm overflow-hidden cursor-pointer hover:shadow-lg hover:-translate-y-1 hover:scale-[1.02] hover:border-primary/30 transition-all duration-300 ease-out"
-              :class="customClass"
-              role="button"
-              tabindex="0"
-              @click="$emit('click')"
-              @keydown.enter="$emit('click')"
-            >
-              <span class="pointer-events-none absolute -top-8 -right-8 w-24 h-24 rounded-full bg-[#3F8CFF]/15 blur-2xl transition-all duration-300 group-hover:bg-[#3F8CFF]/30 group-hover:scale-125"></span>
+  <div
+    class="group relative max-w-[185px] h-[180px]  flex flex-col justify-center items-center rounded-lg p-3 m-2 border border-border shadow-sm overflow-hidden cursor-pointer hover:shadow-lg hover:-translate-y-1 hover:scale-[1.02] hover:border-primary/30 transition-all duration-300 ease-out"
+    :class="customClass"
+    role="button"
+    tabindex="0"
+    @click="$emit('click')"
+    @keydown.enter="$emit('click')"
+  >
+              <span class="pointer-events-none absolute -top-8 -right-8 w-24 h-24 rounded-full bg-[#3F8CFF]/15 blur-xl transition-all duration-300 group-hover:bg-[#3F8CFF]/30 group-hover:scale-125"></span>
               <div class="relative z-10 flex w-full justify-center transition-transform duration-300 group-hover:scale-105">
                 <WorkloadRing v-if="ringProgress !== undefined" :progress="ringProgress" :image-url="imageSrc" :initials="initials" :tone="ringTone" />
                 <template v-else>
@@ -104,5 +104,5 @@ const ringTone = computed(() => {
                 </p>
                 <p v-else-if="department" class="text-[10px] font-medium tracking-wide uppercase text-primary bg-primary-soft rounded-full px-2 py-0.5">{{ department }}</p>
               </div>
-            </div>
+  </div>
 </template>

@@ -44,7 +44,7 @@ const toneClass = computed(() => ({ light: "stroke-primary", medium: "stroke-war
         class="transition-[stroke-dashoffset] duration-500 ease-out"
       />
     </svg>
-    <Avatar class="absolute inset-0 m-auto h-[52px] w-[52px] text-sm">
+    <Avatar class="absolute inset-0 m-auto h-[56px] w-[56px] text-sm">
       <AvatarImage v-if="imageUrl" :src="imageUrl" />
       <AvatarFallback>{{ initials }}</AvatarFallback>
     </Avatar>

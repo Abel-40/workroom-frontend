@@ -118,6 +118,7 @@ const initials = (name: string) => (name || "?").split(" ").map((p) => p[0]).joi
       :image="searchQuery ? undefined : ILLUSTRATIONS.emptyColleaguesDm"
       image-alt="No colleagues yet"
       :message="searchQuery ? `No one matches “${searchQuery}”.` : 'No shared projects or teams yet -- join or create one to see colleagues here.'"
+      class="w-full"
     />
     <div v-else class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       <GlassCard v-for="employee in colleagues" :key="employee.id" variant="flat" padding="dense">
