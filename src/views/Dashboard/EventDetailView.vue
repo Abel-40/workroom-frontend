@@ -5,7 +5,6 @@ import { Building2, Calendar, ChevronLeft, MapPin, Repeat, Trash2, User, Users }
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import ConfirmDeleteDialog from "@/components/common/ConfirmDeleteDialog.vue";
 import { useToast } from "@/components/ui/toast/use-toast";
-import Header from "@/components/layout/Header.vue";
 import { useAuthStore } from "@/stores/authStore";
 import { useEventStore, type EventEntry } from "@/stores/eventStore";
 import { formatDateTime } from "@/lib/dates";
@@ -73,7 +72,6 @@ const confirmDelete = async () => {
 <template>
   <div class="flex-1 p-4">
     <div class="mb-6">
-      <Header />
       <button type="button" class="flex items-center gap-1 text-sm text-primary" @click="goBack">
         <ChevronLeft class="h-4 w-4" /> Events
       </button>

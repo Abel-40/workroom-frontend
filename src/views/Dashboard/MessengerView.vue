@@ -1,12 +1,10 @@
 <script setup lang="ts">
 import { MessageSquare } from "lucide-vue-next";
-import Header from "@/components/layout/Header.vue";
 </script>
 
 <template>
   <div class="flex-1 p-4">
     <div class="mb-6">
-      <Header />
       <h1 class="text-xl font-semibold">Messenger</h1>
     </div>
 

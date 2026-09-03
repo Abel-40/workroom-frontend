@@ -12,7 +12,6 @@ import { useProjectStore } from "@/stores/projectStore";
 import { useDirectoryStore } from "@/stores/directoryStore";
 import { useAiWorkspaceUiStore } from "@/stores/aiWorkspaceUiStore";
 import type { AiMode } from "@/types/aiWorkspace";
-import Header from "@/components/layout/Header.vue";
 import AiPlanCreator from "@/components/ai/AiPlanCreator.vue";
 import AiAssistantPanel from "@/components/ai/AiAssistantPanel.vue";
 import AiHealthCheckPanel from "@/components/ai/AiHealthCheckPanel.vue";
@@ -98,12 +97,13 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="relative flex h-[calc(100vh-2.75rem)] w-full flex-1 flex-col p-4">
-    <Header />
-    <!-- min-h-0 lets this flex-1 slot actually shrink to the space Header
-         leaves behind, instead of growing to fit its content -- without it
-         the panel below can't reliably fill "whatever's left" and the
-         footer stops tracking the real bottom of the available area. -->
+  <!-- h-full, not a 100vh calc: AppShell's content region is already sized to
+       "viewport minus shell padding minus header", so this just fills it. -->
+  <div class="relative flex h-full w-full flex-1 flex-col p-4">
+    <!-- min-h-0 lets this flex-1 slot actually shrink to the space available,
+         instead of growing to fit its content -- without it the panel below
+         can't reliably fill "whatever's left" and the footer stops tracking
+         the real bottom of the available area. -->
     <div class="min-h-0 flex-1">
       <AiPlanCreator
         v-if="activeMode === 'plan'"

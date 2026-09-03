@@ -13,7 +13,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/components/ui/toast/use-toast";
-import Header from "@/components/layout/Header.vue";
 import { useAuthStore } from "@/stores/authStore";
 import { useDirectoryStore } from "@/stores/directoryStore";
 import { useEmployeeStore, ROLE_LABELS, type EmployeeRole } from "@/stores/employeeStore";
@@ -158,7 +157,6 @@ const goBack = () => router.push({ name: "admin-dashboard", query: { section: "e
 <template>
   <div class="flex-1 p-4">
     <div class="mb-6">
-      <Header />
       <button type="button" class="flex items-center gap-1 text-sm text-primary" @click="goBack">
         <ChevronLeft class="h-4 w-4" /> Employees
       </button>

@@ -10,6 +10,7 @@
 // rather than tracked as a separate field, so "back" is just clearing the
 // deepest selection and there's no separate state to keep in sync.
 import { computed, onMounted, ref, watch } from "vue";
+import { useHeaderSearch } from "@/composables/useHeaderSearch";
 import { useRoute, useRouter } from "vue-router";
 import {
   ArrowLeft, Check, CheckSquare, FileText, FolderOpen, MoreVertical, Paperclip, Pencil,
@@ -26,7 +27,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/components/ui/toast/use-toast";
-import Header from "@/components/layout/Header.vue";
 import ShareFolderModal from "@/components/info-portal/ShareFolderModal.vue";
 import ConfirmDeleteDialog from "@/components/common/ConfirmDeleteDialog.vue";
 import EmptyState from "@/components/shared/EmptyState.vue";
@@ -53,9 +53,12 @@ const draftTitle = ref("");
 const draftBlocks = ref<PageBlock[]>([]);
 const saving = ref(false);
 const deleting = ref(false);
-const onSearch = (value: string) => {
+// The search box lives in AppShell's header now (so it can stay fixed while
+// this page scrolls), so its keystrokes arrive through the shared singleton
+// rather than a per-page emit.
+watch(useHeaderSearch().query, (value) => {
   searchQuery.value = value;
-};
+});
 
 const screen = computed<"folders" | "pages" | "page">(() => {
   if (!selectedFolder.value) return "folders";
@@ -384,7 +387,6 @@ async function deleteSelectedPages() {
   />
   <div class="flex-1 p-4">
     <div class="mb-6">
-      <Header @update:search="onSearch" />
       <div class="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <template v-if="screen === 'pages'">

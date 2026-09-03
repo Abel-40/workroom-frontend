@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
+import { useHeaderSearch } from "@/composables/useHeaderSearch";
 import { Plus, Users, Crown } from "lucide-vue-next";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import Header from "@/components/layout/Header.vue";
 import CreateDepartmentModal from "@/components/departments/CreateDepartmentModal.vue";
 import CreateTeamModal from "@/components/departments/CreateTeamModal.vue";
 import EmptyState from "@/components/shared/EmptyState.vue";
@@ -27,9 +27,12 @@ const tab = ref<"departments" | "teams">("departments");
 const isDepartmentModalOpen = ref(false);
 const isTeamModalOpen = ref(false);
 const searchQuery = ref("");
-const onSearch = (value: string) => {
+// The search box lives in AppShell's header now (so it can stay fixed while
+// this page scrolls), so its keystrokes arrive through the shared singleton
+// rather than a per-page emit.
+watch(useHeaderSearch().query, (value) => {
   searchQuery.value = value;
-};
+});
 
 onMounted(() => {
   directoryStore.fetchAll();
@@ -68,7 +71,6 @@ const teamMembers = (memberIds: string[]) =>
 
   <div class="flex-1 p-4">
     <div class="mb-6">
-      <Header @update:search="onSearch" />
       <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <h1 class="text-xl font-semibold">Departments &amp; Teams</h1>
         <div class="flex items-center gap-3">

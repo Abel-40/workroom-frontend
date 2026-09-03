@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
+import { useHeaderSearch } from "@/composables/useHeaderSearch";
 import { ArrowLeft, ArrowRight, Funnel, MoreVertical, Plus } from "lucide-vue-next";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -21,7 +22,6 @@ import {
 } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/toast/use-toast";
-import Header from "@/components/layout/Header.vue";
 import EmployeeInviteModal from "@/components/employees/EmployeeInviteModal.vue";
 import ConfirmDeleteDialog from "@/components/common/ConfirmDeleteDialog.vue";
 import EmptyState from "@/components/shared/EmptyState.vue";
@@ -111,10 +111,13 @@ const confirmReassignAndRemove = async () => {
 const currentPage = ref(1);
 const perPage = 8;
 const searchQuery = ref("");
-const onSearch = (value: string) => {
+// The search box lives in AppShell's header now (so it can stay fixed while
+// this page scrolls), so its keystrokes arrive through the shared singleton
+// rather than a per-page emit.
+watch(useHeaderSearch().query, (value) => {
   searchQuery.value = value;
   currentPage.value = 1;
-};
+});
 
 onMounted(() => {
   employeeStore.fetchEmployees();
@@ -192,7 +195,6 @@ const roleBadgeClass: Record<string, string> = {
   <EmployeeInviteModal v-model:open="isInviteOpen" />
   <div class="flex-1 p-4">
     <div class="mb-6">
-      <Header @update:search="onSearch" />
       <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <h1 class="text-xl font-semibold">Employees ({{ filteredEmployees.length }})</h1>
         <div class="flex items-center gap-3">

@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import EventCard from "@/components/cards/EventCard.vue";
 import EventFilterModal from "@/components/calendar/EventFilterModal.vue";
 import CalendarView from "./CalendarView.vue";
-import Header from "@/components/layout/Header.vue";
 import AddEventModal from "@/components/calendar/AddEventModal.vue";
 import ConfirmDeleteDialog from "@/components/common/ConfirmDeleteDialog.vue";
 import EmptyState from "@/components/shared/EmptyState.vue";
@@ -105,7 +104,6 @@ const confirmBulkDelete = async () => {
 
   <div class="flex-1 p-4">
     <div class="mb-6">
-      <Header />
       <!-- Page Title -->
       <div class="grid grid-cols-1 md:grid-cols-3 items-center gap-4 mb-6">
         <div class="justify-self-start">

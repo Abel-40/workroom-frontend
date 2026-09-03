@@ -14,7 +14,6 @@ import {
   UserMinus,
   Building2,
 } from "lucide-vue-next";
-import Header from "@/components/layout/Header.vue";
 import UserCard from "@/components/cards/UserCard.vue";
 import EmptyState from "@/components/shared/EmptyState.vue";
 import { ILLUSTRATIONS } from "@/lib/illustrations";
@@ -85,7 +84,6 @@ const iconFor = (type: ActivityType) => ICONS[type] ?? FolderPlus;
 <template>
   <div class="flex-1 p-4">
     <div class="mb-6">
-      <Header />
       <h1 class="text-xl font-semibold">Analytics &amp; Company Insights</h1>
       <p class="mt-1 text-sm text-subtle">Project, task, department, and activity overview for your company.</p>
     </div>

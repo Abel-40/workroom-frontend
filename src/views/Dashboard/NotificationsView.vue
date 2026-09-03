@@ -11,7 +11,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import Header from "@/components/layout/Header.vue";
 import { useNotificationStore } from "@/stores/notificationStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { formatDateTime } from "@/lib/dates";
@@ -83,7 +82,6 @@ const totalPages = computed(() =>
 <template>
   <div class="flex-1 p-4">
     <div class="mb-6">
-      <Header />
       <h1 class="text-xl font-semibold">Notifications</h1>
     </div>
 

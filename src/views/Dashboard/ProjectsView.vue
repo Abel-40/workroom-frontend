@@ -17,7 +17,6 @@ import {
 } from "lucide-vue-next";
 import { Button } from "@/components/ui/button";
 import TaskCard from "@/components/cards/TaskCard.vue";
-import Header from "@/components/layout/Header.vue";
 import TaskBoardView from "@/components/projects/TaskBoardView.vue";
 import TaskTimelineView from "@/components/projects/TaskTimelineView.vue";
 import TaskDetailPanel from "@/components/projects/TaskDetailPanel.vue";
@@ -42,6 +41,7 @@ import { useDeviceClass } from "@/composables/useDeviceClass";
 import type { Project, TaskType } from "@/types/types";
 import { addDays, format } from "date-fns";
 import { ref, onMounted, computed, watch } from "vue";
+import { useHeaderSearch } from "@/composables/useHeaderSearch";
 import { storeToRefs } from "pinia";
 import { useRouter, useRoute } from "vue-router";
 import filterModal from "@/components/projects/FilterModal.vue";
@@ -625,10 +625,13 @@ const dmVisibleProjects = computed(() => [...dmCreatedProjects.value, ...dmMembe
 // 📄 Pagination
 const currentPage = ref(1)
 const itemPerPage = ref(5)
-const onSearch = (value: string) => {
+// The search box lives in AppShell's header now (so it can stay fixed while
+// this page scrolls), so its keystrokes arrive through the shared singleton
+// rather than a per-page emit.
+watch(useHeaderSearch().query, (value) => {
   searchQuery.value = value
   currentPage.value = 1
-}
+})
 
 const totalPage = computed(() =>
   Math.ceil(searchedProjects.value.length / itemPerPage.value)
@@ -685,7 +688,6 @@ watch(()=>paginatedProjects.value,()=>{
     <!-- <p>{{ selectedFilters }}</p> -->
     <div class="mb-6">
       <!-- to header -->
-      <Header @update:search="onSearch" />
       <!-- lower header -->
       <!-- Page Title -->
       <div
@@ -717,13 +719,14 @@ watch(()=>paginatedProjects.value,()=>{
     <!-- Whole company/department has no projects yet -- one centered
          illustration takes over the space where the sidebar + task panel
          would otherwise sit, instead of squeezing it into the narrow aside. -->
-    <div v-if="isProjectsWorkspaceEmpty" class="flex min-h-[60vh] w-full items-center justify-center">
+    <div v-if="isProjectsWorkspaceEmpty" class="flex  w-full items-center justify-center">
       <EmptyState
         size="xl"
         :image="ILLUSTRATIONS.emptyProjects"
         image-alt="No projects yet"
         title="No projects yet"
         message="Create your first project to start organizing work."
+        class="w-full max-h-[70vh]"
       >
         <Button v-if="!isReadOnly" class="rounded-xl" @click="isAddProjectOpen = true">
           <Plus class="w-4 h-4" /> Add Project

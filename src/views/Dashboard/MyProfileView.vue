@@ -2,7 +2,6 @@
 import { computed, onMounted, reactive, ref } from "vue";
 import { ArrowDown, ArrowUp, Calendar, Check, FileText, Funnel, MapPin, Pencil, Settings, Upload } from "lucide-vue-next";
 import { RouterLink } from "vue-router";
-import Header from "@/components/layout/Header.vue";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -182,7 +181,6 @@ const roleBadgeClass: Record<string, string> = {
 
 <template>
   <div class="flex-1 p-4">
-    <Header />
     <div class="mb-6 flex items-center justify-between">
       <h1 class="text-xl font-semibold">My Profile</h1>
       <RouterLink :to="{ name: 'admin-dashboard', query: { section: 'settings' } }" class="flex h-9 w-9 items-center justify-center rounded-lg bg-card shadow-sm text-subtle hover:text-ink">

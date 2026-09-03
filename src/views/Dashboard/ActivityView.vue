@@ -9,7 +9,6 @@ import {
   RotateCcw, UserCheck, UserMinus, UserPlus, Users,
 } from "lucide-vue-next";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import Header from "@/components/layout/Header.vue";
 import { useActivityStore, type ActivityType } from "@/stores/activityStore";
 import { usePermissions } from "@/composables/usePermissions";
 import { formatRelativeTime, formatShortDate } from "@/lib/dates";
@@ -98,7 +97,6 @@ const visibleActivities = computed(() =>
 <template>
   <div class="flex-1 p-4">
     <div class="mb-6">
-      <Header />
       <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 class="text-xl font-semibold">Activity</h1>
