@@ -34,8 +34,18 @@ describe("navConfig", () => {
   it("section keys (routing identity) never change across roles, only labels do", () => {
     const keysFor = (role: Role) => getNavItems(role).map((i) => i.key);
     const ownerKeys = keysFor("Owner");
-    for (const role of ["CM", "DL", "DM"] as const) {
+    for (const role of ["CM", "DL"] as const) {
       expect(keysFor(role)).toEqual(ownerKeys);
+    }
+    // DM is the one exception: same keys, minus the ones hidden from them.
+    expect(keysFor("DM")).toEqual(ownerKeys.filter((key) => key !== "activity"));
+  });
+
+  it("hides the company-wide Activity log from DM only", () => {
+    const hasActivity = (role: Role) => getNavItems(role).some((i) => i.key === "activity");
+    expect(hasActivity("DM")).toBe(false);
+    for (const role of ["Owner", "CM", "DL"] as const) {
+      expect(hasActivity(role)).toBe(true);
     }
   });
 

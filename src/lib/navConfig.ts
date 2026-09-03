@@ -1,10 +1,7 @@
 // Single source of truth for sidebar nav. Section keys (and therefore
 // routing via ?section=) never change per role -- only the label and icon
-// do, per the ROLES.md table. Nothing here hides an item per role today:
-// every role in the current nine-item sidebar keeps all nine sections
-// (Owner/CM have no extra billing entry to hide from CM -- there isn't one
-// in this sidebar). If a future item needs hiding, do it here by role, not
-// by scattering `v-if="role === ..."` across Sidebar.vue.
+// do, per the ROLES.md table. Items hidden from a role are declared here via
+// `hiddenFor`, never by scattering `v-if="role === ..."` across Sidebar.vue.
 import type { Component } from "vue";
 import {
   LayoutDashboard,
@@ -27,7 +24,13 @@ export interface NavItem {
   icon: Component;
 }
 
-const BASE_ITEMS: Array<{ key: string; sectionName: string; icon: Component; labels: Record<Role, string> }> = [
+const BASE_ITEMS: Array<{
+  key: string;
+  sectionName: string;
+  icon: Component;
+  labels: Record<Role, string>;
+  hiddenFor?: Role[];
+}> = [
   {
     key: "dashboard",
     sectionName: "dashboard",
@@ -87,12 +90,15 @@ const BASE_ITEMS: Array<{ key: string; sectionName: string; icon: Component; lab
     sectionName: "activity",
     icon: History,
     labels: { Owner: "Activity", CM: "Activity", DL: "Activity", DM: "Activity" },
+    // A DM's own feed is "My Activity" (the analytics section); the
+    // company-wide log isn't part of their sidebar.
+    hiddenFor: ["DM"],
   },
 ];
 
 export function getNavItems(role: Role | null | undefined): NavItem[] {
   const effectiveRole: Role = role ?? "DM";
-  return BASE_ITEMS.map((item) => ({
+  return BASE_ITEMS.filter((item) => !item.hiddenFor?.includes(effectiveRole)).map((item) => ({
     key: item.key,
     sectionName: item.sectionName,
     icon: item.icon,
