@@ -196,7 +196,7 @@ const toggleTheme = () => {
        scrolling region, so it physically can't scroll away. Transparent so it
        reads as the page background (.wr-shell's gradient) rather than a bar. -->
   <header
-    class="mb-5 flex w-full shrink-0 items-center justify-between gap-4 bg-transparent"
+    class="mb-2 flex w-full shrink-0 items-center justify-between gap-4 bg-transparent"
   >
     <!-- ======================================================= -->
     <!-- SEARCH -->

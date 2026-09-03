@@ -30,7 +30,7 @@ const initials = (name: string) =>
       <!-- Left Side -->
       <div class="p-4 min-w-0">
         <div class="flex items-center gap-3 mb-3">
-          <div class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-page ring-2 ring-white shadow-[0_0_0_3px_rgba(63,140,255,0.15)]">
+          <div class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-page ring-2 ring-white shadow-[0_0_0_3px_rgba(63,140,255,0.15)]">
             <ProjectImage v-if="props.project.image" :image="props.project.image" :alt="props.project.title">
               <template #fallback>
                 <span class="text-lg">{{ props.project.icon }}</span>
