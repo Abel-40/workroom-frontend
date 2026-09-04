@@ -41,6 +41,15 @@ describe("navConfig", () => {
     expect(keysFor("DM")).toEqual(ownerKeys.filter((key) => key !== "activity"));
   });
 
+  it("gives every role the same personal To-Do item -- it is individual, not managerial", () => {
+    for (const role of ["Owner", "CM", "DL", "DM"] as const) {
+      const item = getNavItems(role).find((i) => i.key === "todos");
+      expect(item).toBeDefined();
+      expect(item?.title).toBe("My To-Do");
+      expect(item?.sectionName).toBe("todos");
+    }
+  });
+
   it("hides the company-wide Activity log from DM only", () => {
     const hasActivity = (role: Role) => getNavItems(role).some((i) => i.key === "activity");
     expect(hasActivity("DM")).toBe(false);

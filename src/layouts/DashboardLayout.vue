@@ -18,6 +18,7 @@ import MyActivityDl from '@/views/Dashboard/roles/MyActivityDl.vue'
 import MyActivityDm from '@/views/Dashboard/roles/MyActivityDm.vue'
 import NotificationsView from '@/views/Dashboard/NotificationsView.vue'
 import InfoPortalView from '@/views/Dashboard/InfoPortalView.vue'
+import TodoView from '@/views/Dashboard/TodoView.vue'
 import ActivityView from '@/views/Dashboard/ActivityView.vue'
 import MessengerView from '@/views/Dashboard/MessengerView.vue'
 import MyProfileView from '@/views/Dashboard/MyProfileView.vue'
@@ -43,6 +44,7 @@ const showSection = computed(() => {
   if(section === 'analytics') return isDM.value ? MyActivityDm : isDL.value ? MyActivityDl : AnalyticsView
   if(section === 'notifications') return NotificationsView
   if(section === 'info-portal') return InfoPortalView
+  if(section === 'todos') return TodoView
   if(section === 'activity') return ActivityView
   if(section === 'messenger') return MessengerView
   if(section === 'profile') return MyProfileView

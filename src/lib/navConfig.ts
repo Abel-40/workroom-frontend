@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   SquareDashedKanban,
   Sparkles,
+  ListChecks,
   CalendarDays,
   Users,
   Building2,
@@ -48,6 +49,16 @@ const BASE_ITEMS: Array<{
     sectionName: "ai-workspace",
     icon: Sparkles,
     labels: { Owner: "AI Workspace", CM: "AI Workspace", DL: "AI Workspace", DM: "AI Workspace" },
+  },
+  {
+    key: "todos",
+    sectionName: "todos",
+    icon: ListChecks,
+    // Same label for everyone on purpose: a to-do list is personal, not
+    // managerial, so it does not change meaning with role the way
+    // Employees/Departments do. Note "My Day" is already the DM's dashboard
+    // label -- this stays "My To-Do" for all four roles to avoid a collision.
+    labels: { Owner: "My To-Do", CM: "My To-Do", DL: "My To-Do", DM: "My To-Do" },
   },
   {
     key: "events",
