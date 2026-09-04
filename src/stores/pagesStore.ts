@@ -22,6 +22,16 @@ export interface PageFolder {
   color: PageFolderColor;
   createdBy: string | null;
   createdAt: string;
+  // Sharing, revoking, and deleting are creator-only on the backend; this is
+  // the server's own answer to "is that me", not a client-side id comparison.
+  isOwner: boolean;
+}
+
+export interface FolderShare {
+  userId: string;
+  email: string;
+  name: string;
+  sharedAt: string;
 }
 
 export interface WorkroomPage {
@@ -36,7 +46,11 @@ export interface WorkroomPage {
   updatedAt: string;
 }
 
-type PageFolderApi = { id: string; name: string; color: PageFolderColor; created_by: string | null; created_at: string };
+type PageFolderApi = {
+  id: string; name: string; color: PageFolderColor;
+  created_by: string | null; created_at: string; is_owner?: boolean;
+};
+type FolderShareApi = { user_id: string; email: string; name: string; shared_at: string };
 type PageBlockApi = { type: PageBlock["type"]; text?: string; items?: string[]; file_name?: string };
 type PageApi = {
   id: string; folder_id: string; folder_name?: string; project_id: string | null; title: string;
@@ -45,6 +59,11 @@ type PageApi = {
 
 const mapFolder = (api: PageFolderApi): PageFolder => ({
   id: api.id, name: api.name, color: api.color, createdBy: api.created_by, createdAt: api.created_at,
+  isOwner: api.is_owner ?? false,
+});
+
+const mapShare = (api: FolderShareApi): FolderShare => ({
+  userId: api.user_id, email: api.email, name: api.name, sharedAt: api.shared_at,
 });
 
 const mapBlock = (api: PageBlockApi): PageBlock => ({
@@ -72,11 +91,13 @@ export const usePagesStore = defineStore("pagesStore", {
     folders: [] as PageFolder[],
     pagesByFolder: {} as Record<string, WorkroomPage[]>,
     pickerResults: [] as WorkroomPage[],
+    sharesByFolder: {} as Record<string, FolderShare[]>,
     loading: false,
     loaded: false,
   }),
   getters: {
     pagesFor: (state) => (folderId: string) => state.pagesByFolder[folderId] || [],
+    sharesFor: (state) => (folderId: string) => state.sharesByFolder[folderId] || [],
   },
   actions: {
     async fetchFolders() {
@@ -174,9 +195,34 @@ export const usePagesStore = defineStore("pagesStore", {
     async shareFolder(folderId: string, userIds: string[]): Promise<{ error?: string }> {
       try {
         await axiosInstance.post(`/page-folders/${folderId}/share/`, { user_ids: userIds });
+        await this.fetchFolderShares(folderId);
         return {};
       } catch (error: any) {
         return { error: error.response?.data?.message || "Failed to share the folder" };
+      }
+    },
+
+    // Who currently has access. Readable by anyone who can open the folder;
+    // only its creator can change the list.
+    async fetchFolderShares(folderId: string): Promise<{ error?: string }> {
+      try {
+        const { data } = await axiosInstance.get<ApiResponse<{ owner_id: string | null; results: FolderShareApi[] }>>(
+          `/page-folders/${folderId}/shares/`,
+        );
+        this.sharesByFolder[folderId] = data.data.results.map(mapShare);
+        return {};
+      } catch (error: any) {
+        return { error: error.response?.data?.message || "Failed to load who has access" };
+      }
+    },
+
+    async revokeFolderShare(folderId: string, userId: string): Promise<{ error?: string }> {
+      try {
+        await axiosInstance.delete(`/page-folders/${folderId}/shares/${userId}/`);
+        this.sharesByFolder[folderId] = (this.sharesByFolder[folderId] || []).filter((s) => s.userId !== userId);
+        return {};
+      } catch (error: any) {
+        return { error: error.response?.data?.message || "Failed to remove access" };
       }
     },
 
