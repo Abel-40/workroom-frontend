@@ -1,66 +1,109 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+/**
+ * Hero. Its job is comprehension, not spectacle: what Workroom is, who runs
+ * it, why it beats the tools it replaces -- then a product visual big enough
+ * to create curiosity. Asymmetric by design so it doesn't read as the
+ * centred-headline-over-screenshot template.
+ */
+import { ref, onMounted } from "vue";
 import { RouterLink } from "vue-router";
-import { Sparkles, ArrowRight } from "lucide-vue-next";
-import { Button } from "@/components/ui/button";
-import RoleDashboardPreview from "./RoleDashboardPreview.vue";
+import { ArrowRight } from "lucide-vue-next";
 import { gsap, prefersReducedMotion } from "@/lib/gsap";
+import AppFrame from "../product/AppFrame.vue";
+import ScreenDashboard from "../product/screens/ScreenDashboard.vue";
 
-const badge = ref<HTMLElement | null>(null);
-const heading = ref<HTMLElement | null>(null);
 const copy = ref<HTMLElement | null>(null);
-const ctas = ref<HTMLElement | null>(null);
-const preview = ref<HTMLElement | null>(null);
+const visual = ref<HTMLElement | null>(null);
 
 onMounted(() => {
-  if (prefersReducedMotion()) return;
-  gsap
-    .timeline({ defaults: { ease: "power3.out" } })
-    .from(badge.value, { opacity: 0, y: 16, duration: 0.5 })
-    .from(heading.value, { opacity: 0, y: 24, duration: 0.7 }, "-=0.3")
-    .from(copy.value, { opacity: 0, y: 20, duration: 0.6 }, "-=0.4")
-    .from(ctas.value, { opacity: 0, y: 16, duration: 0.5 }, "-=0.35")
-    .from(preview.value, { opacity: 0, y: 32, scale: 0.97, duration: 0.8 }, "-=0.6");
+  if (prefersReducedMotion() || !copy.value) return;
+  // One short entrance, from a visible resting state -- nothing is parked at
+  // opacity 0 waiting on the observer.
+  gsap.from(copy.value.children, {
+    opacity: 0,
+    y: 18,
+    duration: 0.6,
+    stagger: 0.07,
+    ease: "power3.out",
+  });
+  gsap.from(visual.value, { opacity: 0, y: 26, duration: 0.8, delay: 0.15, ease: "power3.out" });
 });
 </script>
 
 <template>
-  <section class="relative overflow-hidden pb-16 pt-14 sm:pt-20 lg:pb-24 lg:pt-24">
-    <div class="mx-auto grid max-w-[1280px] items-center gap-12 px-4 md:px-8 lg:grid-cols-[1.05fr_1fr] lg:gap-8">
-      <div>
-        <div ref="badge" class="inline-flex items-center gap-2 rounded-full bg-primary-soft px-4 py-1.5 text-xs font-bold uppercase tracking-[.04em] text-primary-strong">
-          <Sparkles class="h-3.5 w-3.5" /> AI-powered work management
-        </div>
+  <section class="relative overflow-hidden">
+    <div class="mx-auto max-w-[1560px] px-5 pb-0 pt-14 lg:px-10 lg:pt-24">
+      <div class="grid items-end gap-10 lg:grid-cols-[minmax(0,6fr)_minmax(0,10fr)] lg:gap-12">
+        <!-- Copy -->
+        <div ref="copy" class="max-w-xl pb-2 lg:pb-10">
+          <p class="text-[11px] font-semibold uppercase tracking-[.16em]" style="color: hsl(var(--wr-lp-brand))">
+            Work management for growing companies
+          </p>
 
-        <h1 ref="heading" class="mt-5 text-[40px] font-extrabold leading-[1.08] tracking-tight text-ink sm:text-[52px] lg:text-[58px]">
-          Plan smarter.
-          <br />
-          <span class="bg-gradient-to-r from-[#3F8CFF] to-accent-2 bg-clip-text text-transparent">Execute faster.</span>
-        </h1>
-
-        <p ref="copy" class="mt-6 max-w-xl text-base leading-relaxed text-[#5B6472] sm:text-lg">
-          Workroom brings your company, projects, and tasks into one workspace &mdash; then lets AI turn a
-          project brief into a structured, ready-to-run task plan your team can execute on a Kanban board.
-        </p>
-
-        <div ref="ctas" class="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-          <Button as-child size="lg" class="h-12 bg-gradient-to-br from-[#3F8CFF] to-accent-2 px-7 text-white shadow-[0_10px_28px_rgba(63,140,255,0.38)] hover:shadow-lg">
-            <RouterLink to="/auth/">
-              Get started free <ArrowRight class="ml-1.5 h-4 w-4" />
-            </RouterLink>
-          </Button>
-          <a
-            href="#screenshots"
-            class="inline-flex h-12 items-center justify-center rounded-lg border border-slate-900/10 bg-white/60 px-7 text-sm font-semibold text-ink transition hover:bg-white/90"
+          <h1
+            class="mt-4 text-[clamp(2.4rem,5.2vw,4.1rem)] font-bold leading-[1.02] tracking-[-0.028em] wr-t1"
+            style="text-wrap: balance"
           >
-            See it in action
-          </a>
-        </div>
-      </div>
+            Every project, person and plan in one workspace.
+          </h1>
 
-      <div ref="preview" class="mx-auto w-full max-w-[440px] lg:max-w-none">
-        <RoleDashboardPreview />
+          <p class="mt-5 max-w-lg text-[17px] leading-relaxed wr-t2">
+            Workroom gives company and department leaders a single place to organize
+            projects, assign work across teams, see who has capacity, and let AI turn a
+            brief into a structured plan the team can actually run.
+          </p>
+
+          <div class="mt-8 flex flex-wrap items-center gap-3">
+            <RouterLink
+              to="/auth/"
+              class="inline-flex h-11 items-center gap-1.5 rounded-lg px-6 text-[14px] font-semibold text-white transition-transform hover:-translate-y-px focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+              style="
+                background: linear-gradient(135deg, hsl(var(--wr-lp-brand)), hsl(var(--wr-lp-accent)));
+                outline-color: hsl(var(--wr-lp-brand));
+              "
+            >
+              Get started free <ArrowRight class="h-4 w-4" />
+            </RouterLink>
+            <a
+              href="#walkthrough"
+              class="inline-flex h-11 items-center rounded-lg border px-6 text-[14px] font-semibold wr-t1 wr-line transition-colors hover:bg-black/[.03] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 dark:hover:bg-white/[.05]"
+              style="outline-color: hsl(var(--wr-lp-brand))"
+            >
+              See inside Workroom
+            </a>
+          </div>
+
+          <p class="mt-5 text-[12.5px] wr-t3">
+            Free while you set up your company · No card required
+          </p>
+        </div>
+
+        <!-- Product visual: given the larger half of the grid so the app, not
+             the copy, is the thing the eye lands on. Kept whole -- an earlier
+             right-edge bleed cut the activity stream mid-sentence. -->
+        <div ref="visual" class="relative">
+          <div class="wr-hero-frame">
+            <AppFrame active="dashboard">
+              <ScreenDashboard />
+            </AppFrame>
+          </div>
+        </div>
       </div>
     </div>
   </section>
 </template>
+
+<style scoped>
+.wr-hero-frame {
+  height: clamp(360px, 60vh, 660px);
+}
+.wr-hero-frame :deep(.wr-app) {
+  height: 100%;
+}
+
+@media (min-width: 1024px) {
+  .wr-hero-frame {
+    height: clamp(470px, 72vh, 780px);
+  }
+}
+</style>

@@ -1,0 +1,214 @@
+/*
+ * Landing-page surface system.
+ *
+ * Additive on top of main.css: everything here is a --wr-lp-* token, nothing
+ * overrides a shadcn token. The two themes are authored separately rather
+ * than inverted -- light builds depth from shadow on white, dark builds it
+ * from hairlines, a top highlight and a single blue bloom, because cast
+ * shadows do not read on a near-black ground.
+ */
+
+:root {
+  --wr-lp-brand: 217 100% 62%;
+  --wr-lp-accent: 247 100% 68%;
+
+  /* Page and stage grounds */
+  --wr-lp-ground: 210 45% 96%;
+  --wr-lp-stage: 213 42% 93%;
+  --wr-lp-stage-2: 213 40% 90%;
+
+  /* Application surfaces, outermost to innermost */
+  --wr-lp-app: 0 0% 100%;
+  --wr-lp-app-rail: 210 40% 98%;
+  --wr-lp-app-well: 210 40% 97%;
+
+  --wr-lp-line: 214 32% 88%;
+  --wr-lp-line-soft: 214 32% 92%;
+
+  --wr-lp-text: 222 56% 8%;
+  --wr-lp-text-2: 218 12% 40%;
+  --wr-lp-text-3: 218 11% 55%;
+
+  /* Depth: light mode leans on shadow */
+  --wr-lp-app-shadow:
+    0 1px 2px hsl(215 40% 20% / .05),
+    0 12px 24px -12px hsl(215 40% 20% / .12),
+    0 48px 90px -36px hsl(215 45% 22% / .30);
+  --wr-lp-app-edge: 1px solid hsl(var(--wr-lp-line));
+  --wr-lp-app-highlight: none;
+  --wr-lp-bloom: none;
+  --wr-lp-stage-wash:
+    radial-gradient(1100px 620px at 50% -10%, hsl(var(--wr-lp-brand) / .10), transparent 70%);
+}
+
+.dark {
+  --wr-lp-brand: 217 90% 66%;
+  --wr-lp-accent: 247 100% 75%;
+
+  --wr-lp-ground: 222 47% 6%;
+  --wr-lp-stage: 222 45% 8%;
+  --wr-lp-stage-2: 222 44% 10%;
+
+  --wr-lp-app: 222 40% 11%;
+  --wr-lp-app-rail: 222 40% 13%;
+  --wr-lp-app-well: 222 38% 15%;
+
+  --wr-lp-line: 216 25% 24%;
+  --wr-lp-line-soft: 216 22% 19%;
+
+  --wr-lp-text: 210 40% 96%;
+  --wr-lp-text-2: 217 15% 70%;
+  --wr-lp-text-3: 217 12% 56%;
+
+  /* Depth: dark mode leans on edges and light, not shade */
+  --wr-lp-app-shadow: 0 40px 80px -40px hsl(0 0% 0% / .85);
+  --wr-lp-app-edge: 1px solid hsl(var(--wr-lp-line));
+  --wr-lp-app-highlight: inset 0 1px 0 hsl(0 0% 100% / .06);
+  --wr-lp-bloom:
+    radial-gradient(760px 420px at 50% 0%, hsl(var(--wr-lp-brand) / .16), transparent 68%);
+  --wr-lp-stage-wash:
+    radial-gradient(1100px 620px at 50% -10%, hsl(var(--wr-lp-brand) / .13), transparent 70%);
+}
+
+/* ── Page shell ──────────────────────────────────────────────────── */
+.wr-lp {
+  background: hsl(var(--wr-lp-ground));
+  color: hsl(var(--wr-lp-text));
+}
+
+.wr-lp-stage {
+  background:
+    var(--wr-lp-stage-wash),
+    linear-gradient(180deg, hsl(var(--wr-lp-stage)), hsl(var(--wr-lp-stage-2)));
+}
+
+/* ── The application surface ─────────────────────────────────────── */
+.wr-app {
+  background: hsl(var(--wr-lp-app));
+  border: var(--wr-lp-app-edge);
+  box-shadow: var(--wr-lp-app-shadow), var(--wr-lp-app-highlight);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.wr-app-rail { background: hsl(var(--wr-lp-app-rail)); }
+.wr-app-well { background: hsl(var(--wr-lp-app-well)); }
+.wr-line { border-color: hsl(var(--wr-lp-line)); }
+.wr-line-soft { border-color: hsl(var(--wr-lp-line-soft)); }
+
+.wr-t1 { color: hsl(var(--wr-lp-text)); }
+.wr-t2 { color: hsl(var(--wr-lp-text-2)); }
+.wr-t3 { color: hsl(var(--wr-lp-text-3)); }
+
+/* ── Deck ────────────────────────────────────────────────────────
+   The stack itself is layout, not animation: consecutive siblings that
+   stick at the same offset, so later ones cover earlier ones by DOM order
+   and scrolling back up reverses it for free. --p (0..1, written by
+   ProductDeck's rAF loop) only drives the depth of the screen being
+   covered; if that JS never runs, the stack still works. */
+.wr-deck-item {
+  position: sticky;
+  z-index: var(--z, 1);
+  --p: 0;
+}
+.wr-deck-screen {
+  transform: scale(calc(1 - var(--p) * 0.045)) translate3d(0, calc(var(--p) * -14px), 0);
+  transform-origin: 50% 22%;
+  will-change: transform;
+}
+.wr-deck-veil {
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+  pointer-events: none;
+  background: hsl(var(--wr-lp-ground));
+  opacity: calc(var(--p) * 0.42);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wr-deck-screen { transform: none; }
+  .wr-deck-veil { opacity: 0; }
+}
+
+/* Below the deck breakpoint the stack is abandoned for a snap carousel --
+   tall sticky containers and a covered viewport are the wrong trade on a
+   phone. Same seven screens, same order, still driven by the user's own
+   scrolling. */
+@media (max-width: 1023px) {
+  .wr-deck-item { position: relative; top: auto !important; }
+  .wr-deck-screen { transform: none; }
+  .wr-deck-veil { display: none; }
+}
+
+/* ── Product-screen layout primitives ─────────────────────────────
+   The app frame is a container, so these collapse on the *frame's* width --
+   which is what actually varies (hero column, deck slide, mobile carousel) --
+   rather than the viewport's. A 620px frame on a tablet gets the same
+   treatment as a 620px frame anywhere else.
+
+   Every rule is scoped under .wr-app deliberately: a bare .app-aside would tie
+   on specificity with Tailwind's .flex utility, which is emitted later and
+   would win, so the panel would never actually hide. */
+.wr-app {
+  container-type: inline-size;
+  container-name: wrapp;
+}
+
+.wr-app .app-split { grid-template-columns: 1.55fr 1fr; }
+.wr-app .app-split-2 { grid-template-columns: 1fr 1.15fr; }
+.wr-app .app-cols-3,
+.wr-app .app-stats,
+.wr-app .app-people { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.wr-app .app-board { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.wr-app .app-planner { grid-template-columns: 300px 1fr; }
+.wr-app .app-assist { grid-template-columns: 1fr 248px; }
+.wr-app .app-projects { grid-template-columns: 1fr 210px; }
+.wr-app .app-work { grid-template-columns: 1.5fr 1fr; }
+.wr-app .app-prow { grid-template-columns: 1.7fr .85fr .6fr 1fr .7fr; }
+.wr-app .app-arow { grid-template-columns: 26px 1fr .8fr .9fr .4fr 34px; }
+.wr-app .app-mrow { grid-template-columns: 1.5fr 1.1fr .7fr; }
+
+@container wrapp (max-width: 900px) {
+  .wr-app .app-board { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .wr-app .app-planner { grid-template-columns: 250px 1fr; }
+  .wr-app .app-arow { grid-template-columns: 26px 1fr .9fr .4fr 34px; }
+  .wr-app .app-arow > :nth-child(3) { display: none; }
+}
+
+@container wrapp (max-width: 700px) {
+  /* Secondary panels step aside rather than being squeezed into slivers. */
+  .wr-app .app-split,
+  .wr-app .app-split-2,
+  .wr-app .app-work,
+  .wr-app .app-planner,
+  .wr-app .app-assist,
+  .wr-app .app-projects { grid-template-columns: minmax(0, 1fr); }
+  .wr-app .app-aside { display: none; }
+  .wr-app .app-prow { grid-template-columns: 1fr auto; }
+  .wr-app .app-prow > :nth-child(n + 3) { display: none; }
+  .wr-app .app-arow { grid-template-columns: 26px 1fr .5fr 34px; }
+  .wr-app .app-arow > :nth-child(4) { display: none; }
+  .wr-app .app-mrow { grid-template-columns: 1fr auto; }
+  .wr-app .app-mrow > :nth-child(2) { display: none; }
+  /* A section that outgrows its track clips rather than drawing over its
+     neighbour -- the overlap this replaced was the worst mobile defect. */
+  .wr-app section { overflow: hidden; }
+}
+
+@container wrapp (max-width: 700px) {
+  .wr-app .app-people { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@container wrapp (max-width: 480px) {
+  .wr-app .app-cols-3,
+  .wr-app .app-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* Third tile spans the row so the grid doesn't end on a hole. */
+  .wr-app .app-stats > :nth-child(3) { grid-column: span 2; }
+  /* Show whole people cards or none -- a card clipped through its own middle
+     reads as a bug, not as truncation. */
+  .wr-app .app-people > :nth-child(n + 3) { display: none; }
+  /* At this width the dashboard cannot hold stats, workload and projects
+     without squeezing one of them into a clipped strip. Workload steps out --
+     it gets a full screen of its own later in the walkthrough. */
+  .wr-app .app-workload-block { display: none; }
+  .wr-app .app-board { grid-template-columns: minmax(0, 1fr); }
+}
