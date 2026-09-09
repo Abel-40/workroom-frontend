@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { ClipboardList, Plus } from "lucide-vue-next";
+import { Plus } from "lucide-vue-next";
 import { Button } from "@/components/ui/button";
 import { useDeviceClass } from "@/composables/useDeviceClass";
+import { ILLUSTRATIONS } from "@/lib/illustrations";
+import EmptyState from "@/components/shared/EmptyState.vue";
 
 defineEmits<{
   (e: "add-task"): void;
@@ -11,16 +13,21 @@ const { isReadOnly } = useDeviceClass();
 </script>
 
 <template>
-  <div class="flex flex-col items-center justify-center gap-5 rounded-2xl py-20 text-center">
-    <div class="flex h-20 w-20 items-center justify-center rounded-full bg-page">
-      <ClipboardList class="h-9 w-9 text-primary" />
-    </div>
-    <div>
-      <p class="font-medium text-ink">There are no tasks in this project yet</p>
-      <p class="text-sm text-subtle">Let's add them</p>
-    </div>
+  <!-- "plain": this sits inside the project panel, which already draws the
+       surface -- a card here would nest one border inside another. -->
+  <EmptyState
+    size="lg"
+    variant="plain"
+    :image="ILLUSTRATIONS.emptyTasks"
+    title="No tasks in this project yet"
+    :message="
+      isReadOnly
+        ? 'Tasks added to this project will show up on the board here.'
+        : 'Add the first task, or let the AI break the project down into a plan you can review.'
+    "
+  >
     <Button v-if="!isReadOnly" class="rounded-xl" @click="$emit('add-task')">
       <Plus class="h-4 w-4" /> Add Task
     </Button>
-  </div>
+  </EmptyState>
 </template>

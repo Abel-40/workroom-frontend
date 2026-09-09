@@ -1132,14 +1132,17 @@ watch(()=>paginatedProjects.value,()=>{
               </template>
 
               <template v-else>
-                <p v-if="!paginatedProjects.length && searchQuery" class="px-4 py-6 text-center text-sm text-subtle">
-                  No projects match "{{ searchQuery }}"
-                </p>
+                <EmptyState
+                  v-if="!paginatedProjects.length && searchQuery"
+                  :image="ILLUSTRATIONS.noResults"
+                  :title="`No projects match “${searchQuery}”`"
+                  message="Check the spelling, or search for part of the project name."
+                />
                 <EmptyState
                   v-else-if="!paginatedProjects.length"
                   :image="ILLUSTRATIONS.emptyProjects"
-                  image-alt="No projects in this view"
-                  message="No projects in this view."
+                  title="No projects in this view"
+                  message="Switch to another tab, or create a project to fill this list."
                 />
                 <div v-else class="max-h-[500px]">
                   <ProjectListRow

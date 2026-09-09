@@ -9,6 +9,9 @@ import {
   RotateCcw, UserCheck, UserMinus, UserPlus, Users,
 } from "lucide-vue-next";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { ILLUSTRATIONS } from "@/lib/illustrations";
+import EmptyState from "@/components/shared/EmptyState.vue";
 import { useActivityStore, type ActivityType } from "@/stores/activityStore";
 import { usePermissions } from "@/composables/usePermissions";
 import { formatRelativeTime, formatShortDate } from "@/lib/dates";
@@ -123,6 +126,15 @@ const visibleActivities = computed(() =>
     return true;
   })
 );
+
+// Same list, two meanings: a feed nothing has landed in yet, or one the
+// filters emptied. Only the second offers a way back.
+const hasActiveFilters = computed(() => kindFilter.value !== "all" || categoryFilter.value !== "all");
+
+const clearFilters = () => {
+  kindFilter.value = "all";
+  categoryFilter.value = "all";
+};
 </script>
 
 <template>
@@ -159,11 +171,22 @@ const visibleActivities = computed(() =>
 
     <div class="rounded-2xl border border-border bg-card">
       <p v-if="activityStore.loading" class="px-4 py-10 text-center text-sm text-subtle">Loading activity…</p>
-      <div v-else-if="!visibleActivities.length" class="flex flex-col items-center gap-3 px-4 py-16 text-center">
-        <span class="flex h-12 w-12 items-center justify-center rounded-full bg-page text-subtle"><History class="h-5 w-5" /></span>
-        <p class="text-sm font-medium text-ink">No activity to show</p>
-        <p class="max-w-sm text-xs text-subtle">Nothing matches these filters yet, or nothing's happened here recently.</p>
-      </div>
+      <EmptyState
+        v-else-if="!visibleActivities.length"
+        size="lg"
+        variant="plain"
+        :image="hasActiveFilters ? ILLUSTRATIONS.noResults : ILLUSTRATIONS.emptyActivity"
+        :title="hasActiveFilters ? 'No activity matches these filters' : 'No activity yet'"
+        :message="
+          hasActiveFilters
+            ? 'Nothing in this page of history matches. Try another category, or clear the filters.'
+            : 'Every project, task and membership change your company makes gets recorded here.'
+        "
+      >
+        <Button v-if="hasActiveFilters" variant="outline" class="rounded-xl" @click="clearFilters">
+          Clear filters
+        </Button>
+      </EmptyState>
       <div v-else>
         <div
           v-for="activity in visibleActivities"

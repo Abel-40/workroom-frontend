@@ -16,6 +16,8 @@ import { useProjectStore } from "@/stores/projectStore";
 import { useEmployeeStore, type EmployeeRole } from "@/stores/employeeStore";
 import { useDirectoryStore } from "@/stores/directoryStore";
 import { formatShortDate } from "@/lib/dates";
+import { ILLUSTRATIONS } from "@/lib/illustrations";
+import EmptyState from "@/components/shared/EmptyState.vue";
 
 const authStore = useAuthStore();
 const profileStore = useUserProfileStore();
@@ -363,9 +365,13 @@ const roleBadgeClass: Record<string, string> = {
         </div>
 
         <div v-if="tab === 'projects'" class="space-y-4">
-          <p v-if="!filteredProjects.length" class="rounded-2xl border border-dashed border-border bg-card p-8 text-center text-sm text-subtle">
-            No projects match the selected filters.
-          </p>
+          <EmptyState
+            v-if="!filteredProjects.length"
+            size="lg"
+            :image="ILLUSTRATIONS.noResults"
+            title="No projects match the selected filters"
+            message="Try another status or period, or clear the filters to see everything you're on."
+          />
           <div
             v-for="project in filteredProjects"
             :key="project.id"
@@ -404,9 +410,14 @@ const roleBadgeClass: Record<string, string> = {
         </div>
 
         <div v-else-if="tab === 'team'" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <p v-if="!filteredTeam.length" class="col-span-full rounded-2xl border border-dashed border-border bg-card p-8 text-center text-sm text-subtle">
-            No teammates match the selected filters.
-          </p>
+          <EmptyState
+            v-if="!filteredTeam.length"
+            size="lg"
+            class="col-span-full"
+            :image="ILLUSTRATIONS.noResults"
+            title="No teammates match the selected filters"
+            message="Try another department or role, or clear the filters to see everyone."
+          />
           <div v-for="employee in filteredTeam" :key="employee.id" class="flex flex-col items-center rounded-2xl border border-border bg-card p-4 text-center shadow-sm">
             <Avatar size="sm" class="h-14 w-14 text-sm">
               <AvatarFallback>{{ initials(employee.name) }}</AvatarFallback>

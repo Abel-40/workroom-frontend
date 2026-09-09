@@ -16,6 +16,8 @@ import SectionKicker from "@/components/shared/SectionKicker.vue";
 import { useDirectoryStore } from "@/stores/directoryStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { usePermissions } from "@/composables/usePermissions";
+import EmptyState from "@/components/shared/EmptyState.vue";
+import { ILLUSTRATIONS } from "@/lib/illustrations";
 
 const router = useRouter();
 const directoryStore = useDirectoryStore();
@@ -65,9 +67,12 @@ const openDepartment = (departmentId: string) =>
 
     <div>
       <SectionKicker label="Other departments" />
-      <div v-if="!otherDepartments.length" class="rounded-xl border border-dashed border-slate-900/10 px-6 py-8 text-center text-sm text-[#7D8592]">
-        No other departments yet.
-      </div>
+      <EmptyState
+        v-if="!otherDepartments.length"
+        :image="ILLUSTRATIONS.emptyDepartmentsAndTeams"
+        title="No other departments yet"
+        message="Departments your company adds will be listed here."
+      />
       <div v-else class="wr-glass divide-y divide-slate-900/[.06] rounded-2xl">
         <button
           v-for="dept in otherDepartments"

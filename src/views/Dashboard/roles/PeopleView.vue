@@ -9,7 +9,7 @@
 // so the tag is just Team Lead / Member.
 import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
-import { MessageSquare, Plus, Search, UserMinus, Users } from "lucide-vue-next";
+import { MessageSquare, Plus, Search, UserMinus } from "lucide-vue-next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import GlassCard from "@/components/shared/GlassCard.vue";
@@ -104,10 +104,13 @@ const initials = (name: string) => (name || "?").split(" ").map((p) => p[0]).joi
     <EmptyState
       v-else-if="!roster.length"
       size="lg"
-      :icon="Users"
-      :image="searchQuery ? undefined : ILLUSTRATIONS.emptyEmployees"
-      image-alt="No one in this department yet"
-      :message="searchQuery ? `No one matches “${searchQuery}”.` : 'No one in this department yet.'"
+      :image="searchQuery ? ILLUSTRATIONS.noResults : ILLUSTRATIONS.emptyEmployees"
+      :title="searchQuery ? `No one matches “${searchQuery}”` : 'No one in this department yet'"
+      :message="
+        searchQuery
+          ? 'Check the spelling, or search for part of a name.'
+          : 'Members assigned to this department will show up here.'
+      "
     />
     <div v-else class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       <GlassCard v-for="employee in roster" :key="employee.id" padding="dense">

@@ -6,7 +6,7 @@
 // @project mention (kept working, per spec, as a shortcut to the same
 // selection) -- both paths set the same projectId.
 import { computed, reactive, ref, watch } from "vue";
-import { ArrowRight, ChevronDown, Lock, Minus, Plus, PlusCircle, RefreshCw, Send, Sparkles } from "lucide-vue-next";
+import { ArrowRight, ChevronDown, Lock, Minus, Plus, PlusCircle, RefreshCw, Send } from "lucide-vue-next";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast/use-toast";
 import { useAiStore } from "@/stores/aiStore";
@@ -25,6 +25,8 @@ import ConfirmDiscardDialog from "@/components/ai/shared/ConfirmDiscardDialog.vu
 import AiSlideOverPanel from "@/components/ai/shared/AiSlideOverPanel.vue";
 import AiToolModeDropdown from "@/components/ai/shared/AiToolModeDropdown.vue";
 import AvatarStack from "@/components/ai/shared/AvatarStack.vue";
+import EmptyState from "@/components/shared/EmptyState.vue";
+import { ILLUSTRATIONS } from "@/lib/illustrations";
 
 const props = defineProps<{
   projectId: string | null;
@@ -289,20 +291,22 @@ watch(
 
       <template v-else>
         <!-- Empty state: nothing chosen and nothing generated yet -->
-        <div v-if="!projectId && !visibleGeneration" class="flex flex-col items-center gap-3 px-6 py-16 text-center">
-          <span class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-indigo-500 text-white">
-            <Sparkles class="h-5 w-5" />
-          </span>
-          <p class="text-base font-semibold text-ink">No plan generated yet</p>
-          <p class="max-w-sm text-sm text-subtle">Pick a project and its assignees below, set how many tasks the AI may create, then describe the outcome you want.</p>
-          <div class="mt-2 flex flex-wrap items-center justify-center gap-2 text-xs text-subtle">
+        <EmptyState
+          v-if="!projectId && !visibleGeneration"
+          size="lg"
+          variant="plain"
+          :image="ILLUSTRATIONS.emptyAiPlan"
+          title="No plan generated yet"
+          message="Pick a project and its assignees below, set how many tasks the AI may create, then describe the outcome you want."
+        >
+          <div class="flex flex-wrap items-center justify-center gap-2 text-xs text-subtle">
             <span class="rounded-full bg-page px-3 py-1 font-medium">1 — Select project</span>
             <span>›</span>
             <span class="rounded-full bg-page px-3 py-1 font-medium">2 — Select assignees</span>
             <span>›</span>
             <span class="rounded-full bg-page px-3 py-1 font-medium">3 — Set task limit</span>
           </div>
-        </div>
+        </EmptyState>
 
         <!-- Only shown for the initial generation, before there's any plan to
              look at -- once tasks exist, they stay visible even while a

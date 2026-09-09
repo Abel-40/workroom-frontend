@@ -9,6 +9,7 @@ import { BarChart3, ListChecks, MessageSquare, Play, X } from "lucide-vue-next";
 import { Switch } from "@/components/ui/switch";
 import type { AiMode } from "@/types/aiWorkspace";
 import { TOUR_STEPS, TOUR_SUMMARY } from "@/lib/aiTourSteps";
+import { ILLUSTRATIONS } from "@/lib/illustrations";
 import { useAiWorkspaceUiStore } from "@/stores/aiWorkspaceUiStore";
 
 const props = defineProps<{ activeMode: AiMode }>();
@@ -47,6 +48,23 @@ const firstVisitLabel = computed(() => {
           <button type="button" class="flex h-8 w-8 items-center justify-center rounded-full text-subtle hover:bg-page" @click="emit('close')">
             <X class="h-4 w-4" />
           </button>
+        </div>
+
+        <!-- Panel header art, lit the same way EmptyState lights its
+             illustrations so the two read as one visual language. -->
+        <div class="relative flex h-32 items-center justify-center">
+          <span
+            aria-hidden="true"
+            class="pointer-events-none absolute -inset-x-6 -inset-y-2 rounded-full"
+            style="background: radial-gradient(closest-side, hsl(var(--primary-strong) / 0.16), transparent 78%)"
+          />
+          <img
+            :src="ILLUSTRATIONS.support"
+            alt=""
+            loading="lazy"
+            decoding="async"
+            class="pointer-events-none relative h-full w-full select-none object-contain"
+          />
         </div>
 
         <div class="flex flex-col gap-3">

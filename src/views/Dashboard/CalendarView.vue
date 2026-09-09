@@ -19,6 +19,8 @@ import AddEventModal from "@/components/calendar/AddEventModal.vue";
 import { useEventStore, type EventEntry } from "@/stores/eventStore";
 import { formatTime, toZonedCalendarDate } from "@/lib/dates";
 import { EVENT_BORDER_CLASS, eventColorFor } from "@/lib/eventColor";
+import { ILLUSTRATIONS } from "@/lib/illustrations";
+import EmptyState from "@/components/shared/EmptyState.vue";
 
 const router = useRouter();
 const eventStore = useEventStore();
@@ -200,5 +202,17 @@ const jumpToToday = () => {
         </div>
       </div>
     </div>
+
+    <!-- The grid is never truly empty -- it always has dates -- so this sits
+         under it rather than replacing it. The store fetches exactly the
+         visible month, so an empty list means an empty month. -->
+    <EmptyState
+      v-if="!eventStore.loading && !eventStore.events.length"
+      size="lg"
+      :image="ILLUSTRATIONS.emptyCalendar"
+      :title="`Nothing scheduled in ${monthLabel().replace(',', '')}`"
+      message="Click any upcoming day in the grid above to add your first event for this month."
+      class="mt-4"
+    />
   </div>
 </template>

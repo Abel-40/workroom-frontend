@@ -119,9 +119,13 @@ const teamMembers = (memberIds: string[]) =>
           <Plus class="w-4 h-4" /> Add Department
         </Button>
       </EmptyState>
-      <div v-else-if="filteredDepartments.length === 0" class="rounded-2xl border border-dashed border-border bg-card p-12 text-center">
-        <p class="font-medium text-ink">No departments match "{{ searchQuery }}"</p>
-      </div>
+      <EmptyState
+        v-else-if="filteredDepartments.length === 0"
+        size="lg"
+        :image="ILLUSTRATIONS.noResults"
+        :title="`No departments match “${searchQuery}”`"
+        message="Check the spelling, or search for part of the department name."
+      />
       <div v-else class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <div
           v-for="department in filteredDepartments"
@@ -181,9 +185,13 @@ const teamMembers = (memberIds: string[]) =>
           <Plus class="w-4 h-4" /> Add Team
         </Button>
       </EmptyState>
-      <div v-else-if="filteredTeams.length === 0" class="rounded-2xl border border-dashed border-border bg-card p-12 text-center">
-        <p class="font-medium text-ink">No teams match "{{ searchQuery }}"</p>
-      </div>
+      <EmptyState
+        v-else-if="filteredTeams.length === 0"
+        size="lg"
+        :image="ILLUSTRATIONS.noResults"
+        :title="`No teams match “${searchQuery}”`"
+        message="Check the spelling, or search for part of the team name."
+      />
       <div v-else class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <div
           v-for="team in filteredTeams"

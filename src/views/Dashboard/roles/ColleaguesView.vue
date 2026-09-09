@@ -10,7 +10,7 @@
 // functionality the project rules forbid.
 import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
-import { MessageSquare, Search, Users } from "lucide-vue-next";
+import { MessageSquare, Search } from "lucide-vue-next";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -114,10 +114,13 @@ const initials = (name: string) => (name || "?").split(" ").map((p) => p[0]).joi
     <EmptyState
       v-else-if="!colleagues.length"
       size="lg"
-      :icon="Users"
-      :image="searchQuery ? undefined : ILLUSTRATIONS.emptyColleaguesDm"
-      image-alt="No colleagues yet"
-      :message="searchQuery ? `No one matches “${searchQuery}”.` : 'No shared projects or teams yet -- join or create one to see colleagues here.'"
+      :image="searchQuery ? ILLUSTRATIONS.noResults : ILLUSTRATIONS.emptyColleaguesDm"
+      :title="searchQuery ? `No one matches “${searchQuery}”` : 'No colleagues yet'"
+      :message="
+        searchQuery
+          ? 'Check the spelling, or search for part of a name.'
+          : 'No shared projects or teams yet — join or create one to see colleagues here.'
+      "
       class="w-full"
     />
     <div v-else class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

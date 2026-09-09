@@ -187,9 +187,13 @@ const confirmBulkDelete = async () => {
       >
         <Button @click="isAddEventOpen = true"><Plus class="h-4 w-4" /> Add Event</Button>
       </EmptyState>
-      <p v-else-if="!eventStore.events.length" class="rounded-2xl border border-dashed border-border bg-card p-10 text-center text-sm text-subtle">
-        No events match these filters.
-      </p>
+      <EmptyState
+        v-else-if="!eventStore.events.length"
+        size="lg"
+        :image="ILLUSTRATIONS.noResults"
+        title="No events match these filters"
+        message="Try a wider date range, or clear the filters to see every scheduled event."
+      />
 
       <!-- DM: organizing / attending (scoped) / attending (company-wide, muted) -->
       <div v-else-if="isDM" class="space-y-6 px-2">

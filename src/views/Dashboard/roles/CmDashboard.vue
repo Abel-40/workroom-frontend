@@ -334,23 +334,6 @@ const setupSteps = computed(() => {
             </div>
           </GlassCard>
         </div>
-
-        <div>
-          <SectionKicker label="Load by department" />
-          <SkeletonCard v-if="loading" :rows="4" />
-          <GlassCard v-else variant="flat">
-            <EmptyState v-if="!departmentLoad.length" :icon="Gauge" message="No departments yet." />
-            <div v-else class="space-y-4">
-              <MetricBar
-                v-for="dept in departmentLoad"
-                :key="dept.id"
-                :label="dept.name"
-                :value="dept.openPercent"
-                :sublabel="`${dept.openCount}/${dept.taskCount} open`"
-              />
-            </div>
-          </GlassCard>
-        </div>
       </div>
 
       <div class="col-span-12 space-y-6 xl:col-span-5">

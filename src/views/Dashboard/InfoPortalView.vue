@@ -472,9 +472,13 @@ async function deleteSelectedPages() {
           <Plus class="h-4 w-4" /> Add Folder
         </Button>
       </EmptyState>
-      <p v-else-if="!filteredFolders.length" class="rounded-2xl border border-dashed border-border bg-card p-10 text-center text-sm text-subtle">
-        No folders match "{{ searchQuery }}"
-      </p>
+      <EmptyState
+        v-else-if="!filteredFolders.length"
+        size="lg"
+        :image="ILLUSTRATIONS.noResults"
+        :title="`No folders match “${searchQuery}”`"
+        message="Check the spelling, or search for part of the folder name."
+      />
       <div v-else class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div
           v-for="folder in filteredFolders"
@@ -521,9 +525,17 @@ async function deleteSelectedPages() {
 
     <!-- Screen 2: this folder's pages, as square cards -->
     <template v-else-if="screen === 'pages'">
-      <p v-if="!filteredPages.length" class="rounded-2xl border border-dashed border-border bg-card p-10 text-center text-sm text-subtle">
-        No pages match "{{ searchQuery }}"
-      </p>
+      <EmptyState
+        v-if="!filteredPages.length"
+        size="lg"
+        :image="searchQuery ? ILLUSTRATIONS.noResults : ILLUSTRATIONS.emptyFolder"
+        :title="searchQuery ? `No pages match “${searchQuery}”` : 'This folder is empty'"
+        :message="
+          searchQuery
+            ? 'Check the spelling, or search for part of the page title.'
+            : 'Pages added to this folder will show up here.'
+        "
+      />
       <div v-else class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
         <div
           v-for="page in filteredPages"

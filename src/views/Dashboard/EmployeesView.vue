@@ -292,12 +292,13 @@ const roleBadgeClass: Record<string, string> = {
         <Plus class="w-4 h-4" /> Add Employee
       </Button>
     </EmptyState>
-    <div v-else-if="filteredEmployees.length === 0" class="rounded-2xl border border-dashed border-border bg-card p-12 text-center">
-      <p class="font-medium text-ink">
-        {{ searchQuery ? `No employees match "${searchQuery}"` : "No employees match the selected filters" }}
-      </p>
-      <p class="mt-1 text-sm text-subtle">Try a different name, email, department, or clear the filters.</p>
-    </div>
+    <EmptyState
+      v-else-if="filteredEmployees.length === 0"
+      size="lg"
+      :image="ILLUSTRATIONS.noResults"
+      :title="searchQuery ? `No employees match “${searchQuery}”` : 'No employees match the selected filters'"
+      message="Try a different name, email, or department, or clear the filters."
+    />
 
     <!-- List layout -->
     <div v-else-if="layout === 'list'" class="overflow-x-auto rounded-2xl border border-border bg-card">

@@ -31,3 +31,7 @@ coverage
 # Local design tooling and reference mockups (not app source)
 .21st/
 pic/
+
+# Local reference screenshots (~16MB, organised by role). Not referenced by
+# any code -- kept out of the repo rather than versioned as binary assets.
+screen shoots/

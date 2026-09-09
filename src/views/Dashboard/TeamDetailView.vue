@@ -15,6 +15,8 @@ import { useToast } from "@/components/ui/toast/use-toast";
 import { useAuthStore } from "@/stores/authStore";
 import { useDirectoryStore } from "@/stores/directoryStore";
 import { useEmployeeStore } from "@/stores/employeeStore";
+import EmptyState from "@/components/shared/EmptyState.vue";
+import { ILLUSTRATIONS } from "@/lib/illustrations";
 
 const route = useRoute();
 const router = useRouter();
@@ -110,9 +112,13 @@ const goBack = () => router.push({ name: "admin-dashboard", query: { section: "d
       </button>
     </div>
 
-    <div v-if="!team" class="rounded-2xl border border-dashed border-border bg-card p-12 text-center">
-      <p class="font-medium text-ink">Team not found</p>
-    </div>
+    <EmptyState
+      v-if="!team"
+      size="lg"
+      :image="ILLUSTRATIONS.noResults"
+      title="Team not found"
+      message="It may have been renamed or disbanded, or you may not have access to it."
+    />
 
     <div v-else class="max-w-2xl rounded-2xl border border-border bg-card p-6 shadow-sm">
       <div class="flex items-start justify-between gap-3">

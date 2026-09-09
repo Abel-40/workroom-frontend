@@ -9,6 +9,8 @@ import { useAuthStore } from "@/stores/authStore";
 import { useEventStore, type EventEntry } from "@/stores/eventStore";
 import { formatDateTime } from "@/lib/dates";
 import { canManageEvent } from "@/lib/eventPermissions";
+import EmptyState from "@/components/shared/EmptyState.vue";
+import { ILLUSTRATIONS } from "@/lib/illustrations";
 
 const route = useRoute();
 const router = useRouter();
@@ -80,9 +82,13 @@ const confirmDelete = async () => {
     <p v-if="loading" class="rounded-2xl border border-dashed border-border bg-card p-12 text-center text-sm text-subtle">
       Loading…
     </p>
-    <div v-else-if="!event" class="rounded-2xl border border-dashed border-border bg-card p-12 text-center">
-      <p class="font-medium text-ink">Event not found</p>
-    </div>
+    <EmptyState
+      v-else-if="!event"
+      size="lg"
+      :image="ILLUSTRATIONS.noResults"
+      title="Event not found"
+      message="It may have been cancelled or removed, or you may not have access to it."
+    />
 
     <div v-else class="max-w-2xl rounded-2xl border border-border bg-card p-6 shadow-sm">
       <div class="flex items-start justify-between gap-3">

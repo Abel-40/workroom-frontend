@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { MessageSquare } from "lucide-vue-next";
+import { ILLUSTRATIONS } from "@/lib/illustrations";
+import EmptyState from "@/components/shared/EmptyState.vue";
 </script>
 
 <template>
@@ -8,14 +9,15 @@ import { MessageSquare } from "lucide-vue-next";
       <h1 class="text-xl font-semibold">Messenger</h1>
     </div>
 
-    <div class="flex h-[640px] flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-card text-center">
-      <span class="flex h-14 w-14 items-center justify-center rounded-full bg-page text-subtle">
-        <MessageSquare class="h-6 w-6" />
-      </span>
-      <p class="text-lg font-medium text-ink">Messaging isn't available yet</p>
-      <p class="max-w-sm text-sm text-subtle">
-        In-app messaging is planned for a future release and isn't connected to the backend yet.
-      </p>
-    </div>
+    <EmptyState
+      size="xl"
+      eyebrow="Coming soon"
+      :image="ILLUSTRATIONS.emptyMessages"
+      title="Messaging isn’t available yet"
+      message="In-app messaging is planned for a future release and isn’t connected to the backend yet."
+      class="h-[640px]"
+    >
+      <template #hint>Until then, task comments and notifications carry project conversations.</template>
+    </EmptyState>
   </div>
 </template>

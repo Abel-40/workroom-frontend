@@ -29,6 +29,8 @@ import ConfirmDeleteDialog from "@/components/common/ConfirmDeleteDialog.vue";
 import FolderPagePickerModal from "@/components/ai/shared/FolderPagePickerModal.vue";
 import SaveResponseAsPageModal from "@/components/ai/shared/SaveResponseAsPageModal.vue";
 import ProjectSelectionModal from "@/components/ai/shared/ProjectSelectionModal.vue";
+import EmptyState from "@/components/shared/EmptyState.vue";
+import { ILLUSTRATIONS } from "@/lib/illustrations";
 import AiToolModeDropdown from "@/components/ai/shared/AiToolModeDropdown.vue";
 import AvatarStack from "@/components/ai/shared/AvatarStack.vue";
 import MarkdownText from "@/components/ai/shared/MarkdownText.vue";
@@ -182,11 +184,13 @@ watch(
         </div>
 
         <div class="flex-1 space-y-4 overflow-y-auto px-4 py-4">
-          <div v-if="!projectId" class="mt-8 flex flex-col items-center gap-2 text-center">
-            <Sparkles class="h-6 w-6 text-subtle" />
-            <p class="text-sm font-medium text-ink">Select a project to get started</p>
-            <p class="max-w-xs text-xs text-subtle">Pick a project below and the assistant will answer questions using its real Workroom content.</p>
-          </div>
+          <EmptyState
+            v-if="!projectId"
+            variant="plain"
+            :image="ILLUSTRATIONS.emptyAiPlan"
+            title="Select a project to get started"
+            message="Pick a project below and the assistant will answer questions using its real Workroom content."
+          />
           <p v-else-if="!messages.length" class="mt-8 text-center text-sm text-subtle">
             Ask anything about this project -- scope, risks, next steps, or how to break down a piece of work. Select pages below to ground the answer in specific Workroom content.
           </p>

@@ -3,6 +3,8 @@ import { onMounted } from "vue";
 import { ChevronRight } from "lucide-vue-next";
 import { Button } from "@/components/ui/button";
 import ProjectCard from "@/components/cards/ProjectCard.vue";
+import EmptyState from "@/components/shared/EmptyState.vue";
+import { ILLUSTRATIONS } from "@/lib/illustrations";
 import { useProjectStore } from "@/stores/projectStore";
 import { useEmployeeStore } from "@/stores/employeeStore";
 
@@ -30,8 +32,12 @@ onMounted(async () => {
     <div v-if="projectStore.projects.length" class="space-y-4">
       <ProjectCard v-for="project in projectStore.projects.slice(0, 2)" :key="project.id" :project="project" />
     </div>
-    <div v-else class="rounded-2xl border border-dashed border-gray-200 bg-white p-8 text-center text-sm text-subtle">
-      No projects yet.
-    </div>
+    <EmptyState
+      v-else
+      size="lg"
+      :image="ILLUSTRATIONS.dashboardEmptyProjects"
+      title="No projects yet"
+      message="Your company's projects will appear here once the first one is created."
+    />
   </div>
 </template>

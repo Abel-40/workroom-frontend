@@ -17,6 +17,8 @@ import { useAuthStore } from "@/stores/authStore";
 import { useDirectoryStore } from "@/stores/directoryStore";
 import { useEmployeeStore, ROLE_LABELS, type EmployeeRole } from "@/stores/employeeStore";
 import { hasPermission } from "@/lib/permissions";
+import EmptyState from "@/components/shared/EmptyState.vue";
+import { ILLUSTRATIONS } from "@/lib/illustrations";
 
 const route = useRoute();
 const router = useRouter();
@@ -165,9 +167,13 @@ const goBack = () => router.push({ name: "admin-dashboard", query: { section: "e
     <div v-if="loading" class="rounded-2xl border border-border bg-card p-12 text-center text-sm text-subtle">
       Loading…
     </div>
-    <div v-else-if="!employee" class="rounded-2xl border border-dashed border-border bg-card p-12 text-center">
-      <p class="font-medium text-ink">Employee not found</p>
-    </div>
+    <EmptyState
+      v-else-if="!employee"
+      size="lg"
+      :image="ILLUSTRATIONS.noResults"
+      title="Employee not found"
+      message="They may have left the company, or you may not have access to their profile."
+    />
 
     <div v-else class="flex flex-col gap-4 lg:flex-row">
       <div class="w-full rounded-2xl border border-border bg-card p-6 shadow-sm lg:w-80">

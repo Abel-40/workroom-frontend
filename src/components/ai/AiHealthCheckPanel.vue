@@ -23,6 +23,8 @@ import StatusTag from "@/components/ai/shared/StatusTag.vue";
 import ProjectSelectionModal from "@/components/ai/shared/ProjectSelectionModal.vue";
 import AiToolModeDropdown from "@/components/ai/shared/AiToolModeDropdown.vue";
 import AvatarStack from "@/components/ai/shared/AvatarStack.vue";
+import EmptyState from "@/components/shared/EmptyState.vue";
+import { ILLUSTRATIONS } from "@/lib/illustrations";
 
 const props = defineProps<{
   projectId: string | null;
@@ -111,15 +113,22 @@ watch(
            a long task table. Each column scrolls independently instead. -->
       <div class="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row">
       <div class="min-h-0 flex-1 space-y-4 overflow-y-auto pr-0.5">
-        <div v-if="!projectId" class="rounded-2xl border border-dashed border-border bg-card p-8 text-center text-sm text-subtle">
-          Select a project below to see its health report.
-        </div>
+        <EmptyState
+          v-if="!projectId"
+          size="lg"
+          :image="ILLUSTRATIONS.emptyAnalytics"
+          title="Select a project"
+          message="Choose a project below to see its health report."
+        />
 
         <!-- No tasks yet: nothing meaningful to report -->
-        <div v-else-if="stats && stats.totalTasks === 0" class="rounded-2xl border border-dashed border-border bg-card p-8 text-center">
-          <p class="text-sm font-medium text-ink">This project has no tasks yet</p>
-          <p class="mt-1 text-xs text-subtle">A health report needs at least one task to summarize. Add tasks to the backlog first.</p>
-        </div>
+        <EmptyState
+          v-else-if="stats && stats.totalTasks === 0"
+          size="lg"
+          :image="ILLUSTRATIONS.emptyTasks"
+          title="This project has no tasks yet"
+          message="A health report needs at least one task to summarize. Add tasks to the backlog first."
+        />
 
         <div v-else-if="stats" data-tour="health-report" class="rounded-2xl border border-border bg-card p-5 shadow-sm">
           <div class="flex flex-wrap items-start justify-between gap-3">

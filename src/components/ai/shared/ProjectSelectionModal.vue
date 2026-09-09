@@ -6,6 +6,8 @@ import { ArrowRight, Search, SlidersHorizontal, X } from "lucide-vue-next";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import StatusTag from "@/components/ai/shared/StatusTag.vue";
+import EmptyState from "@/components/shared/EmptyState.vue";
+import { ILLUSTRATIONS } from "@/lib/illustrations";
 import { avatarPalette } from "@/lib/avatarPalette";
 import { formatShortDate } from "@/lib/dates";
 import type { Project } from "@/types/types";
@@ -111,7 +113,12 @@ function confirm() {
         </div>
 
         <div class="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pr-1">
-          <p v-if="!filtered.length" class="py-8 text-center text-sm text-subtle">No projects found.</p>
+          <EmptyState
+            v-if="!filtered.length"
+            :image="ILLUSTRATIONS.noResults"
+            title="No projects found"
+            message="Try a different search term, or clear the filters above."
+          />
           <button
             v-for="project in filtered"
             :key="project.id"

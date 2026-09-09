@@ -18,6 +18,8 @@ import {
 } from "lucide-vue-next";
 
 import { Button } from "@/components/ui/button";
+import { ILLUSTRATIONS } from "@/lib/illustrations";
+import EmptyState from "@/components/shared/EmptyState.vue";
 import type { ActivityType } from "@/stores/activityStore";
 
 const router = useRouter();
@@ -211,27 +213,12 @@ const activityGroups = computed(() => {
     </div>
 
     <!-- Empty state -->
-    <div
-      v-if="!activityGroups.length"
-      class="flex min-h-[220px] items-center justify-center text-center"
-    >
-      <div>
-        <div
-          class="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-[hsl(var(--primary-soft))]"
-        >
-          <Sparkles
-            class="h-5 w-5 text-[hsl(var(--primary-strong))]"
-          />
-        </div>
-
-        <p class="text-sm font-medium text-ink">
-          No company activity yet
-        </p>
-
-        <p class="mt-1 text-xs text-subtle">
-          Activity from your company will appear here.
-        </p>
-      </div>
+    <div v-if="!activityGroups.length" class="flex min-h-[220px] items-center justify-center">
+      <EmptyState
+        :image="ILLUSTRATIONS.emptyActivity"
+        title="No company activity yet"
+        message="Projects, tasks and membership changes will show up here as your team works."
+      />
     </div>
 
     <!-- Activity groups -->

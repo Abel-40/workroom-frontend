@@ -11,9 +11,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { useNotificationStore } from "@/stores/notificationStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { formatDateTime } from "@/lib/dates";
+import { ILLUSTRATIONS } from "@/lib/illustrations";
+import EmptyState from "@/components/shared/EmptyState.vue";
 
 const notificationStore = useNotificationStore();
 const projectStore = useProjectStore();
@@ -77,6 +80,25 @@ const initials = (title: string) =>
 const totalPages = computed(() =>
   notificationStore.meta ? Math.max(1, Math.ceil(notificationStore.meta.count / notificationStore.meta.page_size)) : 1
 );
+
+// An empty list means two different things: nothing has happened yet, or the
+// filters excluded everything. They get different art and a different way out.
+const hasActiveFilters = computed(
+  () =>
+    typeFilter.value !== ALL ||
+    projectFilter.value !== ALL ||
+    taskFilter.value !== ALL ||
+    dateFrom.value !== "" ||
+    dateTo.value !== ""
+);
+
+const clearFilters = () => {
+  typeFilter.value = ALL;
+  projectFilter.value = ALL;
+  taskFilter.value = ALL;
+  dateFrom.value = "";
+  dateTo.value = "";
+};
 </script>
 
 <template>
@@ -128,9 +150,22 @@ const totalPages = computed(() =>
 
     <div class="rounded-2xl border border-border bg-card">
       <div v-if="notificationStore.loading" class="p-8 text-center text-sm text-subtle">Loading…</div>
-      <div v-else-if="!notificationStore.notifications.length" class="p-8 text-center text-sm text-subtle">
-        No notifications match these filters.
-      </div>
+      <EmptyState
+        v-else-if="!notificationStore.notifications.length"
+        size="lg"
+        variant="plain"
+        :image="hasActiveFilters ? ILLUSTRATIONS.noResults : ILLUSTRATIONS.emptyNotifications"
+        :title="hasActiveFilters ? 'No notifications match these filters' : 'You’re all caught up'"
+        :message="
+          hasActiveFilters
+            ? 'Try widening the date range, or clear the filters to see everything.'
+            : 'Assignments, mentions and deadline reminders will land here as your team works.'
+        "
+      >
+        <Button v-if="hasActiveFilters" variant="outline" class="rounded-xl" @click="clearFilters">
+          Clear filters
+        </Button>
+      </EmptyState>
       <div v-else class="divide-y divide-border">
         <div
           v-for="notif in notificationStore.notifications"
