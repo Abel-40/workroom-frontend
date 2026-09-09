@@ -21,7 +21,7 @@ import { useToast } from "@/components/ui/toast/use-toast";
 import { formatHoursToDuration, parseDurationToMinutes } from "@/lib/duration";
 import { formatDateTime } from "@/lib/dates";
 import { createPollSignal, type PollSignal } from "@/lib/pollUntilTerminal";
-import { canManageTask } from "@/lib/projectPermissions";
+import { useProjectAccess } from "@/composables/useProjectAccess";
 import type { Project, TaskType } from "@/types/types";
 
 const props = defineProps<{
@@ -40,18 +40,25 @@ const aiStore = useAiStore();
 const { toast } = useToast();
 const archiving = ref(false);
 
-// Editing/archiving a task follows the backend's manage-task rule: the
-// task's creator, or whoever can manage its parent project (current owner,
-// company admin, or the department leader of the project's own department).
-const canEdit = computed(() =>
-  canManageTask(
-    props.task,
-    props.project,
-    authStore.logedInUserInfo.user?.id,
-    authStore.logedInUserInfo.role,
-    authStore.logedInUserInfo.departmentId
-  )
-);
+// The server decides, and says so on the project (see useProjectAccess).
+// This used to call lib/projectPermissions.canManageTask, which granted on
+// `task.createdById` -- a rule the backend dropped when created_by became
+// provenance rather than a claim, and which nothing here noticed.
+const access = useProjectAccess(computed(() => props.project));
+
+// Two different rights, because the server splits them. Management owns what
+// the work *is*; the assignee owns how it gets done.
+const canEdit = computed(() => access.canManage.value || access.canEditOwnTask(props.task));
+const canManage = access.canManage;
+
+// A deadline only needs a reason when it actually moves. Comparing the date
+// part matches what the form edits.
+const deadlineChanged = computed(() => {
+  const current = props.task.deadline ? props.task.deadline.slice(0, 10) : "";
+  return !!form.deadline && form.deadline !== current;
+});
+
+const canSave = computed(() => !deadlineChanged.value || form.deadlineReason.trim().length > 0);
 
 const NONE = "__none__";
 const isEditing = ref(false);
@@ -61,6 +68,11 @@ const form = reactive({
   description: "",
   priority: "medium" as TaskType["priority"],
   deadline: "",
+  // Required by the server whenever the deadline actually moves. A date
+  // changing under the people doing the work is exactly the change that needs
+  // to carry an explanation with it, so the form collects one rather than
+  // discovering the requirement as a 400.
+  deadlineReason: "",
   estimatedTime: "",
   departmentId: NONE as string,
   taskTypeId: NONE as string,
@@ -71,24 +83,53 @@ const startEditing = () => {
   form.description = props.task.description;
   form.priority = props.task.priority;
   form.deadline = props.task.deadline ? props.task.deadline.slice(0, 10) : "";
+  form.deadlineReason = "";
   form.estimatedTime = props.task.estimatedTimeHours ? formatHoursToDuration(props.task.estimatedTimeHours) : "";
   form.departmentId = props.task.departmentId ?? NONE;
   form.taskTypeId = props.task.taskTypeId ?? NONE;
   isEditing.value = true;
 };
 
+// A task's fields answer to two different people, and the server refuses a
+// body that mixes them rather than half-applying it. So the save is split the
+// same way: whichever group this user owns is what gets sent.
 const saveEditing = async () => {
   saving.value = true;
   const estimateMinutes = parseDurationToMinutes(form.estimatedTime);
-  const { error } = await projectsStore.updateTask(props.task.id, {
-    title: form.title,
-    description: form.description,
-    priority: form.priority,
-    deadline: form.deadline || null,
-    estimatedTimeHours: estimateMinutes > 0 ? estimateMinutes / 60 : null,
-    departmentId: form.departmentId === NONE ? null : form.departmentId,
-    taskTypeId: form.taskTypeId === NONE ? null : form.taskTypeId,
-  });
+
+  let error: string | undefined;
+
+  if (access.canManage.value) {
+    ({ error } = await projectsStore.updateTask(props.task.id, {
+      title: form.title,
+      priority: form.priority,
+      departmentId: form.departmentId === NONE ? null : form.departmentId,
+      taskTypeId: form.taskTypeId === NONE ? null : form.taskTypeId,
+    }));
+    if (!error) {
+      // Assignee-owned fields go in their own request, because the server
+      // will not take them in the same body as the ones above.
+      ({ error } = await projectsStore.updateTask(props.task.id, {
+        description: form.description,
+        estimatedTimeHours: estimateMinutes > 0 ? estimateMinutes / 60 : null,
+      }));
+    }
+    if (!error && deadlineChanged.value) {
+      ({ error } = await projectsStore.changeTaskDeadline(
+        props.task.id,
+        new Date(form.deadline).toISOString(),
+        form.deadlineReason.trim(),
+      ));
+    }
+  } else {
+    // The assignee's half. Title, priority, type, department and the deadline
+    // are not theirs to change, so they are not sent -- and the form does not
+    // offer them (see the template).
+    ({ error } = await projectsStore.updateTask(props.task.id, {
+      description: form.description,
+      estimatedTimeHours: estimateMinutes > 0 ? estimateMinutes / 60 : null,
+    }));
+  }
   saving.value = false;
   if (error) {
     toast({ title: "Task not updated", description: error, variant: "destructive" });
@@ -98,7 +139,10 @@ const saveEditing = async () => {
 };
 
 const toggleEdit = () => {
-  if (isEditing.value) saveEditing();
+  if (isEditing.value) {
+    if (!canSave.value) return;
+    saveEditing();
+  }
   else startEditing();
 };
 
@@ -182,6 +226,7 @@ const regenerateAiContent = async () => {
         <input
           v-if="isEditing"
           v-model="form.title"
+          :disabled="!canManage"
           class="mt-1 w-full rounded-lg border border-border px-2 py-1 text-lg font-semibold text-ink focus:border-primary focus:outline-none"
         />
         <h4 v-else class="text-lg font-semibold text-ink">{{ task.title }}</h4>
@@ -201,7 +246,10 @@ const regenerateAiContent = async () => {
     </p>
 
     <div v-if="isEditing" class="mb-4 grid grid-cols-2 gap-3">
-      <div class="space-y-1">
+      <!-- What the work *is* belongs to whoever manages the project. Hidden
+           rather than disabled for an assignee: a greyed-out control they can
+           never use is a worse answer than not offering it. -->
+      <div v-if="canManage" class="space-y-1">
         <p class="text-xs text-subtle">Priority</p>
         <Select v-model="form.priority">
           <SelectTrigger class="rounded-xl"><SelectValue /></SelectTrigger>
@@ -214,15 +262,30 @@ const regenerateAiContent = async () => {
           </SelectContent>
         </Select>
       </div>
-      <div class="space-y-1">
+      <div v-if="canManage" class="space-y-1">
         <p class="text-xs text-subtle">Dead Line</p>
         <Input v-model="form.deadline" type="date" class="rounded-xl" />
+      </div>
+      <!-- Only when the date actually moves. The server requires it, records
+           it on the audit row, and puts it in the notification the assignee
+           gets -- a date changing with no explanation is what makes a deadline
+           feel arbitrary. -->
+      <div v-if="canManage && deadlineChanged" class="col-span-2 space-y-1">
+        <p class="text-xs text-subtle">Why is the deadline moving?</p>
+        <Input
+          v-model="form.deadlineReason"
+          placeholder="e.g. scope grew after the design review"
+          class="rounded-xl"
+        />
+        <p v-if="!canSave" class="text-xs text-destructive">
+          A reason is required before the new date can be saved.
+        </p>
       </div>
       <div class="space-y-1">
         <p class="text-xs text-subtle">Estimate</p>
         <Input v-model="form.estimatedTime" placeholder="e.g. 2d 4h" class="rounded-xl" />
       </div>
-      <div class="space-y-1">
+      <div v-if="canManage" class="space-y-1">
         <p class="text-xs text-subtle">Department</p>
         <Select v-model="form.departmentId">
           <SelectTrigger class="rounded-xl"><SelectValue /></SelectTrigger>
@@ -234,7 +297,7 @@ const regenerateAiContent = async () => {
           </SelectContent>
         </Select>
       </div>
-      <div class="col-span-2 space-y-1">
+      <div v-if="canManage" class="col-span-2 space-y-1">
         <p class="text-xs text-subtle">Task Type</p>
         <Select v-model="form.taskTypeId">
           <SelectTrigger class="rounded-xl"><SelectValue /></SelectTrigger>

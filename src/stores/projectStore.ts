@@ -9,6 +9,7 @@ type ProjectImageApi = { kind: "upload" | "link"; url: string } | null;
 
 type ProjectApi = {
   id: string;
+  access_level: 'view' | 'contribute' | 'manage' | null;
   title: string;
   description: string;
   company_id: string;
@@ -122,6 +123,7 @@ function mapProject(api: ProjectApi): Project {
     .filter((name): name is string => !!name);
   return {
     id: api.id,
+    accessLevel: api.access_level ?? null,
     title: api.title,
     icon: "📁",
     createdAt: api.created_at,
@@ -169,7 +171,6 @@ export interface UpdateProjectInput {
   priority?: "low" | "medium" | "high";
   status?: Project["status"];
   startDate?: string | null;
-  deadline?: string | null;
   collaboratorIds?: string[];
 }
 
@@ -228,15 +229,33 @@ export interface CreateTaskInput {
   estimatedTimeHours: number | null;
 }
 
+/**
+ * A task edit, in one authority group at a time.
+ *
+ * The backend splits a task's fields between the assignee and whoever manages
+ * the project, and refuses a body that mixes them rather than half-applying
+ * it. Sending both groups is a 403, so the split is mirrored here and checked
+ * before the request goes out -- a local refusal with a useful message beats a
+ * round trip that fails.
+ *
+ * `deadline` is in neither group. It has its own endpoint that requires a
+ * reason; see `changeTaskDeadline`.
+ */
 export interface UpdateTaskInput {
-  title?: string;
+  /** Assignee-owned: how the work gets done. */
   description?: string;
+  estimatedTimeHours?: number | null;
+  /** Management-owned: what the work is, and where it sits. */
+  title?: string;
   departmentId?: string | null;
   taskTypeId?: string | null;
   priority?: TaskType["priority"];
-  deadline?: string | null;
-  estimatedTimeHours?: number | null;
 }
+
+/** Mirrors services.TASK_ASSIGNEE_FIELDS. */
+const TASK_ASSIGNEE_FIELDS = ["description", "estimatedTimeHours"] as const;
+/** Mirrors services.TASK_MANAGE_FIELDS. */
+const TASK_MANAGE_FIELDS = ["title", "departmentId", "taskTypeId", "priority"] as const;
 
 // One real, attributable entry of logged work (api/routers/tasks.py's
 // time_log_data/my_time_log_data) -- task_title/project_id/project_title
@@ -336,7 +355,6 @@ export const useProjectStore = defineStore("projectStore", {
       if (patch.priority !== undefined) body.priority = patch.priority;
       if (patch.status !== undefined) body.status = STATUS_TO_API[patch.status];
       if (patch.startDate !== undefined) body.start_date = patch.startDate;
-      if (patch.deadline !== undefined) body.deadline = patch.deadline;
       if (patch.collaboratorIds !== undefined) body.collaborator_ids = patch.collaboratorIds;
 
       try {
@@ -577,13 +595,24 @@ export const useProjectStore = defineStore("projectStore", {
     },
 
     async updateTask(taskId: string, patch: UpdateTaskInput): Promise<{ task?: TaskType; error?: string }> {
+      const touched = Object.keys(patch).filter((key) => patch[key as keyof UpdateTaskInput] !== undefined);
+      const touchesAssignee = touched.some((key) => (TASK_ASSIGNEE_FIELDS as readonly string[]).includes(key));
+      const touchesManage = touched.some((key) => (TASK_MANAGE_FIELDS as readonly string[]).includes(key));
+      if (touchesAssignee && touchesManage) {
+        // The server refuses this whole rather than half-applying it, so
+        // catching it here turns a confusing 403 into a statement of the rule.
+        return {
+          error:
+            "Edit the description and estimate separately from the title, priority, type and department -- they belong to different people.",
+        };
+      }
+
       const body: Record<string, unknown> = {};
       if (patch.title !== undefined) body.title = patch.title;
       if (patch.description !== undefined) body.description = patch.description;
       if (patch.departmentId !== undefined) body.department_id = patch.departmentId;
       if (patch.taskTypeId !== undefined) body.task_type_id = patch.taskTypeId;
       if (patch.priority !== undefined) body.priority = patch.priority;
-      if (patch.deadline !== undefined) body.deadline = patch.deadline;
       if (patch.estimatedTimeHours !== undefined) body.estimated_time_hours = patch.estimatedTimeHours;
 
       try {
@@ -593,6 +622,61 @@ export const useProjectStore = defineStore("projectStore", {
         return { task };
       } catch (error: any) {
         return { error: error.response?.data?.message || "Failed to update task" };
+      }
+    },
+
+    /**
+     * Move a task's deadline. A reason is required by the server, is recorded
+     * on an audit row, and is included in the notification the assignee gets --
+     * a date changing under somebody with no explanation is the thing that
+     * makes a deadline feel arbitrary.
+     */
+    async changeTaskDeadline(
+      taskId: string,
+      deadline: string,
+      reason: string,
+    ): Promise<{ task?: TaskType; error?: string }> {
+      try {
+        const { data } = await axiosInstance.post<ApiResponse<{ task: TaskApi }>>(
+          `/tasks/${taskId}/change-deadline/`,
+          { deadline, reason },
+        );
+        const task = mapTask(data.data.task);
+        this._applyUpdatedTask(task);
+        return { task };
+      } catch (error: any) {
+        return { error: error.response?.data?.message || "Failed to change the deadline" };
+      }
+    },
+
+    /**
+     * Move a project's deadline. Same rule as a task's, plus one more: the
+     * server refuses a date that would leave tasks past it, and returns those
+     * tasks so they can be fixed inline rather than leaving the user to guess
+     * which ones are in the way.
+     */
+    async changeProjectDeadline(
+      projectId: string,
+      deadline: string,
+      reason: string,
+    ): Promise<{ project?: Project; blockingTasks?: TaskType[]; error?: string }> {
+      try {
+        const { data } = await axiosInstance.post<ApiResponse<{ project: ProjectApi }>>(
+          `/projects/${projectId}/change-deadline/`,
+          { deadline, reason },
+        );
+        const updated = mapProject(data.data.project);
+        const index = this.projects.findIndex((p) => p.id === projectId);
+        if (index !== -1) this.projects[index] = updated;
+        if (this.selectedProject?.id === projectId) this.selectedProject = updated;
+        return { project: updated };
+      } catch (error: any) {
+        const body = error.response?.data;
+        const blocking = body?.data?.tasks;
+        return {
+          blockingTasks: Array.isArray(blocking) ? blocking.map(mapTask) : undefined,
+          error: body?.message || "Failed to change the deadline",
+        };
       }
     },
 

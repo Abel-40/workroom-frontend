@@ -163,6 +163,15 @@ export interface Project {
   assigneeIds?: string[];
   createdById?: string | null;
   currentOwnerId?: string | null;
+  /**
+   * What the current user may do with this project, as decided by the server
+   * (projects_and_tasks.access.resolve_project_access). Read it through
+   * `useProjectAccess`; do not re-derive it from role/creator/owner, which is
+   * how lib/projectPermissions.ts fell out of date with the backend.
+   *
+   * Absent on decorative mock data, which is why it is optional.
+   */
+  accessLevel?: 'view' | 'contribute' | 'manage' | null;
   currentOwnerName?: string | null;
   hasSavedPlan?: boolean;
   updatedAt?: string;
