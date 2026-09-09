@@ -46,6 +46,33 @@ export default {
   			border: 'hsl(var(--border))',
   			input: 'hsl(var(--input))',
   			ring: 'hsl(var(--ring))',
+  			// Additive tokens (see src/assets/main.css :root/.dark for the HSL
+  			// pairs) -- CSS-variable-backed so dark mode adapts them
+  			// automatically. `<alpha-value>` keeps opacity-modifier usages like
+  			// bg-page/60 working, same as the shadcn tokens above.
+  			ink: 'hsl(var(--ink) / <alpha-value>)',
+  			subtle: 'hsl(var(--subtle) / <alpha-value>)',
+  			page: 'hsl(var(--page) / <alpha-value>)',
+  			'primary-strong': 'hsl(var(--primary-strong) / <alpha-value>)',
+  			'primary-soft': 'hsl(var(--primary-soft) / <alpha-value>)',
+  			'accent-2': 'hsl(var(--accent-2) / <alpha-value>)',
+  			surface: 'hsl(var(--surface) / <alpha-value>)',
+  			success: {
+  				DEFAULT: 'hsl(var(--success) / <alpha-value>)',
+  				foreground: 'hsl(var(--success-foreground) / <alpha-value>)',
+  			},
+  			warning: {
+  				DEFAULT: 'hsl(var(--warning) / <alpha-value>)',
+  				foreground: 'hsl(var(--warning-foreground) / <alpha-value>)',
+  			},
+  			danger: {
+  				DEFAULT: 'hsl(var(--danger) / <alpha-value>)',
+  				foreground: 'hsl(var(--danger-foreground) / <alpha-value>)',
+  			},
+  			info: {
+  				DEFAULT: 'hsl(var(--info) / <alpha-value>)',
+  				foreground: 'hsl(var(--info-foreground) / <alpha-value>)',
+  			},
   			chart: {
   				'1': 'hsl(var(--chart-1))',
   				'2': 'hsl(var(--chart-2))',

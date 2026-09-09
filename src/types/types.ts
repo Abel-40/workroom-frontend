@@ -19,25 +19,18 @@ export type ApiResponse<T = any> = {
 
 
 // Supporting types
-export type FileLink = {
-  type: 'file';
-  file: File;
-  name: string;
-};
-
-export type UrlLink = {
-  type: 'link';
-  url: string;
-  label?: string;
-};
-
 export type ImageType = File | string; // File (uploaded) or string (URL)
 
 // Main User Types
+export type UserRole = "company_admin" | "department_leader" | "member";
+
 export type User = {
   id: string;
   email: string;
   username: string;
+  role?: UserRole;
+  timezone?: string;
+  theme?: "light" | "dark" | "system";
 };
 
 export type UserProfile = {
@@ -57,21 +50,21 @@ type Department = {
   leader: string;
 };
 
-// Sector 
+// Sector
 interface Sector{
-  id:number,
+  id:string,
   name:string,
   description:string
 }
 
 // Company
 export interface Company{
-  id:number;
+  id:string;
   name:string;
   code?:string;
   created_at:Date;
   owner:string;
-  sector:number;
+  sector:string;
   plan?:string;
   stripe_customer_id?:string;
   stripe_subscription_id?:string;
@@ -83,40 +76,72 @@ export interface Company{
 
 
 export type Sectors = Sector[]
-// Task
+// Task — real backend shape (projects_and_tasks.models.Task / api/routers/tasks.py:task_data()).
+export type TaskStatus = 'To Do' | 'In Progress' | 'In Review' | 'Done';
+export type TaskPriority = 'low' | 'medium' | 'high';
+export type TaskSource = 'manual' | 'ai_generated';
+
 export interface TaskType {
   id: string;
-  name: string;
-  icon: string;
-  createdAt: string;
+  projectId: string;
+  title: string;
   description: string;
-  priority: {
-    level: 'low' | 'medium' | 'high';
-  };
-  assignee: string;
-  status: 'Done' | 'In Progress' | 'To Do' | 'In Review';
-  EstimatedTime?: string;
-  attachments?: Array<FileLink | UrlLink>;
-  SpentTime?: string;
-  Progress: '0%' | '10%' | '50%' | '75%' | '100%';
+  status: TaskStatus;
+  priority: TaskPriority;
+  source: TaskSource;
+  createdById: string | null;
+  assignedToId: string | null;
+  assigneeName: string | null; // resolved via employeeStore, not sent by the API directly
+  departmentId: string | null;
+  taskTypeId: string | null;
   deadline: string;
+  estimatedTimeHours: number | null;
+  spentTimeHours: number | null;
+  // Formatted percentage string, e.g. "0%", "33%", "100%" — computed from spentTimeHours/estimatedTimeHours.
+  progress: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// One real, attributable entry of logged work (api/routers/tasks.py's
+// TimeLogIn/time_log_data) -- replaces the old single overwritable
+// spentTimeHours-only flow, which had no history or per-user attribution.
+export interface TimeLogEntry {
+  id: string;
+  taskId: string;
+  taskTitle?: string; // only present on /time-logs/mine/ rows
+  projectId?: string | null; // only present on /time-logs/mine/ rows
+  projectTitle?: string | null; // only present on /time-logs/mine/ rows
+  userId: string | null;
+  userName: string | null;
+  hours: number;
+  workDate: string;
+  description: string;
+  createdAt: string;
 }
 
 // default task type
 export interface DefaultTaskType {
-   id:number;
+   id:string;
    name:string;
    description:string;
    sector:string;
 }
 // Project
+export type ProjectVisibility = 'public' | 'company' | 'department' | 'private';
+
+// A project's cover image is either an uploaded file (streamed back through
+// an authenticated endpoint -- there's no public /media/ route for uploads)
+// or a plain external link the browser can load directly.
+export type ProjectCoverImage = { kind: 'upload' | 'link'; url: string };
+
 export interface Project {
   id: string;
   title: string;
   icon: string;
   createdAt: string;
   status: 'Active' | 'In Active' | 'Done';
-  image?: ImageType;
+  image?: ProjectCoverImage | null;
   priority: {
     level: 'low' | 'medium' | 'high';
     icon: 'ArrowDown' | 'ArrowUp';
@@ -131,6 +156,26 @@ export interface Project {
   assignedBy: string;
   description: string;
   deadline: string;
+  // Real backend fields (Phase C) -- absent from decorative mock/demo data.
+  departmentId?: string | null;
+  visibility?: ProjectVisibility;
+  startDate?: string;
+  assigneeIds?: string[];
+  createdById?: string | null;
+  currentOwnerId?: string | null;
+  /**
+   * What the current user may do with this project, as decided by the server
+   * (projects_and_tasks.access.resolve_project_access). Read it through
+   * `useProjectAccess`; do not re-derive it from role/creator/owner, which is
+   * how lib/projectPermissions.ts fell out of date with the backend.
+   *
+   * Absent on decorative mock data, which is why it is optional.
+   */
+  accessLevel?: 'view' | 'contribute' | 'manage' | null;
+  currentOwnerName?: string | null;
+  hasSavedPlan?: boolean;
+  updatedAt?: string;
+  hasPendingVisibilityRequest?: boolean;
 }
 
 export type Departments = Department[];

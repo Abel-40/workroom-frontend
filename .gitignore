@@ -9,7 +9,6 @@ lerna-debug.log*
 
 node_modules
 .DS_Store
-.next/
 dist
 dist-ssr
 coverage
@@ -19,8 +18,7 @@ coverage
 /cypress/screenshots/
 
 # Editor directories and files
-.vscode/*
-!.vscode/extensions.json
+.vscode/
 .idea
 *.suo
 *.ntvs*
@@ -29,3 +27,11 @@ coverage
 *.sw?
 
 *.tsbuildinfo
+
+# Local design tooling and reference mockups (not app source)
+.21st/
+pic/
+
+# Local reference screenshots (~16MB, organised by role). Not referenced by
+# any code -- kept out of the repo rather than versioned as binary assets.
+screen shoots/

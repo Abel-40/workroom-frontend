@@ -1,11 +1,10 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "composite": true,  // Required for project references
-    "outDir": "./dist", // Ensure emit is not disabled
-    "noEmit": false     // Explicitly enable emitting
+    "noEmit": true
   },
   "include": [
+    "env.d.ts",
     "src/**/*.ts",
     "src/**/*.d.ts",
     "src/**/*.tsx",

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { WorkflowIcon, ArrowRight, Section } from 'lucide-vue-next';
+import { ArrowRight } from 'lucide-vue-next';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -16,13 +16,13 @@ const { toast } = useToast();
 
 interface CompanyType {
   name: string;
-  sector: number;
+  sector: string;
   owner: string;
 }
 
 const companyForm = ref<CompanyType>({
   name: '',
-  sector: 0,
+  sector: '',
   owner: authStore.logedInUserInfo.user.id,
 });
 
@@ -35,7 +35,7 @@ onMounted(async () => {
 const validateForm = (): boolean => {
   return (
     companyForm.value.name.trim() !== '' &&
-    companyForm.value.sector > 0 &&
+    companyForm.value.sector !== '' &&
     !!companyForm.value.owner
   );
 };
@@ -52,11 +52,14 @@ const handleSubmit = async () => {
     return;
   }
 
+  // isStep2Complete stays false until register_company actually succeeds --
+  // setting it true beforehand let a failed company registration still
+  // satisfy the step3 router guard (same bug as step1 -> step2).
   authStore.updateStep2Form({
     name: companyForm.value.name,
     owner: companyForm.value.owner,
     sector: companyForm.value.sector,
-    isStep2Complete: true,
+    isStep2Complete: false,
   });
 
   try {
@@ -77,6 +80,7 @@ const handleSubmit = async () => {
         variant: 'destructive',
       });
     } else {
+      authStore.updateStep2Form({ isStep2Complete: true });
       toast({
         title: 'Success!',
         description: 'Company registered successfully.',
@@ -138,7 +142,7 @@ const handleSubmit = async () => {
                       class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                       required
                     >
-                      <option value=0>Select Department</option>
+                      <option value="">Select Department</option>
                       <option 
                         v-for="sector in authStore.sectors" 
                         :key="sector.id" 

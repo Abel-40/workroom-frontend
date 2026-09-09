@@ -5,7 +5,10 @@ import StepOne from '@/views/Auth/StepOne.vue'
 import StepTwo from '@/views/Auth/StepTwo.vue'
 import StepThree from '@/views/Auth/StepThree.vue'
 import StepFour from '@/views/Auth/StepFour.vue'
-import { WorkflowIcon, ArrowRight } from 'lucide-vue-next'
+import StepFive from '@/views/Auth/StepFive.vue'
+import RegistrationSuccess from '@/views/Auth/RegistrationSuccess.vue'
+import { ArrowRight } from 'lucide-vue-next'
+import logoUrl from '@/assets/logo.png'
 import { useAuthStore } from '@/stores/authStore'
 
 const authStore = useAuthStore()
@@ -15,7 +18,9 @@ const stepMap:Record<string,number> = {
   step1: 1,
   step2: 2,
   step3: 3,
-  step4: 4
+  step4: 4,
+  step5: 5,
+  success: 5
 }
 
 const activeStep = computed(() => {
@@ -29,6 +34,8 @@ const showSection = computed(() => {
   if (section === "step2") return StepTwo
   if (section === "step3") return StepThree
   if (section === "step4") return StepFour
+  if (section === "step5") return StepFive
+  if (section === "success") return RegistrationSuccess
 })
 </script>
 
@@ -40,7 +47,7 @@ const showSection = computed(() => {
       <div class="w-full lg:w-1/3 xl:w-1/4 bg-primary text-white p-6 sm:p-8 flex flex-col mr-8 rounded-2xl">
         <div class="flex items-center space-x-3 mb-8">
           <div class="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-lg flex items-center justify-center">
-            <WorkflowIcon class="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
+            <img :src="logoUrl" alt="" class="w-6 h-6 sm:w-8 sm:h-8 object-contain" />
           </div>
           <span class="text-xl sm:text-2xl font-bold">Workroom</span>
         </div>
@@ -98,26 +105,41 @@ const showSection = computed(() => {
               <div class="flex items-start space-x-4">
                 <div class="flex flex-col items-center">
                   <div class="w-8 h-8 rounded-full flex items-center justify-center"
-                       :class="activeStep === 4 ? 'border-black border-2 bg-white text-black' : 'border-2 border-white text-white'">
+                       :class="activeStep >= 4 ? 'border-black border-2 bg-white text-black' : 'border-2 border-white text-white'">
                     <span>4</span>
                   </div>
+                  <div class="w-0.5 h-6 my-1" :class="activeStep >= 5 ? 'bg-black/50' : 'bg-white/50'"></div>
                 </div>
                 <div>
                   <p class="font-medium">Departments</p>
                   <p class="text-sm text-white/80 mt-1">Departments in your company</p>
                 </div>
               </div>
+
+              <!-- Step 5 -->
+              <div class="flex items-start space-x-4">
+                <div class="flex flex-col items-center">
+                  <div class="w-8 h-8 rounded-full flex items-center justify-center"
+                       :class="activeStep === 5 ? 'border-black border-2 bg-white text-black' : 'border-2 border-white text-white'">
+                    <span>5</span>
+                  </div>
+                </div>
+                <div>
+                  <p class="font-medium">Event Types</p>
+                  <p class="text-sm text-white/80 mt-1">Events relevant to your company</p>
+                </div>
+              </div>
             </div>
 
             <!-- Mobile Steps -->
-            <div class="lg:hidden grid grid-cols-4 gap-4">
-              <div v-for="i in 4" :key="i" class="flex flex-col items-center">
+            <div class="lg:hidden grid grid-cols-5 gap-4">
+              <div v-for="i in 5" :key="i" class="flex flex-col items-center">
                 <div class="w-8 h-8 rounded-full flex items-center justify-center"
                      :class="activeStep >= i ? 'border-black border-2 bg-white text-black' : 'border-2 border-white text-white'">
                   <span>{{ i }}</span>
                 </div>
                 <p class="text-xs mt-1 text-center">
-                  {{ ['Owner Info', 'Company Info', 'Task Type', 'Departments'][i - 1] }}
+                  {{ ['Owner Info', 'Company Info', 'Task Type', 'Departments', 'Event Types'][i - 1] }}
                 </p>
               </div>
             </div>

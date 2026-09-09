@@ -46,22 +46,27 @@ const handleNext = async (e:Event)=>{
   errorMessage.value = ''
   showErrors.value = true 
   if (validate.email() && validate.username() && validate.password() && validate.passwordMatch()) {
+    // isStep1Complete stays false until registerUser actually succeeds --
+    // setting it true beforehand let a failed registration (e.g. "email
+    // already exists") still satisfy the step2 router guard, so the wizard
+    // let people through to step 2 despite never creating an account.
     authStore.updateStep1Form({
     email :userForm.value.email,
     username: userForm.value.username,
     password: userForm.value.password,
-    isStep1Complete:true
+    isStep1Complete:false
   })
     const result = await authStore.registerUser(authStore.step1Form)
     if (result.errors) {
-      
+
       errorMessage.value = result.errors
       toast({
       title: 'Error!',
       description: errorMessage.value,
       variant: 'destructive',
     })
-    } else {  
+    } else {
+        authStore.updateStep1Form({ isStep1Complete: true })
         interface userForm {
           email: string
           password: string

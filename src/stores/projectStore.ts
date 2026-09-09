@@ -1,568 +1,790 @@
 // stores/projectStore.ts
 import { defineStore } from "pinia";
-import type { Project } from "@/types/types";
+import type { ApiResponse, Project, ProjectVisibility, TaskType, TimeLogEntry } from "@/types/types";
+import { computeTaskProgress } from "@/lib/duration";
+import axiosInstance from "@/plugins/axios";
+import { useEmployeeStore } from "@/stores/employeeStore";
+
+type ProjectImageApi = { kind: "upload" | "link"; url: string } | null;
+
+type ProjectApi = {
+  id: string;
+  access_level: 'view' | 'contribute' | 'manage' | null;
+  title: string;
+  description: string;
+  company_id: string;
+  department_id: string | null;
+  team_id: string | null;
+  visibility: ProjectVisibility;
+  status: "Active" | "Inactive" | "Done";
+  priority: "low" | "medium" | "high";
+  start_date: string;
+  deadline: string;
+  created_by: string | null;
+  current_owner_id: string | null;
+  current_owner_name: string | null;
+  created_at: string;
+  updated_at: string;
+  total_tasks: number;
+  active_tasks: number;
+  completion_percent: number;
+  collaborator_ids: string[];
+  image: ProjectImageApi;
+  has_saved_plan: boolean;
+  has_pending_visibility_request: boolean;
+};
+
+const STATUS_FROM_API: Record<ProjectApi["status"], Project["status"]> = {
+  Active: "Active",
+  Inactive: "In Active",
+  Done: "Done",
+};
+const STATUS_TO_API: Record<Project["status"], ProjectApi["status"]> = {
+  Active: "Active",
+  "In Active": "Inactive",
+  Done: "Done",
+};
+const PRIORITY_ICON: Record<ProjectApi["priority"], "ArrowUp" | "ArrowDown"> = {
+  high: "ArrowUp",
+  medium: "ArrowUp",
+  low: "ArrowDown",
+};
+const PRIORITY_COLOR: Record<ProjectApi["priority"], string> = {
+  high: "red",
+  medium: "orange",
+  low: "green",
+};
+
+// Mirrors analytics/services.py::get_project_stats' return shape exactly --
+// real, already-computed numbers only, used to give the AI Health Check
+// panel a structured basis instead of relying solely on the AI's free text.
+export interface ProjectStats {
+  totalTasks: number;
+  completedTasks: number;
+  inProgressTasks: number;
+  todoTasks: number;
+  inReviewTasks: number;
+  overdueTasks: number;
+  unassignedTasks: number;
+  completionPercent: number;
+}
+
+type ProjectStatsApi = {
+  total_tasks: number; completed_tasks: number; in_progress_tasks: number; todo_tasks: number;
+  in_review_tasks: number; overdue_tasks: number; unassigned_tasks: number; completion_percent: number;
+};
+
+const mapProjectStats = (api: ProjectStatsApi): ProjectStats => ({
+  totalTasks: api.total_tasks,
+  completedTasks: api.completed_tasks,
+  inProgressTasks: api.in_progress_tasks,
+  todoTasks: api.todo_tasks,
+  inReviewTasks: api.in_review_tasks,
+  overdueTasks: api.overdue_tasks,
+  unassignedTasks: api.unassigned_tasks,
+  completionPercent: api.completion_percent,
+});
+
+// A Department Member's request to raise their own private project to
+// department visibility -- see api.routers.projects' visibility-requests
+// endpoints and projects_and_tasks.services' visibility-escalation section.
+export interface VisibilityRequest {
+  id: string;
+  projectId: string;
+  projectTitle: string;
+  requestedByName: string | null;
+  status: "pending" | "approved" | "denied";
+  createdAt: string;
+}
+
+type VisibilityRequestApi = {
+  id: string;
+  project_id: string;
+  project_title: string;
+  requested_by_name: string | null;
+  status: "pending" | "approved" | "denied";
+  created_at: string;
+};
+
+const mapVisibilityRequest = (api: VisibilityRequestApi): VisibilityRequest => ({
+  id: api.id,
+  projectId: api.project_id,
+  projectTitle: api.project_title,
+  requestedByName: api.requested_by_name,
+  status: api.status,
+  createdAt: api.created_at,
+});
+
+function mapProject(api: ProjectApi): Project {
+  const employeeStore = useEmployeeStore();
+  const creator = employeeStore.employees.find((e) => e.id === api.created_by);
+  const collaboratorNames = api.collaborator_ids
+    .map((id) => employeeStore.employees.find((e) => e.id === id)?.name)
+    .filter((name): name is string => !!name);
+  return {
+    id: api.id,
+    accessLevel: api.access_level ?? null,
+    title: api.title,
+    icon: "📁",
+    createdAt: api.created_at,
+    status: STATUS_FROM_API[api.status] ?? "Active",
+    priority: {
+      level: api.priority,
+      icon: PRIORITY_ICON[api.priority] ?? "ArrowUp",
+      color: PRIORITY_COLOR[api.priority] ?? "orange",
+    },
+    task: { tasks: null, total: api.total_tasks, active: api.active_tasks },
+    assignee: collaboratorNames,
+    assigneeIds: api.collaborator_ids,
+    assignedBy: creator?.name ?? "Unknown",
+    description: api.description,
+    deadline: api.deadline,
+    departmentId: api.department_id,
+    visibility: api.visibility,
+    startDate: api.start_date,
+    createdById: api.created_by,
+    currentOwnerId: api.current_owner_id,
+    currentOwnerName: api.current_owner_name,
+    image: api.image,
+    hasSavedPlan: api.has_saved_plan,
+    updatedAt: api.updated_at,
+    hasPendingVisibilityRequest: api.has_pending_visibility_request,
+  };
+}
+
+export interface CreateProjectInput {
+  title: string;
+  description: string;
+  departmentId: string | null;
+  visibility: ProjectVisibility;
+  priority: "low" | "medium" | "high";
+  startDate: string | null;
+  deadline: string | null;
+  collaboratorIds: string[];
+}
+
+export interface UpdateProjectInput {
+  title?: string;
+  description?: string;
+  departmentId?: string | null;
+  visibility?: ProjectVisibility;
+  priority?: "low" | "medium" | "high";
+  status?: Project["status"];
+  startDate?: string | null;
+  collaboratorIds?: string[];
+}
+
+export type TaskApi = {
+  id: string;
+  project_id: string;
+  department_id: string | null;
+  task_type_id: string | null;
+  created_by: string | null;
+  assigned_to: string | null;
+  title: string;
+  description: string;
+  status: TaskType["status"];
+  priority: TaskType["priority"];
+  source: TaskType["source"];
+  deadline: string;
+  estimated_time_hours: number | null;
+  spent_time_hours: number | null;
+  created_at: string;
+  updated_at: string;
+};
+
+function mapTask(api: TaskApi): TaskType {
+  const employeeStore = useEmployeeStore();
+  const assignee = employeeStore.employees.find((e) => e.id === api.assigned_to);
+  return {
+    id: api.id,
+    projectId: api.project_id,
+    title: api.title,
+    description: api.description,
+    status: api.status,
+    priority: api.priority,
+    source: api.source,
+    createdById: api.created_by,
+    assignedToId: api.assigned_to,
+    assigneeName: assignee?.name ?? null,
+    departmentId: api.department_id,
+    taskTypeId: api.task_type_id,
+    deadline: api.deadline,
+    estimatedTimeHours: api.estimated_time_hours,
+    spentTimeHours: api.spent_time_hours,
+    progress: computeTaskProgress(api.status, api.spent_time_hours, api.estimated_time_hours),
+    createdAt: api.created_at,
+    updatedAt: api.updated_at,
+  };
+}
+
+export interface CreateTaskInput {
+  title: string;
+  description: string;
+  departmentId: string | null;
+  taskTypeId: string | null;
+  assignedToId: string | null;
+  priority: TaskType["priority"];
+  deadline: string | null;
+  estimatedTimeHours: number | null;
+}
+
+/**
+ * A task edit, in one authority group at a time.
+ *
+ * The backend splits a task's fields between the assignee and whoever manages
+ * the project, and refuses a body that mixes them rather than half-applying
+ * it. Sending both groups is a 403, so the split is mirrored here and checked
+ * before the request goes out -- a local refusal with a useful message beats a
+ * round trip that fails.
+ *
+ * `deadline` is in neither group. It has its own endpoint that requires a
+ * reason; see `changeTaskDeadline`.
+ */
+export interface UpdateTaskInput {
+  /** Assignee-owned: how the work gets done. */
+  description?: string;
+  estimatedTimeHours?: number | null;
+  /** Management-owned: what the work is, and where it sits. */
+  title?: string;
+  departmentId?: string | null;
+  taskTypeId?: string | null;
+  priority?: TaskType["priority"];
+}
+
+/** Mirrors services.TASK_ASSIGNEE_FIELDS. */
+const TASK_ASSIGNEE_FIELDS = ["description", "estimatedTimeHours"] as const;
+/** Mirrors services.TASK_MANAGE_FIELDS. */
+const TASK_MANAGE_FIELDS = ["title", "departmentId", "taskTypeId", "priority"] as const;
+
+// One real, attributable entry of logged work (api/routers/tasks.py's
+// time_log_data/my_time_log_data) -- task_title/project_id/project_title
+// are only populated on /time-logs/mine/ rows, not per-task listings.
+type TimeLogApi = {
+  id: string;
+  task_id: string;
+  task_title?: string;
+  project_id?: string | null;
+  project_title?: string | null;
+  user_id: string | null;
+  user_name: string | null;
+  hours: number;
+  work_date: string;
+  description: string;
+  created_at: string;
+};
+
+function mapTimeLog(api: TimeLogApi): TimeLogEntry {
+  return {
+    id: api.id,
+    taskId: api.task_id,
+    taskTitle: api.task_title,
+    projectId: api.project_id,
+    projectTitle: api.project_title,
+    userId: api.user_id,
+    userName: api.user_name,
+    hours: api.hours,
+    workDate: api.work_date,
+    description: api.description,
+    createdAt: api.created_at,
+  };
+}
+
+export interface CreateTimeLogInput {
+  hours: number;
+  workDate?: string;
+  description?: string;
+}
 
 export const useProjectStore = defineStore("projectStore", {
   state: () => ({
-    projects: [
-      {
-        id: "PNU001223",
-        title: "E-Learning Platform",
-        icon: "🎓",
-        createdAt: "2025-05-03",
-        priority: { level: "high", icon: "ArrowUp", color: "red" },
-        assignee: ["Abel", "Sarah", "Michael"],
-        assignedBy: "John",
-        status: "Active",
-        description:
-          "A comprehensive online learning system with courses, quizzes, and certification features.",
-        task: {
-          tasks: [
-            {
-              id: "task-5",
-              name: "Define Course Modules",
-              icon: "📘",
-              createdAt: "2025-05-03",
-              priority: { level: "high" },
-              assignee: "Sarah",
-              status: "To Do",
-              EstimatedTime: "2d",
-              SpentTime: "0h",
-              Progress: "0%",
-              description:
-                "Outline the curriculum structure and learning objectives.",
-            },
-            {
-              id: "task-6",
-              name: "Create Landing Page",
-              icon: "🖼️",
-              createdAt: "2025-05-03",
-              priority: { level: "medium" },
-              assignee: "Michael",
-              status: "In Progress",
-              EstimatedTime: "3d",
-              SpentTime: "1d",
-              Progress: "50%",
-              description: "Design and develop the main marketing page.",
-            },
-          ],
-          total: 2,
-          active: 1,
-        },
-      },
-      {
-        id: "PNU001224",
-        title: "Hotel Booking App",
-        icon: "🏨",
-        createdAt: "2025-05-04",
-        priority: { level: "medium", icon: "ArrowDown", color: "orange" },
-        assignee: ["Emma", "David"],
-        assignedBy: "Emma",
-        status: "Active",
-        description:
-          "Mobile and web app for booking hotels with real-time availability.",
-        task: {
-          tasks: [
-            {
-              id: "task-7",
-              name: "User Authentication",
-              icon: "🔐",
-              createdAt: "2025-05-04",
-              priority: { level: "high" },
-              assignee: "Emma",
-              status: "In Progress",
-              EstimatedTime: "2d",
-              SpentTime: "1d",
-              Progress: "50%",
-              description: "Implement secure login/signup flows.",
-            },
-          ],
-          total: 1,
-          active: 1,
-        },
-      },
-      {
-        id: "PNU001225",
-        title: "Healthcare Dashboard",
-        icon: "🏥",
-        createdAt: "2025-05-05",
-        priority: { level: "high", icon: "ArrowUp", color: "red" },
-        assignee: ["Lisa", "James"],
-        assignedBy: "Alex",
-        status: "In Active",
-        description: "Platform for patient health monitoring and analytics.",
-        task: {
-          tasks: [
-            {
-              id: "task-8",
-              name: "Data Visualization",
-              icon: "📊",
-              createdAt: "2025-05-05",
-              priority: { level: "medium" },
-              assignee: "Lisa",
-              status: "To Do",
-              EstimatedTime: "3d",
-              SpentTime: "0h",
-              Progress: "0%",
-              description: "Create interactive health metrics charts.",
-            },
-          ],
-          total: 1,
-          active: 0,
-        },
-      },
-      {
-        id: "PNU001226",
-        title: "Fitness Tracker",
-        icon: "🏋️",
-        createdAt: "2025-05-06",
-        priority: { level: "medium", icon: "ArrowUp", color: "orange" },
-        assignee: ["Abel", "Emma"],
-        assignedBy: "Lisa",
-        status: "Done",
-        description: "Mobile app for workout tracking and health metrics.",
-        task: {
-          tasks: [
-            {
-              id: "task-9",
-              name: "Workout Logging",
-              icon: "📝",
-              createdAt: "2025-05-06",
-              priority: { level: "high" },
-              assignee: "Abel",
-              status: "Done",
-              EstimatedTime: "2d",
-              SpentTime: "2d",
-              Progress: "100%",
-              description: "Implement exercise tracking functionality.",
-            },
-          ],
-          total: 1,
-          active: 0,
-        },
-      },
-      {
-        id: "PNU001227",
-        title: "E-Commerce Platform",
-        icon: "🛒",
-        createdAt: "2025-05-07",
-        priority: { level: "high", icon: "ArrowUp", color: "red" },
-        assignee: ["David", "Sarah"],
-        assignedBy: "Mark",
-        status: "Active",
-        description: "Online store with product catalog and checkout system.",
-        task: {
-          tasks: [
-            {
-              id: "task-10",
-              name: "Payment Gateway",
-              icon: "💳",
-              createdAt: "2025-05-07",
-              priority: { level: "high" },
-              assignee: "David",
-              status: "In Progress",
-              EstimatedTime: "3d",
-              SpentTime: "1d",
-              Progress: "33%",
-              description: "Integrate Stripe payment processing.",
-            },
-          ],
-          total: 1,
-          active: 1,
-        },
-      },
-      {
-        id: "PNU001228",
-        title: "Project Management Tool",
-        icon: "📋",
-        createdAt: "2025-05-08",
-        priority: { level: "medium", icon: "ArrowDown", color: "orange" },
-        assignee: ["Michael", "Lisa"],
-        assignedBy: "Sara",
-        status: "In Active",
-        description: "Collaborative platform for team task management.",
-        task: {
-          tasks: [
-            {
-              id: "task-11",
-              name: "Kanban Board",
-              icon: "📌",
-              createdAt: "2025-05-08",
-              priority: { level: "medium" },
-              assignee: "Michael",
-              status: "To Do",
-              EstimatedTime: "2d",
-              SpentTime: "0h",
-              Progress: "0%",
-              description: "Implement drag-and-drop task management.",
-            },
-          ],
-          total: 1,
-          active: 0,
-        },
-      },
-      {
-        id: "PNU001229",
-        title: "Social Media Dashboard",
-        icon: "📱",
-        createdAt: "2025-05-09",
-        priority: { level: "low", icon: "ArrowDown", color: "green" },
-        assignee: ["James", "Emma"],
-        assignedBy: "John",
-        status: "Active",
-        description:
-          "Analytics platform for social media performance tracking.",
-        task: {
-          tasks: [
-            {
-              id: "task-12",
-              name: "API Integration",
-              icon: "🔗",
-              createdAt: "2025-05-09",
-              priority: { level: "high" },
-              assignee: "James",
-              status: "In Progress",
-              EstimatedTime: "4d",
-              SpentTime: "2d",
-              Progress: "50%",
-              description: "Connect to Twitter and Instagram APIs.",
-            },
-          ],
-          total: 1,
-          active: 1,
-        },
-      },
-      {
-        id: "PNU001230",
-        title: "AI Content Moderator",
-        icon: "🤖",
-        createdAt: "2025-05-10",
-        priority: { level: "high", icon: "ArrowUp", color: "red" },
-        assignee: ["Henry", "Ivy"],
-        assignedBy: "Emma",
-        status: "Active",
-        description:
-          "Automated system for detecting inappropriate content using machine learning.",
-        task: {
-          tasks: [
-            {
-              id: "task-13",
-              name: "Model Training",
-              icon: "🧠",
-              createdAt: "2025-05-10",
-              priority: { level: "high" },
-              assignee: "Henry",
-              status: "In Progress",
-              EstimatedTime: "5d",
-              SpentTime: "3d",
-              Progress: "75%",
-              description: "Train NLP model on flagged content datasets",
-            },
-            {
-              id: "task-14",
-              name: "Image Recognition",
-              icon: "🖼️",
-              createdAt: "2025-05-10",
-              priority: { level: "high" },
-              assignee: "Ivy",
-              status: "In Review",
-              EstimatedTime: "4d",
-              SpentTime: "4d",
-              Progress: "100%",
-              description: "Implement visual content analysis system",
-            },
-          ],
-          total: 2,
-          active: 2,
-        },
-      },
-
-      {
-        id: "PNU001231",
-        title: "Fleet Tracking System",
-        icon: "🚚",
-        createdAt: "2025-05-11",
-        priority: { level: "medium", icon: "ArrowUp", color: "orange" },
-        assignee: ["Jack", "Karen"],
-        assignedBy: "Alex",
-        status: "Active",
-        description:
-          "Real-time GPS tracking and route optimization for delivery vehicles.",
-        task: {
-          tasks: [
-            {
-              id: "task-15",
-              name: "GPS Integration",
-              icon: "📍",
-              createdAt: "2025-05-11",
-              priority: { level: "high" },
-              assignee: "Jack",
-              status: "Done",
-              EstimatedTime: "3d",
-              SpentTime: "3d",
-              Progress: "100%",
-              description: "Connect to vehicle tracking devices",
-            },
-            {
-              id: "task-16",
-              name: "Route Algorithm",
-              icon: "🛣️",
-              createdAt: "2025-05-11",
-              priority: { level: "high" },
-              assignee: "Karen",
-              status: "In Progress",
-              EstimatedTime: "4d",
-              SpentTime: "2d",
-              Progress: "50%",
-              description: "Develop optimal routing logic",
-            },
-          ],
-          total: 2,
-          active: 1,
-        },
-      },
-
-      {
-        id: "PNU001232",
-        title: "Event Management Platform",
-        icon: "🎪",
-        createdAt: "2025-05-12",
-        priority: { level: "low", icon: "ArrowDown", color: "green" },
-        assignee: ["Leo", "Mia"],
-        assignedBy: "Lisa",
-        status: "Active",
-        description:
-          "End-to-end solution for planning, promoting, and running events.",
-        task: {
-          tasks: [
-            {
-              id: "task-17",
-              name: "Ticketing System",
-              icon: "🎫",
-              createdAt: "2025-05-12",
-              priority: { level: "medium" },
-              assignee: "Leo",
-              status: "In Progress",
-              EstimatedTime: "3d",
-              SpentTime: "1d",
-              Progress: "50%",
-              description: "Implement seat selection and payment processing",
-            },
-            {
-              id: "task-18",
-              name: "RSVP Tracking",
-              icon: "✍️",
-              createdAt: "2025-05-12",
-              priority: { level: "low" },
-              assignee: "Mia",
-              status: "Done",
-              EstimatedTime: "1d",
-              SpentTime: "1d",
-              Progress: "100%",
-              description: "Create invitation response system",
-            },
-          ],
-          total: 2,
-          active: 1,
-        },
-      },
-
-      {
-        id: "PNU001233",
-        title: "Smart Home Control",
-        icon: "🏠",
-        createdAt: "2025-05-13",
-        priority: { level: "high", icon: "ArrowUp", color: "red" },
-        assignee: ["Noah", "Olivia"],
-        assignedBy: "Mark",
-        status: "Active",
-        description:
-          "Centralized platform for controlling smart home devices and automation.",
-        task: {
-          tasks: [
-            {
-              id: "task-19",
-              name: "Device Integration",
-              icon: "🔌",
-              createdAt: "2025-05-13",
-              priority: { level: "high" },
-              assignee: "Noah",
-              status: "In Progress",
-              EstimatedTime: "3d",
-              SpentTime: "1d",
-              Progress: "33%",
-              description: "Connect to various smart home protocols",
-            },
-            {
-              id: "task-20",
-              name: "Voice Control",
-              icon: "🎤",
-              createdAt: "2025-05-13",
-              priority: { level: "medium" },
-              assignee: "Olivia",
-              status: "To Do",
-              EstimatedTime: "2d",
-              SpentTime: "0h",
-              Progress: "0%",
-              description: "Implement voice command functionality",
-            },
-          ],
-          total: 2,
-          active: 1,
-        },
-      },
-
-      {
-        id: "PNU001234",
-        title: "Inventory Management",
-        icon: "📦",
-        createdAt: "2025-05-14",
-        priority: { level: "medium", icon: "ArrowDown", color: "orange" },
-        assignee: ["Ethan", "Ava"],
-        assignedBy: "Sara",
-        status: "Active",
-        description:
-          "System for tracking stock levels and automated reordering.",
-        task: {
-          tasks: [
-            {
-              id: "task-21",
-              name: "Barcode Scanning",
-              icon: "📷",
-              createdAt: "2025-05-14",
-              priority: { level: "high" },
-              assignee: "Ethan",
-              status: "Done",
-              EstimatedTime: "2d",
-              SpentTime: "2d",
-              Progress: "100%",
-              description: "Implement mobile scanner integration",
-            },
-            {
-              id: "task-22",
-              name: "Low Stock Alerts",
-              icon: "⚠️",
-              createdAt: "2025-05-14",
-              priority: { level: "medium" },
-              assignee: "Ava",
-              status: "In Progress",
-              EstimatedTime: "1d",
-              SpentTime: "0.5d",
-              Progress: "50%",
-              description: "Configure notification thresholds",
-            },
-          ],
-          total: 2,
-          active: 1,
-        },
-      },
-
-      {
-        id: "PNU001235",
-        title: "Language Learning App",
-        icon: "🗣️",
-        createdAt: "2025-05-15",
-        priority: { level: "medium", icon: "ArrowUp", color: "orange" },
-        assignee: ["Liam", "Sophia"],
-        assignedBy: "John",
-        status: "Active",
-        description:
-          "Mobile app for learning languages with interactive lessons.",
-        task: {
-          tasks: [
-            {
-              id: "task-23",
-              name: "Lesson Builder",
-              icon: "📚",
-              createdAt: "2025-05-15",
-              priority: { level: "high" },
-              assignee: "Liam",
-              status: "In Progress",
-              EstimatedTime: "4d",
-              SpentTime: "2d",
-              Progress: "50%",
-              description: "Create tools for designing lessons",
-            },
-            {
-              id: "task-24",
-              name: "Speech Recognition",
-              icon: "🎤",
-              createdAt: "2025-05-15",
-              priority: { level: "medium" },
-              assignee: "Sophia",
-              status: "To Do",
-              EstimatedTime: "3d",
-              SpentTime: "0h",
-              Progress: "0%",
-              description: "Implement pronunciation evaluation",
-            },
-          ],
-          total: 2,
-          active: 1,
-        },
-      },
-
-      {
-        id: "PNU001236",
-        title: "Expense Tracker",
-        icon: "💵",
-        createdAt: "2025-05-16",
-        priority: { level: "low", icon: "ArrowDown", color: "green" },
-        assignee: ["Mason", "Isabella"],
-        assignedBy: "Emma",
-        status: "Active",
-        description: "App for tracking personal expenses and budgeting.",
-        task: {
-          tasks: [
-            {
-              id: "task-25",
-              name: "Expense Input",
-              icon: "✍️",
-              createdAt: "2025-05-16",
-              priority: { level: "medium" },
-              assignee: "Mason",
-              status: "Done",
-              EstimatedTime: "2d",
-              SpentTime: "2d",
-              Progress: "100%",
-              description: "Design interface for logging expenses",
-            },
-            {
-              id: "task-26",
-              name: "Budget Planner",
-              icon: "📅",
-              createdAt: "2025-05-16",
-              priority: { level: "medium" },
-              assignee: "Isabella",
-              status: "In Progress",
-              EstimatedTime: "3d",
-              SpentTime: "1d",
-              Progress: "33%",
-              description: "Create tools for setting budgets",
-            },
-          ],
-          total: 2,
-          active: 1,
-        },
-      },
-    ] as Project[],
-
+    projects: [] as Project[],
+    loading: false,
     selectedProject: null as Project | null,
     showDetial: false as boolean,
+    selectedTask: null as TaskType | null,
+    statsByProject: {} as Record<string, ProjectStats>,
+    visibilityRequests: [] as VisibilityRequest[],
+    timeLogsByTask: {} as Record<string, TimeLogEntry[]>,
   }),
   getters: {
     getSelectedState(state) {
       return state.projects[0];
     },
+    statsFor: (state) => (projectId: string) => state.statsByProject[projectId] ?? null,
   },
   actions: {
-    addProject(project: Project) {
-      this.projects.push(project);
+    async fetchProjects() {
+      this.loading = true;
+      try {
+        const { data } = await axiosInstance.get<ApiResponse<{ results: ProjectApi[] }>>("/projects/");
+        this.projects = data.data.results.map(mapProject);
+      } catch (error) {
+        console.error("Failed to fetch projects:", error);
+      } finally {
+        this.loading = false;
+      }
     },
-  },
 
-  persist: {
-    key: "pinia-projectStore",
-    storage: localStorage,
+    async createProject(input: CreateProjectInput): Promise<{ project?: Project; errors?: Record<string, string[]> }> {
+      try {
+        const { data } = await axiosInstance.post<ApiResponse<{ project: ProjectApi }>>("/projects/", {
+          title: input.title,
+          description: input.description,
+          department_id: input.departmentId,
+          visibility: input.visibility,
+          priority: input.priority,
+          start_date: input.startDate,
+          deadline: input.deadline,
+          collaborator_ids: input.collaboratorIds,
+        });
+        const project = mapProject(data.data.project);
+        this.projects.unshift(project);
+        return { project };
+      } catch (error: any) {
+        return { errors: error.response?.data?.errors || { title: [error.response?.data?.message || "Failed to create project"] } };
+      }
+    },
+
+    async updateProject(projectId: string, patch: UpdateProjectInput): Promise<{ project?: Project; error?: string }> {
+      const body: Record<string, unknown> = {};
+      if (patch.title !== undefined) body.title = patch.title;
+      if (patch.description !== undefined) body.description = patch.description;
+      if (patch.departmentId !== undefined) body.department_id = patch.departmentId;
+      if (patch.visibility !== undefined) body.visibility = patch.visibility;
+      if (patch.priority !== undefined) body.priority = patch.priority;
+      if (patch.status !== undefined) body.status = STATUS_TO_API[patch.status];
+      if (patch.startDate !== undefined) body.start_date = patch.startDate;
+      if (patch.collaboratorIds !== undefined) body.collaborator_ids = patch.collaboratorIds;
+
+      try {
+        const { data } = await axiosInstance.patch<ApiResponse<{ project: ProjectApi }>>(`/projects/${projectId}/`, body);
+        const updated = mapProject(data.data.project);
+        const index = this.projects.findIndex((p) => p.id === projectId);
+        if (index !== -1) this.projects[index] = updated;
+        if (this.selectedProject?.id === projectId) this.selectedProject = updated;
+        return { project: updated };
+      } catch (error: any) {
+        return { error: error.response?.data?.message || "Failed to update project" };
+      }
+    },
+
+    // Visibility escalation (A7): a Department Member's private project can
+    // only reach department visibility by requesting it here and having
+    // their Department Leader (or Owner/CM) approve -- see updateProject
+    // above for the direct path DL/Owner/CM use instead.
+    async requestVisibilityChange(projectId: string, visibility: "department"): Promise<{ error?: string }> {
+      try {
+        await axiosInstance.post(`/projects/${projectId}/visibility-requests/`, { visibility });
+        return {};
+      } catch (error: any) {
+        return { error: error.response?.data?.message || "Failed to submit visibility request" };
+      }
+    },
+
+    async fetchVisibilityRequests(): Promise<VisibilityRequest[]> {
+      try {
+        const { data } = await axiosInstance.get<ApiResponse<{ results: VisibilityRequestApi[] }>>(
+          "/projects/visibility-requests/"
+        );
+        this.visibilityRequests = data.data.results.map(mapVisibilityRequest);
+        return this.visibilityRequests;
+      } catch (error) {
+        console.error("Failed to fetch visibility requests:", error);
+        return [];
+      }
+    },
+
+    async approveVisibilityRequest(requestId: string): Promise<{ error?: string }> {
+      try {
+        await axiosInstance.post(`/projects/visibility-requests/${requestId}/approve/`);
+        this.visibilityRequests = this.visibilityRequests.filter((r) => r.id !== requestId);
+        return {};
+      } catch (error: any) {
+        return { error: error.response?.data?.message || "Failed to approve request" };
+      }
+    },
+
+    async denyVisibilityRequest(requestId: string, comment = ""): Promise<{ error?: string }> {
+      try {
+        await axiosInstance.post(`/projects/visibility-requests/${requestId}/deny/`, { comment });
+        this.visibilityRequests = this.visibilityRequests.filter((r) => r.id !== requestId);
+        return {};
+      } catch (error: any) {
+        return { error: error.response?.data?.message || "Failed to deny request" };
+      }
+    },
+
+    async transferOwnership(projectId: string, newOwnerId: string): Promise<{ project?: Project; error?: string }> {
+      try {
+        const { data } = await axiosInstance.patch<ApiResponse<{ project: ProjectApi }>>(
+          `/projects/${projectId}/owner/`,
+          { new_owner_id: newOwnerId }
+        );
+        const updated = mapProject(data.data.project);
+        this._applyUpdatedProject(updated);
+        return { project: updated };
+      } catch (error: any) {
+        return { error: error.response?.data?.message || "Failed to transfer ownership" };
+      }
+    },
+
+    async archiveProject(projectId: string): Promise<boolean> {
+      try {
+        await axiosInstance.delete(`/projects/${projectId}/`);
+        this.projects = this.projects.filter((p) => p.id !== projectId);
+        if (this.selectedProject?.id === projectId) this.selectedProject = null;
+        return true;
+      } catch {
+        return false;
+      }
+    },
+
+    _applyUpdatedProject(updated: Project) {
+      const index = this.projects.findIndex((p) => p.id === updated.id);
+      if (index !== -1) this.projects[index] = updated;
+      if (this.selectedProject?.id === updated.id) this.selectedProject = updated;
+    },
+
+    async setProjectImageLink(projectId: string, imageUrl: string): Promise<{ error?: string }> {
+      try {
+        const { data } = await axiosInstance.put<ApiResponse<{ project: ProjectApi }>>(
+          `/projects/${projectId}/image/`,
+          { image_url: imageUrl }
+        );
+        this._applyUpdatedProject(mapProject(data.data.project));
+        return {};
+      } catch (error: any) {
+        return { error: error.response?.data?.message || "Failed to set the project image link" };
+      }
+    },
+
+    async uploadProjectImage(projectId: string, file: File): Promise<{ error?: string }> {
+      try {
+        const form = new FormData();
+        form.append("image", file);
+        const { data } = await axiosInstance.post<ApiResponse<{ project: ProjectApi }>>(
+          `/projects/${projectId}/image/`,
+          form
+        );
+        this._applyUpdatedProject(mapProject(data.data.project));
+        return {};
+      } catch (error: any) {
+        return { error: error.response?.data?.message || "Failed to upload the project image" };
+      }
+    },
+
+    async removeProjectImage(projectId: string): Promise<{ error?: string }> {
+      try {
+        await axiosInstance.delete(`/projects/${projectId}/image/`);
+        const project = this.projects.find((p) => p.id === projectId);
+        if (project) project.image = null;
+        if (this.selectedProject?.id === projectId) this.selectedProject.image = null;
+        return {};
+      } catch (error: any) {
+        return { error: error.response?.data?.message || "Failed to remove the project image" };
+      }
+    },
+
+    selectTask(task: TaskType | null) {
+      this.selectedTask = task;
+    },
+
+    findProject(projectId: string) {
+      return this.projects.find((project) => project.id === projectId) ?? null;
+    },
+
+    findTask(taskId: string): TaskType | null {
+      for (const project of this.projects) {
+        const task = project.task.tasks?.find((t) => t.id === taskId);
+        if (task) return task;
+      }
+      return null;
+    },
+
+    _syncTaskCounts(project: Project) {
+      const tasks = project.task.tasks || [];
+      project.task.total = tasks.length;
+      project.task.active = tasks.filter((t) => t.status !== "Done").length;
+    },
+
+    // For callers (e.g. aiStore's task-content regeneration poll) that only
+    // have the raw API task shape and shouldn't need to know about mapTask.
+    applyTaskApiUpdate(taskApi: TaskApi) {
+      this._applyUpdatedTask(mapTask(taskApi));
+    },
+
+    _applyUpdatedTask(updated: TaskType) {
+      const project = this.findProject(updated.projectId);
+      const task = project?.task.tasks?.find((t) => t.id === updated.id);
+      if (project && task) {
+        Object.assign(task, updated);
+        this._syncTaskCounts(project);
+      }
+      if (this.selectedTask?.id === updated.id) this.selectedTask = updated;
+    },
+
+    async fetchTasks(projectId: string) {
+      try {
+        const { data } = await axiosInstance.get<ApiResponse<{ results: TaskApi[] }>>(
+          `/projects/${projectId}/tasks/`,
+          { params: { page_size: 100 } }
+        );
+        const project = this.findProject(projectId);
+        if (project) {
+          project.task.tasks = data.data.results.map(mapTask);
+          this._syncTaskCounts(project);
+        }
+      } catch (error) {
+        console.error("Failed to fetch tasks:", error);
+      }
+    },
+
+    async createTask(
+      projectId: string,
+      input: CreateTaskInput
+    ): Promise<{ task?: TaskType; errors?: Record<string, string[]> }> {
+      try {
+        const { data } = await axiosInstance.post<ApiResponse<{ task: TaskApi }>>(`/projects/${projectId}/tasks/`, {
+          title: input.title,
+          description: input.description,
+          department_id: input.departmentId,
+          task_type_id: input.taskTypeId,
+          assigned_to_id: input.assignedToId,
+          priority: input.priority,
+          deadline: input.deadline,
+          estimated_time_hours: input.estimatedTimeHours,
+        });
+        const task = mapTask(data.data.task);
+        const project = this.findProject(projectId);
+        if (project) {
+          if (!project.task.tasks) project.task.tasks = [];
+          project.task.tasks.push(task);
+          this._syncTaskCounts(project);
+        }
+        return { task };
+      } catch (error: any) {
+        return {
+          errors: error.response?.data?.errors || { title: [error.response?.data?.message || "Failed to create task"] },
+        };
+      }
+    },
+
+    // Inserts already-created tasks (e.g. from an AI plan save) into the
+    // matching project's in-memory task list without a refetch -- mirrors
+    // what createTask does for a single task, just for a batch.
+    appendTasks(projectId: string, tasksApi: TaskApi[]) {
+      const project = this.findProject(projectId);
+      if (!project) return;
+      if (!project.task.tasks) project.task.tasks = [];
+      project.task.tasks.push(...tasksApi.map(mapTask));
+      this._syncTaskCounts(project);
+    },
+
+    // Real, already-computed task-status breakdown for a project -- powers
+    // the AI Health Check panel's stat cards (see analytics/services.py
+    // ::get_project_stats, the same function the AI health summary itself
+    // is generated from).
+    async fetchProjectStats(projectId: string) {
+      try {
+        const { data } = await axiosInstance.get<ApiResponse<ProjectStatsApi>>(`/analytics/projects/${projectId}/`);
+        this.statsByProject[projectId] = mapProjectStats(data.data);
+      } catch (error) {
+        console.error("Failed to fetch project stats:", error);
+      }
+    },
+
+    async updateTask(taskId: string, patch: UpdateTaskInput): Promise<{ task?: TaskType; error?: string }> {
+      const touched = Object.keys(patch).filter((key) => patch[key as keyof UpdateTaskInput] !== undefined);
+      const touchesAssignee = touched.some((key) => (TASK_ASSIGNEE_FIELDS as readonly string[]).includes(key));
+      const touchesManage = touched.some((key) => (TASK_MANAGE_FIELDS as readonly string[]).includes(key));
+      if (touchesAssignee && touchesManage) {
+        // The server refuses this whole rather than half-applying it, so
+        // catching it here turns a confusing 403 into a statement of the rule.
+        return {
+          error:
+            "Edit the description and estimate separately from the title, priority, type and department -- they belong to different people.",
+        };
+      }
+
+      const body: Record<string, unknown> = {};
+      if (patch.title !== undefined) body.title = patch.title;
+      if (patch.description !== undefined) body.description = patch.description;
+      if (patch.departmentId !== undefined) body.department_id = patch.departmentId;
+      if (patch.taskTypeId !== undefined) body.task_type_id = patch.taskTypeId;
+      if (patch.priority !== undefined) body.priority = patch.priority;
+      if (patch.estimatedTimeHours !== undefined) body.estimated_time_hours = patch.estimatedTimeHours;
+
+      try {
+        const { data } = await axiosInstance.patch<ApiResponse<{ task: TaskApi }>>(`/tasks/${taskId}/`, body);
+        const task = mapTask(data.data.task);
+        this._applyUpdatedTask(task);
+        return { task };
+      } catch (error: any) {
+        return { error: error.response?.data?.message || "Failed to update task" };
+      }
+    },
+
+    /**
+     * Move a task's deadline. A reason is required by the server, is recorded
+     * on an audit row, and is included in the notification the assignee gets --
+     * a date changing under somebody with no explanation is the thing that
+     * makes a deadline feel arbitrary.
+     */
+    async changeTaskDeadline(
+      taskId: string,
+      deadline: string,
+      reason: string,
+    ): Promise<{ task?: TaskType; error?: string }> {
+      try {
+        const { data } = await axiosInstance.post<ApiResponse<{ task: TaskApi }>>(
+          `/tasks/${taskId}/change-deadline/`,
+          { deadline, reason },
+        );
+        const task = mapTask(data.data.task);
+        this._applyUpdatedTask(task);
+        return { task };
+      } catch (error: any) {
+        return { error: error.response?.data?.message || "Failed to change the deadline" };
+      }
+    },
+
+    /**
+     * Move a project's deadline. Same rule as a task's, plus one more: the
+     * server refuses a date that would leave tasks past it, and returns those
+     * tasks so they can be fixed inline rather than leaving the user to guess
+     * which ones are in the way.
+     */
+    async changeProjectDeadline(
+      projectId: string,
+      deadline: string,
+      reason: string,
+    ): Promise<{ project?: Project; blockingTasks?: TaskType[]; error?: string }> {
+      try {
+        const { data } = await axiosInstance.post<ApiResponse<{ project: ProjectApi }>>(
+          `/projects/${projectId}/change-deadline/`,
+          { deadline, reason },
+        );
+        const updated = mapProject(data.data.project);
+        const index = this.projects.findIndex((p) => p.id === projectId);
+        if (index !== -1) this.projects[index] = updated;
+        if (this.selectedProject?.id === projectId) this.selectedProject = updated;
+        return { project: updated };
+      } catch (error: any) {
+        const body = error.response?.data;
+        const blocking = body?.data?.tasks;
+        return {
+          blockingTasks: Array.isArray(blocking) ? blocking.map(mapTask) : undefined,
+          error: body?.message || "Failed to change the deadline",
+        };
+      }
+    },
+
+    async updateTaskStatus(taskId: string, status: TaskType["status"]): Promise<{ error?: string }> {
+      try {
+        const { data } = await axiosInstance.patch<ApiResponse<{ task: TaskApi }>>(`/tasks/${taskId}/status/`, {
+          status,
+        });
+        this._applyUpdatedTask(mapTask(data.data.task));
+        return {};
+      } catch (error: any) {
+        return { error: error.response?.data?.message || "Failed to update task status" };
+      }
+    },
+
+    async assignTask(taskId: string, assignedToId: string | null): Promise<{ error?: string }> {
+      try {
+        const { data } = await axiosInstance.post<ApiResponse<{ task: TaskApi }>>(`/tasks/${taskId}/assign/`, {
+          assigned_to_id: assignedToId,
+        });
+        this._applyUpdatedTask(mapTask(data.data.task));
+        return {};
+      } catch (error: any) {
+        return { error: error.response?.data?.message || "Failed to assign task" };
+      }
+    },
+
+    async archiveTask(taskId: string): Promise<boolean> {
+      try {
+        await axiosInstance.delete(`/tasks/${taskId}/`);
+        for (const project of this.projects) {
+          if (project.task.tasks?.some((t) => t.id === taskId)) {
+            project.task.tasks = project.task.tasks.filter((t) => t.id !== taskId);
+            this._syncTaskCounts(project);
+            break;
+          }
+        }
+        if (this.selectedTask?.id === taskId) this.selectedTask = null;
+        return true;
+      } catch {
+        return false;
+      }
+    },
+
+    // Creates one real, attributable time-log entry (replaces the old
+    // logTime, which just overwrote a single running-total field and
+    // silently discarded the date/description -- see TaskTimeLog).
+    async createTimeLog(taskId: string, input: CreateTimeLogInput): Promise<{ entry?: TimeLogEntry; error?: string }> {
+      try {
+        const { data } = await axiosInstance.post<ApiResponse<{ time_log: TimeLogApi; spent_time_hours: number | null }>>(
+          `/tasks/${taskId}/time-logs/`,
+          { hours: input.hours, work_date: input.workDate, description: input.description }
+        );
+        const entry = mapTimeLog(data.data.time_log);
+        this.timeLogsByTask[taskId] = [entry, ...(this.timeLogsByTask[taskId] ?? [])];
+        this._applySpentHours(taskId, data.data.spent_time_hours);
+        return { entry };
+      } catch (error: any) {
+        return { error: error.response?.data?.message || "Failed to log time" };
+      }
+    },
+
+    async fetchTimeLogs(taskId: string): Promise<{ error?: string }> {
+      try {
+        const { data } = await axiosInstance.get<ApiResponse<{ results: TimeLogApi[] }>>(
+          `/tasks/${taskId}/time-logs/`,
+          { params: { page_size: 100 } }
+        );
+        this.timeLogsByTask[taskId] = data.data.results.map(mapTimeLog);
+        return {};
+      } catch (error: any) {
+        return { error: error.response?.data?.message || "Failed to load time logs" };
+      }
+    },
+
+    async deleteTimeLog(taskId: string, logId: string): Promise<{ error?: string }> {
+      try {
+        const { data } = await axiosInstance.delete<ApiResponse<{ spent_time_hours: number | null }>>(
+          `/tasks/${taskId}/time-logs/${logId}/`
+        );
+        this.timeLogsByTask[taskId] = (this.timeLogsByTask[taskId] ?? []).filter((entry) => entry.id !== logId);
+        this._applySpentHours(taskId, data.data.spent_time_hours);
+        return {};
+      } catch (error: any) {
+        return { error: error.response?.data?.message || "Failed to delete time log" };
+      }
+    },
+
+    _applySpentHours(taskId: string, spentTimeHours: number | null) {
+      const task = this.findTask(taskId);
+      if (!task) return;
+      task.spentTimeHours = spentTimeHours;
+      task.progress = computeTaskProgress(task.status, task.spentTimeHours, task.estimatedTimeHours);
+    },
+
+    // The current user's own logged entries across every task/project,
+    // optionally scoped to a date range -- powers My Activity's real
+    // per-period "Time by projects" (view-specific, so not cached here).
+    async fetchMyTimeLogs(range?: { startDate?: string; endDate?: string }): Promise<TimeLogEntry[]> {
+      try {
+        const { data } = await axiosInstance.get<ApiResponse<{ results: TimeLogApi[] }>>("/time-logs/mine/", {
+          params: { start_date: range?.startDate, end_date: range?.endDate, page_size: 200 },
+        });
+        return data.data.results.map(mapTimeLog);
+      } catch (error) {
+        console.error("Failed to fetch my time logs:", error);
+        return [];
+      }
+    },
   },
 });

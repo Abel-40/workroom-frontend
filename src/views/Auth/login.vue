@@ -1,5 +1,6 @@
 <script lang="ts" setup>
-import { WorkflowIcon, ArrowRight } from 'lucide-vue-next'
+import { ArrowRight } from 'lucide-vue-next'
+import logoUrl from '@/assets/logo.png'
 import {
   Card,
   CardContent,
@@ -10,10 +11,11 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import Button from '@/components/ui/button/Button.vue'
-import {computed, ref } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import { useToast } from '@/components/ui/toast/use-toast'
+import type { Role } from '@/lib/permissions'
 
 interface userForm {
   email: string
@@ -55,6 +57,17 @@ const onSubmit = async (e: Event) => {
 }
 
 }
+
+// Dev-only: preview any role without a running backend. Never present in a
+// production build (import.meta.env.DEV is compiled away by Vite), so this
+// isn't a real auth bypass shipped to users. Read into a plain const here --
+// Vue's template compiler rejects `import.meta` written directly inside a
+// template expression ("import.meta may appear only with sourceType: module").
+const isDevPreview = import.meta.env.DEV
+const previewAsRole = (role: Role) => {
+  authStore.loginAsDummy(role)
+  router.push({ path: '/admin/dashboard/', query: { section: 'dashboard' } })
+}
 </script>
 
 
@@ -67,7 +80,7 @@ const onSubmit = async (e: Event) => {
           <!-- Logo - Always visible -->
           <div class="flex items-center space-x-2 mb-4">
             <div class="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-lg flex items-center justify-center">
-              <WorkflowIcon class="w-6 h-6 sm:w-8 sm:h-8 text-[#3F8CFF]" />
+              <img :src="logoUrl" alt="" class="w-6 h-6 sm:w-8 sm:h-8 object-contain" />
             </div>
             <span class="text-xl sm:text-2xl text-white font-bold">Workroom</span>
           </div>
@@ -99,7 +112,7 @@ const onSubmit = async (e: Event) => {
 
         <!-- Right Container -->
         <div class="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-8">
-          <form @submit.pervent="onSubmit" class="w-full flex flex-col justify-center items-center">
+          <form @submit.prevent="onSubmit" class="w-full flex flex-col justify-center items-center">
             <Card class="w-full max-w-md border-none shadow-none">
               <CardHeader class="text-center">
                 <CardTitle class="text-xl sm:text-2xl font-bold">Sign In to Workroom</CardTitle>
@@ -132,17 +145,40 @@ const onSubmit = async (e: Event) => {
                 </div>
               </CardContent>
 
-              <div class="px-6 pb-6">
-                <Button class="w-full bg-[#3F8CFF] hover:bg-[#D8E0F0]/90 hover:text-black">
+              <div class="px-6 pb-4">
+                <Button
+                  type="submit"
+                  class="w-full bg-[#3F8CFF] hover:bg-[#2a74e0] text-white"
+                >
                   Sign In <ArrowRight class="ml-2 w-4 h-4" />
                 </Button>
               </div>
 
-              <CardFooter class="justify-center text-sm">
-                Don't have an account?
-                <Button as="a" variant="link" href="/auth/" class="text-[#3F8CFF] p-0 ml-1 h-auto">
-                  Register
-                </Button>
+              <CardFooter class="flex-col gap-3">
+                <div class="text-sm">
+                  Don't have an account?
+                  <Button as="a" variant="link" href="/auth/" class="text-[#3F8CFF] p-0 ml-1 h-auto">
+                    Register
+                  </Button>
+                </div>
+
+                <div v-if="isDevPreview" class="w-full rounded-xl border border-dashed border-slate-300 p-3">
+                  <p class="mb-2 text-center text-xs font-semibold uppercase tracking-wide text-slate-400">
+                    Dev preview -- skip auth as
+                  </p>
+                  <div class="flex flex-wrap justify-center gap-2">
+                    <Button
+                      v-for="role in (['Owner', 'CM', 'DL', 'DM'] as const)"
+                      :key="role"
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      @click="previewAsRole(role)"
+                    >
+                      {{ role }}
+                    </Button>
+                  </div>
+                </div>
               </CardFooter>
             </Card>
           </form>
