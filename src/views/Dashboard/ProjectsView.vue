@@ -35,8 +35,8 @@ import { useProjectStore } from "@/stores/projectStore";
 import { useAuthStore } from "@/stores/authStore";
 import { useEmployeeStore } from "@/stores/employeeStore";
 import { useDirectoryStore } from "@/stores/directoryStore";
-import { canManageProject } from "@/lib/projectPermissions";
 import { usePermissions } from "@/composables/usePermissions";
+import { useProjectAccess } from "@/composables/useProjectAccess";
 import { useDeviceClass } from "@/composables/useDeviceClass";
 import type { Project, TaskType } from "@/types/types";
 import { addDays, format } from "date-fns";
@@ -80,14 +80,11 @@ const myDepartmentName = computed(
   () => directoryStore.departments.find((d) => d.id === myDepartmentId.value)?.name ?? null
 );
 // const selectedProject = ref(projectsStore.getSelectedState)
-const canManageSelectedProject = computed(() =>
-  canManageProject(
-    selectedProject.value,
-    authStore.logedInUserInfo.user?.id,
-    authStore.logedInUserInfo.role,
-    authStore.logedInUserInfo.departmentId
-  )
-);
+// Server-reported (project.accessLevel), not re-derived here -- the old
+// lib/projectPermissions.ts version of this check still granted management
+// on `createdById`, which the backend stopped doing (created_by is
+// provenance, not a standing claim). See useProjectAccess's own docstring.
+const { canManage: canManageSelectedProject } = useProjectAccess(selectedProject);
 // A DM can never change visibility directly, even on a project they manage
 // by other rights (creator/owner) -- see update_project's visibility_locked
 // check. Everyone else who can manage the project may.

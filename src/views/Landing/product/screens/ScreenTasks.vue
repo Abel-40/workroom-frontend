@@ -3,7 +3,7 @@
 // The Kanban board for one project, using the app's four real statuses from
 // types/types.ts and the task-type vocabulary from the sector defaults.
 import { computed } from "vue";
-import { Clock, MessageSquare, Paperclip } from "lucide-vue-next";
+import { ArrowDown, ArrowUp, Clock, MessageSquare, Paperclip } from "lucide-vue-next";
 import { DEMO_TASKS, STATUS_COLUMNS, DEMO_PROJECTS } from "../demoWorkspace";
 import type { TaskStatus } from "@/types/types";
 
@@ -70,14 +70,13 @@ const priorityTone: Record<string, string> = {
           <article
             v-for="t in col.tasks"
             :key="t.id"
-            class="rounded-lg border p-2.5 wr-line-soft"
+            class="rounded-2xl border p-3 shadow-sm transition-shadow wr-line-soft hover:shadow-md"
             style="background: hsl(var(--wr-lp-app))"
           >
+            <p class="mb-1 font-mono text-[9px] tabular-nums wr-t3">{{ t.id }}</p>
             <div class="flex items-start gap-1.5">
-              <span class="mt-1 h-1.5 w-1.5 shrink-0 rounded-full" :style="{ background: priorityTone[t.priority] }" />
-              <p class="min-w-0 flex-1 text-[11.5px] font-medium leading-snug wr-t1">{{ t.name }}</p>
+              <p class="mb-3 min-w-0 flex-1 text-[11.5px] font-medium leading-snug wr-t1">{{ t.name }}</p>
             </div>
-            <p class="mt-1.5 text-[10.5px] wr-t3">{{ t.taskType }}</p>
             <div v-if="t.progress > 0 && t.progress < 100" class="mt-2 flex items-center gap-1.5">
               <span class="h-1 flex-1 overflow-hidden rounded-full bg-black/[.07] dark:bg-white/10">
                 <span class="block h-full rounded-full" :style="{ width: t.progress + '%', background: statusTone[t.status] }" />
@@ -90,6 +89,10 @@ const priorityTone: Record<string, string> = {
                 style="background: linear-gradient(135deg, hsl(var(--wr-lp-brand)), hsl(var(--wr-lp-accent)))"
                 >{{ t.assignee }}</span
               >
+              <span class="flex items-center gap-1 text-[10.5px]" :style="{ color: priorityTone[t.priority] }">
+                <ArrowDown v-if="t.priority === 'low'" class="h-3 w-3" />
+                <ArrowUp v-else class="h-3 w-3" />
+              </span>
               <span class="flex items-center gap-0.5 text-[10.5px] tabular-nums wr-t3">
                 <Clock class="h-2.5 w-2.5" />{{ t.estimated }}
               </span>
@@ -97,7 +100,7 @@ const priorityTone: Record<string, string> = {
               <span class="flex items-center gap-0.5 text-[10.5px] wr-t3"><MessageSquare class="h-2.5 w-2.5" />2</span>
               <span class="flex items-center gap-0.5 text-[10.5px] wr-t3"><Paperclip class="h-2.5 w-2.5" />1</span>
             </div>
-            <p class="mt-1.5 text-[10.5px] tabular-nums wr-t3">{{ t.id }} · due {{ t.deadline }}</p>
+            <p class="mt-1.5 text-[10.5px] wr-t3">{{ t.taskType }} · due {{ t.deadline }}</p>
           </article>
         </div>
       </section>

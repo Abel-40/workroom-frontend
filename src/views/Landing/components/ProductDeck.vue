@@ -19,7 +19,6 @@ import { ref, onMounted, onBeforeUnmount, computed } from "vue";
 import AppFrame from "../product/AppFrame.vue";
 import ScreenDashboard from "../product/screens/ScreenDashboard.vue";
 import ScreenProjects from "../product/screens/ScreenProjects.vue";
-import ScreenTasks from "../product/screens/ScreenTasks.vue";
 import ScreenDepartments from "../product/screens/ScreenDepartments.vue";
 import ScreenWorkload from "../product/screens/ScreenWorkload.vue";
 import ScreenAiPlanner from "../product/screens/ScreenAiPlanner.vue";
@@ -30,7 +29,6 @@ import { prefersReducedMotion } from "@/lib/gsap";
 const screens = [
   { nav: "dashboard", label: "Dashboard", q: "What can I see at a glance?", a: "Workload, projects, events and activity for the whole company on one screen.", comp: ScreenDashboard, hint: "Search projects, tasks and people" },
   { nav: "projects", label: "Projects", q: "How do I organize work?", a: "Projects belong to departments, carry a visibility rule, and track their own progress.", comp: ScreenProjects, hint: "Search projects" },
-  { nav: "projects", label: "Tasks", q: "How does work get executed?", a: "A Kanban board with the four statuses your team actually uses, typed by sector.", comp: ScreenTasks, hint: "Search tasks in Mobile App v2" },
   { nav: "departments", label: "Departments", q: "How does the organization collaborate?", a: "Departments own people and projects. Roles decide what each member can reach.", comp: ScreenDepartments, hint: "Search departments and members" },
   { nav: "analytics", label: "Workload", q: "Who actually has capacity?", a: "Capacity per person and per department, with the reassignment made obvious.", comp: ScreenWorkload, hint: "Search insights" },
   { nav: "ai-workspace", label: "AI Planner", q: "How do I turn an idea into structured work?", a: "Describe an outcome; get a sequenced, assigned, dependency-aware draft plan to review.", comp: ScreenAiPlanner, hint: "Search AI generations" },

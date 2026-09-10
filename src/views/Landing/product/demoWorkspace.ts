@@ -53,11 +53,16 @@ export const DEMO_VIEWER = {
 
 /** Real department names from the Technology sector defaults. */
 export const DEMO_DEPARTMENTS = [
-  { name: "Engineering", lead: "Jordan Lee", members: 9, activeProjects: 4, load: 84 },
-  { name: "Design", lead: "Maya Chen", members: 5, activeProjects: 3, load: 96 },
-  { name: "Product", lead: "Amina Yusuf", members: 4, activeProjects: 5, load: 71 },
-  { name: "QA", lead: "Priya Nair", members: 4, activeProjects: 2, load: 63 },
-  { name: "DevOps", lead: "Sam Okoro", members: 2, activeProjects: 2, load: 48 },
+  { id: "dep-eng", name: "Engineering", description: "Builds and maintains the product platform.", lead: "Jordan Lee", members: 9, activeProjects: 4, load: 84 },
+  { id: "dep-design", name: "Design", description: "Shapes the product experience and brand system.", lead: "Maya Chen", members: 5, activeProjects: 3, load: 96 },
+  { id: "dep-product", name: "Product", description: "Turns customer needs into a focused roadmap.", lead: "Amina Yusuf", members: 4, activeProjects: 5, load: 71 },
+  { id: "dep-qa", name: "QA", description: "Protects quality across every release.", lead: "Priya Nair", members: 4, activeProjects: 2, load: 63 },
+  { id: "dep-devops", name: "DevOps", description: "Keeps delivery reliable and observable.", lead: "Sam Okoro", members: 2, activeProjects: 2, load: 48 },
+];
+
+export const DEMO_TEAMS = [
+  { name: "Checkout launch", description: "Cross-functional launch team for Payments Migration.", lead: "Amina Yusuf", members: ["AY", "JL", "MC", "PN"] },
+  { name: "Platform foundations", description: "Shared engineering work for the next release.", lead: "Jordan Lee", members: ["JL", "SO", "NB"] },
 ];
 
 export const DEMO_PEOPLE: DemoPerson[] = [
@@ -82,6 +87,10 @@ export const DEMO_PROJECTS = [
     totalTasks: 34,
     doneTasks: 21,
     members: ["MC", "JL", "AY"],
+    description: "A focused learning platform for customer onboarding and training.",
+    visibility: "Company-wide",
+    owner: "Amina Yusuf",
+    startDate: "Aug 04",
   },
   {
     id: "PNU001241",
@@ -94,6 +103,10 @@ export const DEMO_PROJECTS = [
     totalTasks: 28,
     doneTasks: 12,
     members: ["MC", "SO"],
+    description: "A faster mobile experience for customers on the move.",
+    visibility: "Department only",
+    owner: "Maya Chen",
+    startDate: "Aug 18",
   },
   {
     id: "PNU001256",
@@ -106,6 +119,10 @@ export const DEMO_PROJECTS = [
     totalTasks: 19,
     doneTasks: 4,
     members: ["JL", "NB"],
+    description: "Move payment methods and retry logic onto the new platform.",
+    visibility: "Private",
+    owner: "Jordan Lee",
+    startDate: "Sep 01",
   },
   {
     id: "PNU001260",
@@ -118,6 +135,10 @@ export const DEMO_PROJECTS = [
     totalTasks: 22,
     doneTasks: 18,
     members: ["MC", "AY", "PN"],
+    description: "A shared component language for every Workroom surface.",
+    visibility: "Company-wide",
+    owner: "Maya Chen",
+    startDate: "Jul 22",
   },
 ];
 

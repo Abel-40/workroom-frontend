@@ -72,8 +72,14 @@
 
 /* ── Page shell ──────────────────────────────────────────────────── */
 .wr-lp {
-  background: hsl(var(--wr-lp-ground));
+  background:
+    var(--wr-lp-stage-wash),
+    linear-gradient(180deg, hsl(var(--wr-lp-ground)), hsl(var(--wr-lp-stage) / .52) 46%, hsl(var(--wr-lp-ground)) 100%);
   color: hsl(var(--wr-lp-text));
+}
+
+.wr-lp main > section:nth-child(even) {
+  background: linear-gradient(180deg, transparent, hsl(var(--wr-lp-stage) / .28) 50%, transparent);
 }
 
 .wr-lp-stage {
@@ -94,6 +100,39 @@
 .wr-app-well { background: hsl(var(--wr-lp-app-well)); }
 .wr-line { border-color: hsl(var(--wr-lp-line)); }
 .wr-line-soft { border-color: hsl(var(--wr-lp-line-soft)); }
+
+/* The landing shell follows the authenticated AppShell: a rounded rail,
+   primary-soft active rows, and raised utility controls around the search. */
+.wr-real-rail {
+  background:
+    linear-gradient(180deg, hsl(var(--wr-lp-app-rail) / .96), hsl(var(--wr-lp-stage) / .72));
+  box-shadow: 0 16px 34px -28px hsl(215 45% 22% / .5);
+}
+.wr-real-nav-active {
+  background: hsl(var(--wr-lp-brand) / .10);
+  color: hsl(var(--wr-lp-brand));
+}
+.wr-real-nav-icon { color: hsl(var(--wr-lp-brand)); }
+.wr-real-well {
+  background: hsl(var(--wr-lp-app) / .52);
+  box-shadow: inset 0 1px 0 hsl(0 0% 100% / .55);
+}
+.wr-real-search,
+.wr-real-control {
+  background: hsl(var(--wr-lp-app) / .86);
+}
+.wr-real-search { box-shadow: 0 8px 18px -16px hsl(215 45% 22% / .8); }
+.wr-real-control { color: hsl(var(--wr-lp-text-2)); }
+.wr-app { container-type: inline-size; container-name: wrapp; }
+.wr-app > .wr-real-rail { display: flex; }
+.wr-app > div { min-width: 0; }
+.dark .wr-real-rail {
+  background: linear-gradient(180deg, hsl(var(--wr-lp-app-rail) / .94), hsl(var(--wr-lp-stage) / .86));
+  box-shadow: var(--wr-lp-app-shadow);
+}
+.dark .wr-real-well,
+.dark .wr-real-search,
+.dark .wr-real-control { background: hsl(var(--wr-lp-app) / .72); }
 
 .wr-t1 { color: hsl(var(--wr-lp-text)); }
 .wr-t2 { color: hsl(var(--wr-lp-text-2)); }
@@ -148,12 +187,8 @@
    Every rule is scoped under .wr-app deliberately: a bare .app-aside would tie
    on specificity with Tailwind's .flex utility, which is emitted later and
    would win, so the panel would never actually hide. */
-.wr-app {
-  container-type: inline-size;
-  container-name: wrapp;
-}
-
 .wr-app .app-split { grid-template-columns: 1.55fr 1fr; }
+.wr-app .app-dashboard { grid-template-columns: 1.4fr 1fr; }
 .wr-app .app-split-2 { grid-template-columns: 1fr 1.15fr; }
 .wr-app .app-cols-3,
 .wr-app .app-stats,
@@ -166,8 +201,17 @@
 .wr-app .app-prow { grid-template-columns: 1.7fr .85fr .6fr 1fr .7fr; }
 .wr-app .app-arow { grid-template-columns: 26px 1fr .8fr .9fr .4fr 34px; }
 .wr-app .app-mrow { grid-template-columns: 1.5fr 1.1fr .7fr; }
+.wr-app .ai-task-card { width: min(145px, 21cqw); }
 
 @container wrapp (max-width: 900px) {
+  .wr-app .ai-task-card { width: min(118px, 20cqw); }
+}
+
+@container wrapp (max-width: 900px) {
+  .wr-app > .wr-real-rail { width: 170px; padding: .625rem; }
+  .wr-app .wr-rail-label { display: none; }
+  .wr-app .wr-rail-brand { justify-content: center; }
+  .wr-app .wr-header-control { display: none; }
   .wr-app .app-board { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .wr-app .app-planner { grid-template-columns: 250px 1fr; }
   .wr-app .app-arow { grid-template-columns: 26px 1fr .9fr .4fr 34px; }
@@ -177,12 +221,17 @@
 @container wrapp (max-width: 700px) {
   /* Secondary panels step aside rather than being squeezed into slivers. */
   .wr-app .app-split,
+  .wr-app .app-dashboard,
   .wr-app .app-split-2,
   .wr-app .app-work,
   .wr-app .app-planner,
   .wr-app .app-assist,
   .wr-app .app-projects { grid-template-columns: minmax(0, 1fr); }
   .wr-app .app-aside { display: none; }
+  .wr-app > .wr-real-rail { display: flex; width: 54px !important; padding: .375rem; }
+  .wr-app .wr-rail-brand { margin-bottom: .5rem; }
+  .wr-app .wr-real-nav > span { justify-content: center; padding-inline: 0; }
+  .wr-app .wr-real-nav > span svg { height: 1rem; width: 1rem; }
   .wr-app .app-prow { grid-template-columns: 1fr auto; }
   .wr-app .app-prow > :nth-child(n + 3) { display: none; }
   .wr-app .app-arow { grid-template-columns: 26px 1fr .5fr 34px; }

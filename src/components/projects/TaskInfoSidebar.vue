@@ -17,7 +17,7 @@ import { useEmployeeStore } from "@/stores/employeeStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { formatHoursToDuration } from "@/lib/duration";
 import { formatShortDate, formatCalendarDate } from "@/lib/dates";
-import { canManageTask } from "@/lib/projectPermissions";
+import { useProjectAccess } from "@/composables/useProjectAccess";
 import type { Project, TaskType } from "@/types/types";
 import TimeTrackingModal from "./TimeTrackingModal.vue";
 
@@ -34,17 +34,12 @@ const timeTrackingOpen = ref(false);
 const assigning = ref(false);
 
 // Reassignment follows the same manage-task rule as editing/archiving a
-// task elsewhere (TaskDetailPanel) -- creator, or whoever can manage the
-// parent project.
-const canReassign = computed(() =>
-  canManageTask(
-    props.task,
-    props.project,
-    authStore.logedInUserInfo.user?.id,
-    authStore.logedInUserInfo.role,
-    authStore.logedInUserInfo.departmentId
-  )
-);
+// task elsewhere (TaskDetailPanel) -- whoever can manage the parent project.
+// Server-reported (project.accessLevel), not re-derived here -- this used to
+// call lib/projectPermissions.canManageTask, which granted on
+// `task.createdById`/`project.createdById`, a rule the backend dropped when
+// created_by became provenance rather than a claim.
+const canReassign = useProjectAccess(computed(() => props.project)).canManage;
 
 const initials = (name: string) =>
   (name || "?")

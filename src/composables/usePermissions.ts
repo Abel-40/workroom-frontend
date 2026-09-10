@@ -1,15 +1,22 @@
 // Single source of truth for "can the current user do X" in components.
-// Wraps lib/permissions.ts (the flat role->code catalog) plus the
-// resource-scoped ownership rules in projectPermissions.ts/eventPermissions.ts
-// so nothing outside this file needs to read authStore.logedInUserInfo
-// directly or branch on `role === 'DM'`. Route guards and nav config should
-// go through this too (see router/index.ts and lib/navConfig.ts).
+// Wraps lib/permissions.ts (the flat role->code catalog) plus
+// eventPermissions.ts's resource-scoped ownership rule, so nothing outside
+// this file needs to read authStore.logedInUserInfo directly or branch on
+// `role === 'DM'`. Route guards and nav config should go through this too
+// (see router/index.ts and lib/navConfig.ts).
+//
+// Project/task management questions do NOT live here any more -- use
+// useProjectAccess(project) instead, which reads the server-reported
+// project.accessLevel rather than re-deriving the rule client-side. This
+// composable used to re-export lib/projectPermissions.ts's canManageProject/
+// canManageTask, which still granted management on `createdById` after the
+// backend stopped doing that (created_by is provenance, not a standing
+// claim); they had no remaining callers and were removed rather than fixed
+// in place, so nothing can accidentally call the stale version again.
 import { computed } from "vue";
 import { useAuthStore } from "@/stores/authStore";
 import { hasPermission, isCompanyAdmin, isMemberRowLocked, type PermissionCode, type Role } from "@/lib/permissions";
-import { canManageProject, canManageTask } from "@/lib/projectPermissions";
 import { canManageEvent } from "@/lib/eventPermissions";
-import type { Project, TaskType } from "@/types/types";
 import type { EventEntry } from "@/stores/eventStore";
 
 export function usePermissions() {
@@ -37,10 +44,6 @@ export function usePermissions() {
     isDL,
     isDM,
     isAdmin,
-    canManageProject: (project: Project | null | undefined) =>
-      canManageProject(project, userId.value, role.value, departmentId.value),
-    canManageTask: (task: TaskType | null | undefined, project: Project | null | undefined) =>
-      canManageTask(task, project, userId.value, role.value, departmentId.value),
     canManageEvent: (event: EventEntry | null | undefined) =>
       canManageEvent(event, userId.value, role.value, departmentId.value),
     isMemberRowLocked: (targetRole: Role) => isMemberRowLocked(role.value, targetRole),
