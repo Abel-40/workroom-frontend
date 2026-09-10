@@ -6,8 +6,6 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { formatDayNumber, formatMonthShort, formatTime } from "@/lib/dates";
 import { EVENT_BADGE_CLASS, EVENT_CARD_BG_CLASS, eventColorFor } from "@/lib/eventColor";
-import { canManageEvent } from "@/lib/eventPermissions";
-import { useAuthStore } from "@/stores/authStore";
 import { useEventStore, type EventEntry } from "@/stores/eventStore";
 import {
   DropdownMenu,
@@ -25,7 +23,6 @@ const props = withDefaults(
 const emit = defineEmits<{ (e: "toggle-select", id: string): void }>();
 
 const router = useRouter();
-const authStore = useAuthStore();
 const eventStore = useEventStore();
 const { toast } = useToast();
 
@@ -42,14 +39,10 @@ const onCardClick = () => {
 const color = computed(() => eventColorFor(props.event.eventTypeName || props.event.title));
 const badgeClass = computed(() => EVENT_BADGE_CLASS[color.value]);
 const cardBgClass = computed(() => EVENT_CARD_BG_CLASS[color.value]);
-const canManage = computed(() =>
-  canManageEvent(
-    props.event,
-    authStore.logedInUserInfo?.user?.id,
-    authStore.logedInUserInfo?.role,
-    authStore.logedInUserInfo?.departmentId
-  )
-);
+// The server's answer, carried on the event itself. The old client-side
+// version predated WP13's `audience` and knew nothing about it -- notably
+// that a `personal` event has no administrative override at all.
+const canManage = computed(() => props.event.canManage);
 
 const initials = (name: string) => (name || "?").split(" ").map((p) => p[0]).join("").slice(0, 2).toUpperCase();
 

@@ -8,7 +8,11 @@ const StepOne = () => import('@/views/Auth/StepOne.vue')
 const StepTwo = () => import('@/views/Auth/StepTwo.vue')
 const DashboardLayout = () => import('@/layouts/DashboardLayout.vue')
 const Dashboard = () => import('@/views/Dashboard/DashboardHome.vue')
-const LandingPage = () => import('@/views/landing/LandingPage.vue')
+// Casing matters: the directory is `Landing`. Importing it as `landing`
+// resolves fine on Windows/macOS but registers the module twice under two
+// spellings (TS1261), and fails outright on a case-sensitive filesystem --
+// which is what CI and any Linux container are.
+const LandingPage = () => import('@/views/Landing/LandingPage.vue')
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),

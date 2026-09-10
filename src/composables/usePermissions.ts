@@ -1,23 +1,23 @@
-// Single source of truth for "can the current user do X" in components.
-// Wraps lib/permissions.ts (the flat role->code catalog) plus
-// eventPermissions.ts's resource-scoped ownership rule, so nothing outside
-// this file needs to read authStore.logedInUserInfo directly or branch on
-// `role === 'DM'`. Route guards and nav config should go through this too
-// (see router/index.ts and lib/navConfig.ts).
+// Single source of truth for the *company-role* question -- "does this
+// person's role allow X" -- in components. Wraps lib/permissions.ts (the flat
+// role->code catalog) so nothing outside this file reads
+// authStore.logedInUserInfo directly or branches on `role === 'DM'`. Route
+// guards and nav config go through this too (router/index.ts, lib/navConfig.ts).
 //
-// Project/task management questions do NOT live here any more -- use
-// useProjectAccess(project) instead, which reads the server-reported
-// project.accessLevel rather than re-deriving the rule client-side. This
-// composable used to re-export lib/projectPermissions.ts's canManageProject/
-// canManageTask, which still granted management on `createdById` after the
-// backend stopped doing that (created_by is provenance, not a standing
-// claim); they had no remaining callers and were removed rather than fixed
-// in place, so nothing can accidentally call the stale version again.
+// **Per-resource** questions deliberately do not live here. Both used to, and
+// both drifted out of date the moment the backend's rules moved:
+//
+//   projects/tasks -> useProjectAccess(project), reading project.accessLevel
+//   events         -> event.canManage, reported on the event itself
+//
+// The removed versions granted management on `createdById` (after the backend
+// made created_by provenance rather than a claim) and ignored an event's
+// `audience` entirely (including that `personal` has no admin override). A
+// mirrored rule set is a second source of truth, and the second one is always
+// the stale one -- so the mirrors are gone rather than patched.
 import { computed } from "vue";
 import { useAuthStore } from "@/stores/authStore";
 import { hasPermission, isCompanyAdmin, isMemberRowLocked, type PermissionCode, type Role } from "@/lib/permissions";
-import { canManageEvent } from "@/lib/eventPermissions";
-import type { EventEntry } from "@/stores/eventStore";
 
 export function usePermissions() {
   const authStore = useAuthStore();
@@ -44,8 +44,6 @@ export function usePermissions() {
     isDL,
     isDM,
     isAdmin,
-    canManageEvent: (event: EventEntry | null | undefined) =>
-      canManageEvent(event, userId.value, role.value, departmentId.value),
     isMemberRowLocked: (targetRole: Role) => isMemberRowLocked(role.value, targetRole),
   };
 }

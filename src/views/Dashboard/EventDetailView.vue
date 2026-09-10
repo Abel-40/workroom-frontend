@@ -5,17 +5,14 @@ import { Building2, Calendar, ChevronLeft, MapPin, Repeat, Trash2, User, Users }
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import ConfirmDeleteDialog from "@/components/common/ConfirmDeleteDialog.vue";
 import { useToast } from "@/components/ui/toast/use-toast";
-import { useAuthStore } from "@/stores/authStore";
 import { useEventStore, type EventEntry } from "@/stores/eventStore";
 import { formatDateTime } from "@/lib/dates";
-import { canManageEvent } from "@/lib/eventPermissions";
 import EmptyState from "@/components/shared/EmptyState.vue";
 import { ILLUSTRATIONS } from "@/lib/illustrations";
 
 const route = useRoute();
 const router = useRouter();
 const { toast } = useToast();
-const authStore = useAuthStore();
 const eventStore = useEventStore();
 
 const eventId = computed(() => String(route.query.eventId ?? ""));
@@ -33,14 +30,8 @@ watch(eventId, (id) => {
   if (id) load();
 });
 
-const canManage = computed(() =>
-  canManageEvent(
-    event.value,
-    authStore.logedInUserInfo?.user?.id,
-    authStore.logedInUserInfo?.role,
-    authStore.logedInUserInfo?.departmentId
-  )
-);
+// Server-reported on the event itself -- see eventStore.EventEntry.canManage.
+const canManage = computed(() => event.value?.canManage ?? false);
 
 const initials = (name: string) =>
   (name || "?").split(" ").map((p) => p[0]).join("").slice(0, 2).toUpperCase();

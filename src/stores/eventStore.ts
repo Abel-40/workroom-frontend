@@ -26,6 +26,10 @@ export interface EventEntry {
   isRecurring: boolean;
   recurrenceCadence: "daily" | "weekly" | "monthly" | null;
   recurrenceDays: string[];
+  /** Server-reported. Never re-derive this from role/organizer on the
+   *  client -- the audience matrix lives on the backend and a mirrored
+   *  copy is always the stale one. */
+  canManage: boolean;
 }
 
 type EventApi = {
@@ -48,6 +52,7 @@ type EventApi = {
   is_recurring: boolean;
   recurrence_cadence: "daily" | "weekly" | "monthly" | null;
   recurrence_days: string[];
+  can_manage: boolean;
 };
 
 type PaginationMeta = { count: number; page: number; page_size: number; has_next: boolean };
@@ -71,6 +76,9 @@ const mapEvent = (e: EventApi): EventEntry => ({
   isRecurring: e.is_recurring,
   recurrenceCadence: e.recurrence_cadence,
   recurrenceDays: e.recurrence_days,
+  // Default false, not true: an older backend that does not send the flag
+  // should hide management controls, not offer ones the server will refuse.
+  canManage: e.can_manage ?? false,
 });
 
 export interface EventFilters {

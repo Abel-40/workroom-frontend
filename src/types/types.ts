@@ -4,7 +4,13 @@ export type ApiResponse<T = any> = {
   message: string;
   statusCode: number;
   data: T;
-  errors?: Record<string, string[]> | string[]; 
+  // Always field -> messages. The server builds this in exactly one place
+  // (utils/api_response.py) and every one of its ~80 call sites passes a
+  // dict; the envelope schema types it `dict[str, Any] | None`. This used to
+  // also allow `string[]`, a shape nothing ever sends, which forced every
+  // consumer that declares `errors?: Record<string, string[]>` into an
+  // unassignable union.
+  errors?: Record<string, string[]>;
   code?: string | number;                       
   meta?: Record<string, any>;                   
   pagination?: {
